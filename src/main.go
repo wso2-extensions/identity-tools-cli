@@ -20,7 +20,7 @@ package main
 
 import (
 	"fmt"
-	"iamctl/cmd"
+	"github.com/wso2-extensions/identity-tools-cli/src/cmd"
 	"os"
 )
 
