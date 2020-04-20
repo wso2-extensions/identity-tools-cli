@@ -21,8 +21,8 @@ pipeline {
         stage('Build') {
             steps {
 
-                git url: 'https://github.com/piraveena/identity-tools-cli.git',
-                        branch: 'test-build'
+                git url: 'https://github.com/wso2-extensions/identity-tools-cli.git',
+                        branch: 'master'
 
                 sh '''#!/bin/bash +x
                     echo "***********************************************************"
