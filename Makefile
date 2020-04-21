@@ -14,7 +14,8 @@
 # limitations under the License.
 # -----------------------------------------------------------------------
 
-Version=1.2
+Version=0.1-SNAPSHOT
+
 .PHONY: install-cli
 install-cli:
 	 cd src && ./build.sh -t main.go -v ${Version} -f
