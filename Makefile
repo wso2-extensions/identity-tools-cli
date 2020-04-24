@@ -14,12 +14,12 @@
 # limitations under the License.
 # -----------------------------------------------------------------------
 
-Version?=0.0.1-SNAPSHOT
+VERSION?=0.0.2-SNAPSHOT
 
 .PHONY: install-cli
 install-cli:
-	 cd src && ./build.sh -t main.go -v ${Version} -f
+	 cd src && ./build.sh -t main.go -v ${VERSION} -f
 
 .PHONY: install-cli-skip-test
 install-cli-skip-test:
-	cd cmd && ./build.sh -t main.go -v ${Version} -f test.skip
+	cd cmd && ./build.sh -t main.go -v ${VERSION} -f test.skip
