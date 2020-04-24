@@ -15,31 +15,74 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-pipeline {
-    agent any
-    stages {
-        stage('Build') {
-            steps {
+def VERSION
+def CLI_REPO = "https://github.com/wso2-extensions/identity-tools-cli.git"
+def BRANCH = "master"
+def repo="wso2-extensions/identity-tools-cli"
 
-                git url: 'https://github.com/wso2-extensions/identity-tools-cli.git',
-                        branch: 'master'
+node('PRODUCT_ECS') {
+    stage('Preparation') {
+        // Get some code from a GitHub repository
+        checkout([$class: 'GitSCM', branches: [[name: BRANCH]],
+                  userRemoteConfigs: [[url: CLI_REPO]]])
 
-                sh '''#!/bin/bash +x
-                    echo "***********************************************************"
-                    echo "Building the cli tool"
-                    echo "***********************************************************"  
-                    echo "***********************************************************"                                  
-                   make install-cli
-                '''
-            }
-            post {
-                // archive the installers.
-                success {
-                    archiveArtifacts 'src/build/*.tar.gz'
-                    archiveArtifacts 'src/build/*.zip'
-                }
-            }
-
+    }
+    stage('Build') {
+        if (ReleaseVersion != ""){
+            VERSION = ReleaseVersion
+            sh """
+                VERSION=${VERSION} make install-cli
+              """
+        } else {
+            sh """
+            make install-cli
+          """
         }
+
+
+        if (ReleaseVersion != ""){
+            withCredentials([usernamePassword(credentialsId: '4ff4a55b-1313-45da-8cbf-b2e100b1accd', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+                def patternToFind = "VERSION"+version()
+                echo patternToFind
+                textToReplace = "VERSION?="+ DevelopmentVersion
+                echo textToReplace
+                replaceText("Makefile", patternToFind, textToReplace)
+
+                sh 'git config  user.email "email-id"'
+                sh 'git status'
+                sh 'git add Makefile'
+                sh 'git commit -m "Update to next development version"'
+                sh 'git push -u https://{GIT_USERNAME}:${GIT_PASSWORD}@github.com/wso2-extensions/identity-tools-cli.git HEAD:master'
+
+                def response = sh returnStdout: true,
+                        script: "curl --retry 5 -s -u ${GIT_USERNAME}:${GIT_PASSWORD} " +
+                                "-d '{\"tag_name\": \"v${ReleaseVersion}\", \"target_commitish\": \"${BRANCH}\", \"name\":\"Identity CLI-tool Release v${ReleaseVersion}\",\"body\":\"Identity CLI-tool version v${ReleaseVersion} released! \",\"prerelease\": true}' " +
+                                "https://api.github.com/repos/${repo}/releases"
+                //end withCredentials
+            }
+        }
+
+    }
+    stage('Results') {
+        archive 'src/build/*.tar.gz'
+        archive 'src/build/*.zip'
+    }
+
+}
+
+def version() {
+    def matcher = readFile("Makefile")=~'VERSION(.*)'
+    return matcher ? matcher[0][1] : null
+}
+
+def replaceText(String filepath, String pattern, String replaceText) {
+    def text = readFile filepath
+    def isExists = fileExists filepath
+    if (isExists){
+
+        def fileText = text.replace(pattern, replaceText)
+        writeFile file: filepath, text: fileText
+    } else {
+        println("WARN: " + filepath + "file not found")
     }
 }
