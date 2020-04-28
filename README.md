@@ -9,41 +9,44 @@ Here you can create service providers by entering inputs as a command  and flags
 
 ### How to run the executable file 
 
-1. First clone or download  ```identity-cli``` module.
-2. Copy the path of executable file according to your platform.
+1. Download latest release binary file from [Releases](https://github.com/wso2-extensions/identity-tools-cli/releases)
+ based on your Operating System.
+2. Extract the tar or zip file.
 * linux:
 
-```<identity-cli_PATH>/command-line-extension/bin/linux/iamctl```
+```<iamct-{version}>/bin/iamctl```
 
 * mac:
 
-```<identity-cli_PATH>/command-line-extension/bin/mac/iamctl```
+```<iamct-{version}>/bin/iamctl```
 
 * windows
 
-```<identity-cli_PATH>/command-line-extension/bin/windows/iamctl.exe```
+```<iamct-{version}>/bin/iamctl.exe```
+
+Eg: If it is mac and the released version is 1.0.0, then the extracted binary file looks like ```iamct-1.0.0/bin/iamctl```
 
 
-3. Then you select your directory to work and open a terminal.
+3. Then you select your directory to work and open a terminal. Here onwards refer the location of ```<iamct-{version}> ``` directory as ```<IDENTITY-CLI-PATH>```
 4. You can choose any name as keyword of IAM-CTL and set that using following command according to your platform.
 Here I have chosen 'iamctl' as keyword.
 
 * linux:
  
     ```
-    alias iamctl="<identity-cli_PATH>/command-line-extension/bin/linux/iamctl" 
+    alias iamctl="<IDENTITY-CLI-PATH>/bin/iamctl" 
     ```
   
 * mac:
  
   ```
-   alias iamctl="<identity-cli_PATH>/command-line-extension/bin/mac/iamctl" 
+   alias iamctl="<IDENTITY-CLI-PATH>/bin/iamctl" 
   ```
 
 * windows
 
     ```
-    doskey iamctl=<identity-cli_PATH>/command-line-extension/bin/windows/iamctl.exe $*
+    doskey iamctl=<IDENTITY-CLI-PATH>/bin/iamctl.exe $*
     ```
  
  
@@ -268,5 +271,13 @@ example:-
 ? Enter your web app technology (Eg: spring-boot) : spring-boot
 ? Enter the package name of the project (Eg: com.example.demo) : com.example.demo
 ? Enter your OAuth application Name (Eg:TestApp) : Testapp
+```
+
+Flags:
+```
+  -h, --help                  Help for list
+  -t, --technology   string   Technology or Framework of the web app. Eg: spring-boot
+  -k, --package      string   Package name of the project where artifacts are going to be placed. Eg: com.example.demo
+  -a, --application  string   Name of the application Eg:TestApp
 ```
 Now you have successfully installed the artifacts and secured with OIDC using WSO2 IS..
