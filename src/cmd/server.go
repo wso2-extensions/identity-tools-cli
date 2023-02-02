@@ -49,17 +49,17 @@ type oAuthResponse struct {
 	Expires      int    `json:"expires_in"`
 }
 
-func start(serverUrl string, userName string, password string) {
+func start(serverUrl string, userName string, password string) bool {
 
 	_, err2 := url.ParseRequestURI(serverUrl)
 	if err2 != nil {
 		log.Fatalln(err2)
-		return
+		return false
 	}
 	ur, err2 := url.Parse(serverUrl)
 	if err2 != nil {
 		log.Fatalln(err2)
-		return
+		return false
 	} else {
 		IAMURL = ur.Scheme + "://" + ur.Host
 	}
@@ -70,6 +70,8 @@ func start(serverUrl string, userName string, password string) {
 	if accessToken != "" {
 		writeFiles(IAMURL, accessToken, refreshToken)
 	}
+
+	return true
 }
 
 func sendOAuthRequest(userName string, password string) (string, string) {
