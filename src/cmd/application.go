@@ -135,14 +135,14 @@ func create() {
 				return
 			}
 			if answersOauth.CallbackURLs == "" {
-				grantTypes := []string{"password", "client_credentials", "refresh_token", "urn:ietf:params:oauth:grant-type:device_code", "iwa:ntlm", "urn:ietf:params:oauth:grant-type:jwt-bearer", "account_switch", "urn:ietf:params:oauth:grant-type:saml2-bearer", "urn:ietf:params:oauth:grant-type:uma-ticket"}
+				grantTypes := []string{"password", "client_credentials", "refresh_token", "urn:ietf:params:oauth:grant-type:device_code", "iwa:ntlm", "urn:ietf:params:oauth:grant-type:jwt-bearer", "account_switch", "urn:ietf:params:oauth:grant-type:saml2-bearer"}
 				createSPOauthApplication(answersOauth.Name, answersOauth.Name, answersOauth.CallbackURLs, grantTypes)
 			} else {
 				_, err := url.ParseRequestURI(answersOauth.CallbackURLs)
 				if err != nil {
 					log.Fatalln(err)
 				} else {
-					grantTypes := []string{"authorization_code", "implicit", "password", "client_credentials", "refresh_token", "urn:ietf:params:oauth:grant-type:device_code", "iwa:ntlm", "urn:ietf:params:oauth:grant-type:jwt-bearer", "account_switch", "urn:ietf:params:oauth:grant-type:saml2-bearer", "urn:ietf:params:oauth:grant-type:uma-ticket"}
+					grantTypes := []string{"authorization_code", "implicit", "password", "client_credentials", "refresh_token", "urn:ietf:params:oauth:grant-type:device_code", "iwa:ntlm", "urn:ietf:params:oauth:grant-type:jwt-bearer", "account_switch", "urn:ietf:params:oauth:grant-type:saml2-bearer"}
 					createSPOauthApplication(answersOauth.Name, answersOauth.Name, answersOauth.CallbackURLs, grantTypes)
 				}
 			}

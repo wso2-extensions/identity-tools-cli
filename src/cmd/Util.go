@@ -24,7 +24,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 )
@@ -33,6 +35,16 @@ type ServerInfo struct {
 	Server      string `json:"server"`
 	PackageName string `json:"packageName"`
 	Application string `json:"application"`
+}
+
+type ServerConfigs struct {
+	ServerUrl    string `json:"SERVER_URL"`
+	ClientId     string `json:"CLIENT_ID"`
+	ClientSecret string `json:"CLIENT_SECRET"`
+	TenantDomain string `json:"TENANT_DOMAIN"`
+	Username     string `json:"USERNAME"`
+	Password     string `json:"PASSWORD"`
+	Token        string `json:"TOKEN"`
 }
 
 func createFileIfNotExist(filepath string) {
@@ -129,4 +141,124 @@ func callArtifactServiceApi(technology string, application string) *http.Respons
 		return nil
 	}
 	return resp
+}
+
+func writeToken(config ServerConfigs) bool {
+
+	_, err2 := url.ParseRequestURI(config.ServerUrl)
+	if err2 != nil {
+		log.Fatalln(err2)
+		return false
+	}
+	ur, err2 := url.Parse(config.ServerUrl)
+	if err2 != nil {
+		log.Fatalln(err2)
+		return false
+	} else {
+		IAMURL = ur.Scheme + "://" + ur.Host
+	}
+
+	AUTHURL = IAMURL + "/oauth2/token"
+
+	accessToken, refreshToken = sendTokenRequest(config)
+	if accessToken != "" {
+		writeFiles(IAMURL, accessToken, refreshToken)
+	}
+
+	return true
+}
+
+func sendTokenRequest(config ServerConfigs) (string, string) {
+
+	var err error
+	var accessToken string
+	var refreshToken string
+	var list oAuthResponse
+
+	// Build response body to POST :=
+	body := url.Values{}
+	body.Set("grant_type", "password")
+	body.Set("username", config.Username)
+	body.Set("password", config.Password)
+	body.Set("scope", SCOPE)
+
+	req, err := http.NewRequest("POST", AUTHURL, strings.NewReader(body.Encode()))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	req.SetBasicAuth(config.ClientId, config.ClientSecret)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	defer req.Body.Close()
+
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer resp.Body.Close()
+
+	body1, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	if resp.StatusCode == 401 {
+		type clientError struct {
+			Description string `json:"error_description"`
+			Error       string `json:"error"`
+		}
+		var err = new(clientError)
+
+		err2 := json.Unmarshal(body1, &err)
+		if err2 != nil {
+			log.Fatalln(err2)
+		}
+		fmt.Println(err.Error + "\n" + err.Description)
+		setSampleSP()
+		return accessToken, refreshToken
+	}
+
+	err2 := json.Unmarshal(body1, &list)
+	if err2 != nil {
+		log.Fatalln(err2)
+	}
+
+	accessToken = list.AccessToken
+	refreshToken = list.RefreshToken
+
+	return accessToken, refreshToken
+}
+
+func loadServerConfigsFromFile(configFilePath string) (config ServerConfigs) {
+
+	var rootDir, _ = os.Getwd()
+	var configPath = rootDir + "/config.json"
+	if configFilePath != "" {
+		configPath = configFilePath
+	}
+
+	configFile, err := os.Open(configPath)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	defer configFile.Close()
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	jsonParser := json.NewDecoder(configFile)
+	jsonParser.Decode(&config)
+
+	fmt.Println("Server configs loaded succesfully from the config file.")
+
+	writeToken(config)
+	config.Token = readFile()
+
+	return config
 }

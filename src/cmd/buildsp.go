@@ -159,7 +159,7 @@ func exportApplication(exportlocation string, serviceProviderID string, fileType
 
 	start(SERVER, "admin", "admin")
 
-	var ADDAPPURL = SERVER + "t/" + TENANTDOMAIN + "/api/server/v1/applications"
+	var ADDAPPURL = SERVER + "/t/" + TENANTDOMAIN + "/api/server/v1/applications"
 	var err error
 
 	token := readFile()

@@ -39,7 +39,7 @@ func importApplication(importFilePath string) bool {
 
 	start(SERVER, "admin", "admin")
 
-	var ADDAPPURL = SERVER + "t/" + TENANTDOMAIN + "/api/server/v1/applications/import"
+	var ADDAPPURL = SERVER + "/t/" + TENANTDOMAIN + "/api/server/v1/applications/import"
 	var err error
 
 	token := readFile()

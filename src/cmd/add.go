@@ -37,7 +37,7 @@ var createUsingCommand = &cobra.Command{
 		domain, _ := cmd.Flags().GetString("serverDomain")
 		_, err = url.ParseRequestURI(domain)
 		if err != nil && err.Error() != "parse : empty url" {
-			log.Fatalln(err)
+			fmt.Println(err)
 		} else if err == nil {
 			userName, _ := cmd.Flags().GetString("userName")
 			password, _ := cmd.Flags().GetString("password")
@@ -101,14 +101,14 @@ var createUsingCommand = &cobra.Command{
 			callbackURl, _ := cmd.Flags().GetString("callbackURl")
 
 			if callbackURl == "" {
-				grantTypes := []string{"password", "client_credentials", "refresh_token", "urn:ietf:params:oauth:grant-type:device_code", "iwa:ntlm", "urn:ietf:params:oauth:grant-type:jwt-bearer", "account_switch", "urn:ietf:params:oauth:grant-type:saml2-bearer", "urn:ietf:params:oauth:grant-type:uma-ticket"}
+				grantTypes := []string{"password", "client_credentials", "refresh_token", "urn:ietf:params:oauth:grant-type:device_code", "iwa:ntlm", "urn:ietf:params:oauth:grant-type:jwt-bearer", "account_switch", "urn:ietf:params:oauth:grant-type:saml2-bearer"}
 				if description != "" {
 					createSPOauthApplication(name, description, callbackURl, grantTypes)
 				} else {
 					createSPOauthApplication(name, name, callbackURl, grantTypes)
 				}
 			} else {
-				grantTypes := []string{"authorization_code", "implicit", "password", "client_credentials", "refresh_token", "urn:ietf:params:oauth:grant-type:device_code", "iwa:ntlm", "urn:ietf:params:oauth:grant-type:jwt-bearer", "account_switch", "urn:ietf:params:oauth:grant-type:saml2-bearer", "urn:ietf:params:oauth:grant-type:uma-ticket"}
+				grantTypes := []string{"authorization_code", "implicit", "password", "client_credentials", "refresh_token", "urn:ietf:params:oauth:grant-type:device_code", "iwa:ntlm", "urn:ietf:params:oauth:grant-type:jwt-bearer", "account_switch", "urn:ietf:params:oauth:grant-type:saml2-bearer"}
 				_, err := url.ParseRequestURI(callbackURl)
 				if err != nil {
 					log.Fatalln(err)
