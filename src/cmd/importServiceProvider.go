@@ -4,10 +4,15 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
+	"mime"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
+	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
@@ -44,24 +49,39 @@ func importApplication(importFilePath string) bool {
 
 	token := readFile()
 
-	fileBytes, err := ioutil.ReadFile(importFilePath)
+	// fileBytes, err := ioutil.ReadFile(importFilePath)
+	file, err := os.Open(importFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	extraParams := map[string]string{
-		"file": string(fileBytes),
-	}
+	filename := filepath.Base(importFilePath)
+	fmt.Println("File name:", filename)
 
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
 
-	for key, val := range extraParams {
-		err := writer.WriteField(key, val)
-		if err != nil {
-			log.Fatal(err)
-		}
+	// Get file extension
+	fileExtension := filepath.Ext(filename)
+
+	mime.AddExtensionType(".yml", "text/yaml")
+	mime.AddExtensionType(".xml", "application/xml")
+
+	mimeType := mime.TypeByExtension(fileExtension)
+
+	part, err := writer.CreatePart(textproto.MIMEHeader{
+		"Content-Disposition": []string{fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file", filename)},
+		"Content-Type":        []string{mimeType},
+	})
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	_, err = io.Copy(part, file)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	defer writer.Close()
 
 	request, err := http.NewRequest("POST", ADDAPPURL, body)
