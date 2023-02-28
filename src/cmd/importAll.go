@@ -11,9 +11,9 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
-	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -107,12 +107,6 @@ func importApp(importFilePath string, update bool) {
 	var reqUrl = SERVER_CONFIGS.ServerUrl + "/t/" + SERVER_CONFIGS.TenantDomain + "/api/server/v1/applications/import"
 	var err error
 
-	// fileBytes, err := ioutil.ReadFile(importFilePath)
-	file, err := os.Open(importFilePath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	filename := filepath.Base(importFilePath)
 
 	body := new(bytes.Buffer)
@@ -120,6 +114,19 @@ func importApp(importFilePath string, update bool) {
 
 	// Get file extension
 	fileExtension := filepath.Ext(filename)
+	appName := strings.TrimSuffix(filename, fileExtension)
+
+	fileBytes, err := ioutil.ReadFile(importFilePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fileData := replaceKeywords(fileBytes, appName)
+	var buf bytes.Buffer
+	_, err = io.WriteString(&buf, fileData)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	mime.AddExtensionType(".yml", "text/yaml")
 	mime.AddExtensionType(".xml", "application/xml")
@@ -134,7 +141,7 @@ func importApp(importFilePath string, update bool) {
 		log.Fatal(err)
 	}
 
-	_, err = io.Copy(part, file)
+	_, err = io.Copy(part, &buf)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -186,4 +193,43 @@ func importApp(importFilePath string, update bool) {
 	case 201:
 		log.Println("Application imported successfully.")
 	}
+}
+
+func replaceKeywords(fileData []byte, appName string) string {
+
+	// Creating a template with the variable to replace
+	tmpl, err := template.New("app").Parse(string(fileData))
+	if err != nil {
+		panic(err)
+	}
+	var buf strings.Builder
+
+	appKeywordMap := getAppKeywordMappings(appName)
+
+	// Replacing the values by executing the template
+	if err := tmpl.Execute(&buf, appKeywordMap); err != nil {
+		panic(err)
+	}
+
+	return buf.String()
+}
+
+func getAppKeywordMappings(appName string) (keywordMappings map[string]interface{}) {
+
+	keywordMappings = SERVER_CONFIGS.KeywordMappings
+	if SERVER_CONFIGS.ApplicationConfigs != nil {
+		if appConfigs, ok := SERVER_CONFIGS.ApplicationConfigs[appName]; ok {
+			if appKeywordMappings, ok := appConfigs.(map[string]interface{})["KEYWORD_MAPPINGS"]; ok {
+				mergedKeywordMap := make(map[string]interface{})
+				for key, value := range keywordMappings {
+					mergedKeywordMap[key] = value.(string)
+				}
+				for key, value := range appKeywordMappings.(map[string]interface{}) {
+					mergedKeywordMap[key] = value.(string)
+				}
+				return mergedKeywordMap
+			}
+		}
+	}
+	return keywordMappings
 }

@@ -38,13 +38,15 @@ type ServerInfo struct {
 }
 
 type ServerConfigs struct {
-	ServerUrl    string `json:"SERVER_URL"`
-	ClientId     string `json:"CLIENT_ID"`
-	ClientSecret string `json:"CLIENT_SECRET"`
-	TenantDomain string `json:"TENANT_DOMAIN"`
-	Username     string `json:"USERNAME"`
-	Password     string `json:"PASSWORD"`
-	Token        string `json:"TOKEN"`
+	ServerUrl          string                 `json:"SERVER_URL"`
+	ClientId           string                 `json:"CLIENT_ID"`
+	ClientSecret       string                 `json:"CLIENT_SECRET"`
+	TenantDomain       string                 `json:"TENANT_DOMAIN"`
+	Username           string                 `json:"USERNAME"`
+	Password           string                 `json:"PASSWORD"`
+	Token              string                 `json:"TOKEN"`
+	KeywordMappings    map[string]interface{} `json:"KEYWORD_MAPPINGS"`
+	ApplicationConfigs map[string]interface{} `json:"APPLICATIONS"`
 }
 
 func createFileIfNotExist(filepath string) {
