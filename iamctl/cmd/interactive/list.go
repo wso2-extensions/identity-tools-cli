@@ -31,7 +31,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
-	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils/interactive"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 var getListCmd = &cobra.Command{

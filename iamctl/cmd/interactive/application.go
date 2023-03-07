@@ -25,7 +25,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
-	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils/interactive"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 var createSPCmd = &cobra.Command{

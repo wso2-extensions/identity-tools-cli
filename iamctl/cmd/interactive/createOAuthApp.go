@@ -29,7 +29,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils/interactive"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 type Parts struct {

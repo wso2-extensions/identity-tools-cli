@@ -28,7 +28,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils/interactive"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 var IAMURL string
