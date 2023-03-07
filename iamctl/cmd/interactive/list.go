@@ -16,21 +16,22 @@
  * under the License.
  */
 
-package cmd
+package interactive
 
 import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/mbndr/figlet4go"
-	"github.com/spf13/cobra"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"text/tabwriter"
+
+	"github.com/spf13/cobra"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils/interactive"
 )
 
 var getListCmd = &cobra.Command{
@@ -38,23 +39,19 @@ var getListCmd = &cobra.Command{
 	Short: "get service providers List",
 	Long:  `You can get service provider List`,
 	Run: func(cmd *cobra.Command, args []string) {
-		server, err := cmd.Flags().GetString("server")
+		server, _ := cmd.Flags().GetString("server")
 		if server == "" {
-			ascii := figlet4go.NewAsciiRender()
-			renderStr, _ := ascii.Render(appName)
-			fmt.Print(renderStr)
-
 			getList()
 		} else {
 			_, err = url.ParseRequestURI(server)
-			if err != nil && err.Error() != "parse : empty url" {
+			if err != nil && err.Error() != "parse \"\": empty url" {
 				log.Fatalln(err)
 			} else if err == nil {
 				userName, _ := cmd.Flags().GetString("userName")
 				password, _ := cmd.Flags().GetString("password")
 
 				if userName == "" && password == "" {
-					token := readFile()
+					token := utils.ReadFile()
 					if token == "" {
 						fmt.Println("required flag(s) \"password\",\"userName\" not set \nFlags:\n-u, --userName string       Username for Identity Server\n-p, --password string       Password for Identity Server")
 						return
@@ -63,7 +60,7 @@ var getListCmd = &cobra.Command{
 					}
 				} else {
 					if password == "" {
-						token := readFile()
+						token := utils.ReadFile()
 						if token == "" {
 							fmt.Println("required flag(s) \"password\" not set \nFlag:\n-p, --password string       Password for Identity Server ")
 							return
@@ -71,7 +68,7 @@ var getListCmd = &cobra.Command{
 							getList()
 						}
 					} else if userName == "" {
-						token := readFile()
+						token := utils.ReadFile()
 						if token == "" {
 							fmt.Println("required flag(s) \"userName\" not set \nFlag:\n-u, --userName string       Username for Identity Server ")
 							return
@@ -84,14 +81,14 @@ var getListCmd = &cobra.Command{
 						if CLIENTID == "" {
 							setSampleSP()
 							start(server, userName, password)
-							if readFile() == "" {
+							if utils.ReadFile() == "" {
 								return
 							} else {
 								getList()
 							}
 						} else {
 							start(server, userName, password)
-							if readFile() == "" {
+							if utils.ReadFile() == "" {
 								return
 							} else {
 								getList()
@@ -135,11 +132,11 @@ func getList() {
 	var list List
 	var app Application
 
-	token := readFile()
+	token := utils.ReadFile()
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	req, err := http.NewRequest("GET", GETLISTURL, bytes.NewBuffer(nil))
+	req, _ := http.NewRequest("GET", GETLISTURL, bytes.NewBuffer(nil))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("accept", "*/*")
 	defer req.Body.Close()
@@ -156,7 +153,7 @@ func getList() {
 	if status == 401 {
 		fmt.Println("Unauthorized access.\nPlease enter your Username and password for server.")
 		setServerWithInit(SERVER)
-		if readFile() == "" {
+		if utils.ReadFile() == "" {
 			return
 		} else {
 			getList()
@@ -178,7 +175,7 @@ func getList() {
 			log.Fatalln(err)
 		}
 		fmt.Fprintf(writer, "\n %s\t%s\t%s\t", "Application Id ", "Name", "Description")
-		fmt.Fprintf(writer, "\n %s\t%s\t%s\t", " ----", "----", "----", )
+		fmt.Fprintf(writer, "\n %s\t%s\t%s\t", " ----", "----", "----")
 
 		for i := 0; i < len(list.Applications); i++ {
 			app.Id = list.Applications[i].Id

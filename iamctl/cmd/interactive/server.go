@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package cmd
+package interactive
 
 import (
 	"crypto/tls"
@@ -27,6 +27,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils/interactive"
 )
 
 var IAMURL string
@@ -68,7 +70,7 @@ func start(serverUrl string, userName string, password string) {
 
 	accessToken, refreshToken = sendOAuthRequest(userName, password)
 	if accessToken != "" {
-		writeFiles(IAMURL, accessToken, refreshToken)
+		utils.WriteFiles(IAMURL, accessToken, refreshToken)
 	}
 }
 

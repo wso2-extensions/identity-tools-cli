@@ -16,14 +16,15 @@
  * under the License.
  */
 
-package cmd
+package interactive
 
 import (
 	"fmt"
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/mbndr/figlet4go"
-	"github.com/spf13/cobra"
 	"io/ioutil"
+
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/spf13/cobra"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
 )
 
 var technology string
@@ -50,7 +51,7 @@ var clientapp = []*survey.Question{
 	},
 }
 
-//Response from artifact-service
+// Response from artifact-service
 type HttpResponse struct {
 	Error        bool   `json:"error"`
 	ErrorMessage string `json:"errorMessage"`
@@ -76,10 +77,6 @@ type Metadata struct {
 
 func setProjectPath() {
 
-	ascii := figlet4go.NewAsciiRender()
-	renderStr, _ := ascii.Render(appName)
-	fmt.Print(renderStr)
-
 	ClientAppProject := struct {
 		ProjectSrcPath string `survey:"technology"`
 		PackageName    string `survey:"package"`
@@ -98,7 +95,7 @@ func setProjectPath() {
 
 func init() {
 
-	rootCmd.AddCommand(createClientApp)
+	cmd.RootCmd.AddCommand(createClientApp)
 	createClientApp.Flags().StringP("technology", "t", "", "enter web app technology")
 	createClientApp.Flags().StringP("package", "k", "", "enter your project package")
 	createClientApp.Flags().StringP("application", "a", "", "enter name of the OAuth application")

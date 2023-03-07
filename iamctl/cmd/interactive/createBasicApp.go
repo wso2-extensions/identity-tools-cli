@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package cmd
+package interactive
 
 import (
 	"bytes"
@@ -25,6 +25,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils/interactive"
 )
 
 type ServiceProvider struct {
@@ -40,7 +42,7 @@ func createSPBasicApplication(spName string, spDescription string) {
 	var err error
 	var status int
 
-	token := readFile()
+	token := utils.ReadFile()
 
 	toJson := ServiceProvider{spName, spDescription}
 	jsonData, err := json.Marshal(toJson)

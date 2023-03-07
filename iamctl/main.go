@@ -20,8 +20,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/wso2-extensions/identity-tools-cli/src/cmd"
 	"os"
+
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
+	_ "github.com/wso2-extensions/identity-tools-cli/iamctl/cmd/interactive"
 )
 
 func main() {

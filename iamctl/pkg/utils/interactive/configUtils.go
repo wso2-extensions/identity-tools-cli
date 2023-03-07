@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package cmd
+package utils
 
 import (
 	"encoding/json"
@@ -27,47 +27,61 @@ import (
 )
 
 var dir, _ = os.Getwd()
-var path = dir + "/iamctl.json"
+var Path = dir + "/iamctl.json"
+var PathSampleSPDetails = dir + "/init.json"
+
+const (
+	AppName       = "IAM-CTL"
+	ShortAppDesc  = "Service Provider configuration"
+	LongAPPConfig = "Service Provider configuration"
+)
+
+type SampleSP struct {
+	Server       string `json:"server"`
+	ClientID     string `json:"clientID"`
+	ClientSecret string `json:"clientSecret"`
+	Tenant       string `json:"tenant"`
+}
 
 type ServerDetails struct {
 	Server       string `json:"server"`
 	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
 }
-type myJSON struct {
+type MyJSON struct {
 	Array []ServerDetails
 }
 
-func createFile() {
+func CreateFile() {
 
 	// detect if file exists
-	var _, err = os.Stat(path)
+	var _, err = os.Stat(Path)
 	// create file if not exists
 	if os.IsNotExist(err) {
-		var file, err = os.Create(path)
+		var file, err = os.Create(Path)
 		checkError(err)
 		defer file.Close()
 
-		jsonData := &myJSON{Array: []ServerDetails{}}
+		jsonData := &MyJSON{Array: []ServerDetails{}}
 		encodeJson, _ := json.Marshal(jsonData)
 
 		if err != nil {
 			log.Fatalln(err)
 		}
-		err = ioutil.WriteFile(path, encodeJson, 0644)
+		err = ioutil.WriteFile(Path, encodeJson, 0644)
 		if err != nil {
 			log.Fatalln(err)
 		}
 	}
 }
 
-func writeFiles(server string, token string, refreshToken string) {
+func WriteFiles(server string, token string, refreshToken string) {
 
 	var err error
-	var data myJSON
+	var data MyJSON
 	var msg = new(ServerDetails)
 
-	file, err := ioutil.ReadFile(path)
+	file, err := ioutil.ReadFile(Path)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -98,7 +112,7 @@ func writeFiles(server string, token string, refreshToken string) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	err = ioutil.WriteFile(path, jsonData, 0644)
+	err = ioutil.WriteFile(Path, jsonData, 0644)
 	if err != nil {
 		log.Fatalln(err)
 	} else {
@@ -107,12 +121,12 @@ func writeFiles(server string, token string, refreshToken string) {
 	checkError(err)
 }
 
-func readFile() string {
+func ReadFile() string {
 
 	var a ServerDetails
-	var data myJSON
+	var data MyJSON
 
-	file, err := ioutil.ReadFile(path)
+	file, err := ioutil.ReadFile(Path)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -133,5 +147,26 @@ func checkError(err error) {
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(0)
+	}
+}
+
+func CreateSampleSPFile() {
+
+	// detect if file exists
+	var _, err = os.Stat(PathSampleSPDetails)
+	// create file if not exists
+	if os.IsNotExist(err) {
+		var file, err = os.Create(PathSampleSPDetails)
+		checkError(err)
+		defer file.Close()
+		jsonData := &SampleSP{}
+		encodeJson, _ := json.Marshal(jsonData)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		err = ioutil.WriteFile(PathSampleSPDetails, encodeJson, 0644)
+		if err != nil {
+			log.Fatalln(err)
+		}
 	}
 }

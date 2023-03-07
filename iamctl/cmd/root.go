@@ -20,32 +20,28 @@ package cmd
 
 import (
 	"fmt"
+	"log"
+	"os"
+
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"log"
-	"os"
-)
-
-const (
-	appName       = "IAM-CTL"
-	shortAppDesc  = "Service Provider configuration"
-	longAPPConfig = "Service Provider configuration"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils/interactive"
 )
 
 var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:   appName,
-	Short: shortAppDesc,
-	Long:  longAPPConfig,
+var RootCmd = &cobra.Command{
+	Use:   utils.AppName,
+	Short: utils.ShortAppDesc,
+	Long:  utils.LongAPPConfig,
 	Run:   func(cmd *cobra.Command, args []string) {},
 }
 
 func Execute() {
 
-	if err := rootCmd.Execute(); err != nil {
+	if err := RootCmd.Execute(); err != nil {
 		log.Fatalln(err)
 		os.Exit(1)
 	}
@@ -53,8 +49,8 @@ func Execute() {
 
 func init() {
 
-	createFile()
-	createSampleSPFile()
+	utils.CreateFile()
+	utils.CreateSampleSPFile()
 
 	cobra.OnInitialize(initConfig)
 }

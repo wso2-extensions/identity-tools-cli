@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package cmd
+package interactive
 
 import (
 	"encoding/base64"

@@ -60,24 +60,24 @@ node('PRODUCT_ECS') {
 
                 uploadUrl = getUploadUrl(response)
 
-                macfile = sh(returnStdout: true, script: "basename src/build/iamctl-*-macosx-x64.tar.gz").trim()
-                ubuntufile = sh(returnStdout: true, script: "basename src/build/iamctl-*-linux-x64.tar.gz").trim()
-                windowsfile = sh(returnStdout: true, script: "basename src/build/iamctl-*-windows-x64.zip").trim()
+                macfile = sh(returnStdout: true, script: "basename iamctl/build/iamctl-*-macosx-x64.tar.gz").trim()
+                ubuntufile = sh(returnStdout: true, script: "basename iamctl/build/iamctl-*-linux-x64.tar.gz").trim()
+                windowsfile = sh(returnStdout: true, script: "basename iamctl/build/iamctl-*-windows-x64.zip").trim()
 
 
                 sh returnStdout: true,
                         script: "curl -s -H \"Content-Type: application/octet-stream\" -u ${GIT_USERNAME}:${GIT_PASSWORD} " +
-                                "--data-binary @src/build/${macfile} " +
+                                "--data-binary @iamctl/build/${macfile} " +
                                 "${uploadUrl}?name=${macfile}\\&label=${macfile}"
 
                 sh returnStdout: true,
                         script: "curl -s -H \"Content-Type: application/octet-stream\" -u ${GIT_USERNAME}:${GIT_PASSWORD} " +
-                                "--data-binary @src/build/${ubuntufile} " +
+                                "--data-binary @iamctl/build/${ubuntufile} " +
                                 "${uploadUrl}?name=${ubuntufile}\\&label=${ubuntufile}"
 
                 sh returnStdout: true,
                         script: "curl -s -H \"Content-Type: application/octet-stream\" -u ${GIT_USERNAME}:${GIT_PASSWORD} " +
-                                "--data-binary @src/build/${windowsfile} " +
+                                "--data-binary @iamctl/build/${windowsfile} " +
                                 "${uploadUrl}?name=${windowsfile}\\&label=${windowsfile}"
                 //end withCredentials
             }
@@ -85,8 +85,8 @@ node('PRODUCT_ECS') {
 
     }
     stage('Results') {
-        archive 'src/build/*.tar.gz'
-        archive 'src/build/*.zip'
+        archive 'iamctl/build/*.tar.gz'
+        archive 'iamctl/build/*.zip'
     }
 
 }

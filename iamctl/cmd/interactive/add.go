@@ -16,13 +16,15 @@
  * under the License.
  */
 
-package cmd
+package interactive
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"log"
 	"net/url"
+
+	"github.com/spf13/cobra"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils/interactive"
 )
 
 var createUsingCommand = &cobra.Command{
@@ -36,14 +38,14 @@ var createUsingCommand = &cobra.Command{
 
 		domain, _ := cmd.Flags().GetString("serverDomain")
 		_, err = url.ParseRequestURI(domain)
-		if err != nil && err.Error() != "parse : empty url" {
+		if err != nil && err.Error() != "parse \"\": empty url" {
 			log.Fatalln(err)
 		} else if err == nil {
 			userName, _ := cmd.Flags().GetString("userName")
 			password, _ := cmd.Flags().GetString("password")
 
 			if userName == "" && password == "" {
-				token := readFile()
+				token := utils.ReadFile()
 				if token == "" {
 					fmt.Println("required flag(s) \"password\",\"userName\" not set \nFlags:\n-u, --userName string       Username for Identity Server\n-p, --password string       Password for Identity Server")
 					return
@@ -60,12 +62,12 @@ var createUsingCommand = &cobra.Command{
 					if CLIENTID == "" {
 						setSampleSP()
 						start(domain, userName, password)
-						if readFile() == "" {
+						if utils.ReadFile() == "" {
 							return
 						}
 					} else {
 						start(domain, userName, password)
-						if readFile() == "" {
+						if utils.ReadFile() == "" {
 							return
 						}
 					}
@@ -77,14 +79,14 @@ var createUsingCommand = &cobra.Command{
 				setSampleSP()
 				SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = readSPConfig()
 				setServerWithInit(SERVER)
-				if readFile() == "" {
+				if utils.ReadFile() == "" {
 					return
 				}
 			} else {
-				token := readFile()
+				token := utils.ReadFile()
 				if token == "" {
 					setServer()
-					if readFile() == "" {
+					if utils.ReadFile() == "" {
 						return
 					}
 				}
@@ -101,14 +103,14 @@ var createUsingCommand = &cobra.Command{
 			callbackURl, _ := cmd.Flags().GetString("callbackURl")
 
 			if callbackURl == "" {
-				grantTypes := []string{"password", "client_credentials", "refresh_token", "urn:ietf:params:oauth:grant-type:device_code", "iwa:ntlm", "urn:ietf:params:oauth:grant-type:jwt-bearer", "account_switch", "urn:ietf:params:oauth:grant-type:saml2-bearer", "urn:ietf:params:oauth:grant-type:uma-ticket"}
+				grantTypes := []string{"password", "client_credentials", "refresh_token", "urn:ietf:params:oauth:grant-type:device_code", "iwa:ntlm", "urn:ietf:params:oauth:grant-type:jwt-bearer", "account_switch", "urn:ietf:params:oauth:grant-type:saml2-bearer"}
 				if description != "" {
 					createSPOauthApplication(name, description, callbackURl, grantTypes)
 				} else {
 					createSPOauthApplication(name, name, callbackURl, grantTypes)
 				}
 			} else {
-				grantTypes := []string{"authorization_code", "implicit", "password", "client_credentials", "refresh_token", "urn:ietf:params:oauth:grant-type:device_code", "iwa:ntlm", "urn:ietf:params:oauth:grant-type:jwt-bearer", "account_switch", "urn:ietf:params:oauth:grant-type:saml2-bearer", "urn:ietf:params:oauth:grant-type:uma-ticket"}
+				grantTypes := []string{"authorization_code", "implicit", "password", "client_credentials", "refresh_token", "urn:ietf:params:oauth:grant-type:device_code", "iwa:ntlm", "urn:ietf:params:oauth:grant-type:jwt-bearer", "account_switch", "urn:ietf:params:oauth:grant-type:saml2-bearer"}
 				_, err := url.ParseRequestURI(callbackURl)
 				if err != nil {
 					log.Fatalln(err)
