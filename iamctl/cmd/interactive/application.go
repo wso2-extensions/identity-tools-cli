@@ -100,11 +100,11 @@ func create() {
 		CallbackURLs string `survey:"callbackURls"`
 	}{}
 
-	SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = readSPConfig()
+	SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 
 	if CLIENTID == "" {
 		setSampleSP()
-		SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = readSPConfig()
+		SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 		setServerWithInit(SERVER)
 	} else if utils.ReadFile() == "" {
 		setServer()

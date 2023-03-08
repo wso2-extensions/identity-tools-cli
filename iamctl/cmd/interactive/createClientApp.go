@@ -25,6 +25,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 var technology string
@@ -136,7 +137,7 @@ func installArtifacts() {
 	if status == 401 {
 		fmt.Println("Resource Server " + ArtifactServiceUrl + "returned 401-Unauthorized access.")
 		fmt.Println("Please enter your UserName and password for server.")
-		SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = readSPConfig()
+		SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 		setServerWithInit(SERVER)
 		installArtifacts()
 	} else if status == 400 {

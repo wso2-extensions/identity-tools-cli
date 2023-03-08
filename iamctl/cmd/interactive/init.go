@@ -128,16 +128,3 @@ func writeSampleAPPFile(server string, clientID string, clientSecret string, ten
 	_ = ioutil.WriteFile(utils.PathSampleSPDetails, jsonData, 0644)
 	fmt.Println("successfully set service provider  Client_key: " + clientID + " Client_Secret: ****************************  Tenant Domain " + tenant + " in " + server)
 }
-
-func readSPConfig() (string, string, string, string) {
-
-	var data utils.SampleSP
-
-	file, _ := ioutil.ReadFile(utils.PathSampleSPDetails)
-	err := json.Unmarshal(file, &data)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	return data.Server, data.ClientID, data.ClientSecret, data.Tenant
-}

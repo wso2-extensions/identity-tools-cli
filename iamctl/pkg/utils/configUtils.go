@@ -30,6 +30,8 @@ var dir, _ = os.Getwd()
 var Path = dir + "/iamctl.json"
 var PathSampleSPDetails = dir + "/init.json"
 
+const SCOPE string = "/permission/admin/manage/identity/applicationmgt/update /permission/admin/manage/identity/applicationmgt/create /permission/admin/manage/identity/applicationmgt/view internal_application_mgt_update internal_application_mgt_create internal_application_mgt_view"
+
 const (
 	AppName       = "IAM-CTL"
 	ShortAppDesc  = "Service Provider configuration"
@@ -169,4 +171,17 @@ func CreateSampleSPFile() {
 			log.Fatalln(err)
 		}
 	}
+}
+
+func ReadSPConfig() (string, string, string, string) {
+
+	var data SampleSP
+
+	file, _ := ioutil.ReadFile(PathSampleSPDetails)
+	err := json.Unmarshal(file, &data)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return data.Server, data.ClientID, data.ClientSecret, data.Tenant
 }

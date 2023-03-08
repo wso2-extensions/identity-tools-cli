@@ -25,6 +25,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 var configCmd = &cobra.Command{
@@ -38,10 +39,10 @@ var configCmd = &cobra.Command{
 		}
 
 		if server == "" {
-			SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = readSPConfig()
+			SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 			if CLIENTID == "" {
 				setSampleSP()
-				SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = readSPConfig()
+				SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 				setServerWithInit(SERVER)
 			} else {
 				setServer()

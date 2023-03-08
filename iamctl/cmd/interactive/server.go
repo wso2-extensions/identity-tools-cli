@@ -76,7 +76,7 @@ func start(serverUrl string, userName string, password string) {
 
 func sendOAuthRequest(userName string, password string) (string, string) {
 
-	SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = readSPConfig()
+	SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 
 	var err error
 	var accessToken string

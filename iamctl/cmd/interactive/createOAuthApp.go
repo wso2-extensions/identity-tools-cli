@@ -114,7 +114,7 @@ type Export struct {
 
 func createSPOauthApplication(oauthAppName string, description string, callbackURLs string, grantTypes []string) {
 
-	SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = readSPConfig()
+	SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 
 	var ADDAPPURL = SERVER + "/t/" + TENANTDOMAIN + "/api/server/v1/applications"
 	var err error

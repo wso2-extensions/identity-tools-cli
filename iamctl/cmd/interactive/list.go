@@ -77,7 +77,7 @@ var getListCmd = &cobra.Command{
 						}
 
 					} else {
-						SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = readSPConfig()
+						SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 						if CLIENTID == "" {
 							setSampleSP()
 							start(server, userName, password)
@@ -125,7 +125,7 @@ func init() {
 }
 func getList() {
 
-	SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = readSPConfig()
+	SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 
 	var GETLISTURL = SERVER + "/t/" + TENANTDOMAIN + "/api/server/v1/applications"
 	var status int

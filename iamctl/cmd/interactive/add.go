@@ -58,7 +58,7 @@ var createUsingCommand = &cobra.Command{
 					fmt.Println("required flag(s) \"userName\" not set \nFlag:\n-u, --userName string       Username for Identity Server ")
 					return
 				} else {
-					SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = readSPConfig()
+					SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 					if CLIENTID == "" {
 						setSampleSP()
 						start(domain, userName, password)
@@ -74,10 +74,10 @@ var createUsingCommand = &cobra.Command{
 				}
 			}
 		} else {
-			SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = readSPConfig()
+			SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 			if CLIENTID == "" {
 				setSampleSP()
-				SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = readSPConfig()
+				SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 				setServerWithInit(SERVER)
 				if utils.ReadFile() == "" {
 					return
