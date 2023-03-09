@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package cmd
+package interactive
 
 import (
 	"bytes"
@@ -28,6 +28,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 type Parts struct {
@@ -112,14 +114,14 @@ type Export struct {
 
 func createSPOauthApplication(oauthAppName string, description string, callbackURLs string, grantTypes []string) {
 
-	SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = readSPConfig()
+	SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 
 	var ADDAPPURL = SERVER + "/t/" + TENANTDOMAIN + "/api/server/v1/applications"
 	var err error
 	var status int
 	var xmlData ServiceProviderXml
 
-	token := readFile()
+	token := utils.ReadFile()
 
 	toJson := ServiceProviderOAuth{
 		Name:        oauthAppName,
@@ -175,7 +177,7 @@ func createSPOauthApplication(oauthAppName string, description string, callbackU
 
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-		req, err := http.NewRequest("GET", ADDAPPURL+"/"+serviceProviderID+"/export", bytes.NewBuffer(nil))
+		req, _ := http.NewRequest("GET", ADDAPPURL+"/"+serviceProviderID+"/export", bytes.NewBuffer(nil))
 		query := req.URL.Query()
 		query.Add("exportSecrets", "true")
 		req.URL.RawQuery = query.Encode()

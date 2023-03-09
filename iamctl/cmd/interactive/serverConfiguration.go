@@ -16,15 +16,16 @@
  * under the License.
  */
 
-package cmd
+package interactive
 
 import (
-	"fmt"
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/mbndr/figlet4go"
-	"github.com/spf13/cobra"
 	"log"
 	"net/url"
+
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/spf13/cobra"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 var configCmd = &cobra.Command{
@@ -38,10 +39,10 @@ var configCmd = &cobra.Command{
 		}
 
 		if server == "" {
-			SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = readSPConfig()
+			SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 			if CLIENTID == "" {
 				setSampleSP()
-				SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = readSPConfig()
+				SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 				setServerWithInit(SERVER)
 			} else {
 				setServer()
@@ -81,17 +82,13 @@ var userNamePassword = []*survey.Question{
 
 func init() {
 
-	rootCmd.AddCommand(configCmd)
+	cmd.RootCmd.AddCommand(configCmd)
 	configCmd.Flags().StringP("server", "s", "", "set server domain")
 	configCmd.Flags().StringP("username", "u", "", "enter your username")
 	configCmd.Flags().StringP("password", "p", "", "enter your password")
 }
 
 func setServer() {
-
-	ascii := figlet4go.NewAsciiRender()
-	renderStr, _ := ascii.Render(appName)
-	fmt.Print(renderStr)
 
 	serverAnswer := struct {
 		Server string `survey:"server"`

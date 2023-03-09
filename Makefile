@@ -18,8 +18,8 @@ VERSION?=0.0.4-SNAPSHOT
 
 .PHONY: install-cli
 install-cli:
-	 cd src && ./build.sh -t main.go -v ${VERSION} -f
+	 cd iamctl && ./build.sh -t main.go -v ${VERSION} -f
 
 .PHONY: install-cli-skip-test
 install-cli-skip-test:
-	cd cmd && ./build.sh -t main.go -v ${VERSION} -f test.skip
+	cd iamctl && ./build.sh -t main.go -v ${VERSION} -f test.skip

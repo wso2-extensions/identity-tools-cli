@@ -16,22 +16,23 @@
  * under the License.
  */
 
-package cmd
+package interactive
 
 import (
-	"fmt"
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/mbndr/figlet4go"
-	"github.com/spf13/cobra"
 	"log"
 	"net/url"
+
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/spf13/cobra"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 var createSPCmd = &cobra.Command{
 	Use:   "application",
 	Short: "Create a service provider",
 	Long:  `This will help you to create the service providers`,
-	Run:   func(cmd *cobra.Command, args []string) { create() },}
+	Run:   func(cmd *cobra.Command, args []string) { create() }}
 
 var qs = []*survey.Question{
 	{
@@ -81,7 +82,7 @@ var oauthDetails = []*survey.Question{
 
 func init() {
 
-	rootCmd.AddCommand(createSPCmd)
+	cmd.RootCmd.AddCommand(createSPCmd)
 }
 
 func create() {
@@ -99,21 +100,17 @@ func create() {
 		CallbackURLs string `survey:"callbackURls"`
 	}{}
 
-	SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = readSPConfig()
+	SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 
 	if CLIENTID == "" {
 		setSampleSP()
-		SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = readSPConfig()
+		SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 		setServerWithInit(SERVER)
-	} else if readFile() == "" {
+	} else if utils.ReadFile() == "" {
 		setServer()
-		if readFile() == "" {
+		if utils.ReadFile() == "" {
 			return
 		}
-	} else {
-		ascii := figlet4go.NewAsciiRender()
-		renderStr, _ := ascii.Render(appName)
-		fmt.Print(renderStr)
 	}
 
 	err := survey.Ask(qs, &answers)
@@ -135,14 +132,14 @@ func create() {
 				return
 			}
 			if answersOauth.CallbackURLs == "" {
-				grantTypes := []string{"password", "client_credentials", "refresh_token", "urn:ietf:params:oauth:grant-type:device_code", "iwa:ntlm", "urn:ietf:params:oauth:grant-type:jwt-bearer", "account_switch", "urn:ietf:params:oauth:grant-type:saml2-bearer", "urn:ietf:params:oauth:grant-type:uma-ticket"}
+				grantTypes := []string{"password", "client_credentials", "refresh_token", "urn:ietf:params:oauth:grant-type:device_code", "iwa:ntlm", "urn:ietf:params:oauth:grant-type:jwt-bearer", "account_switch", "urn:ietf:params:oauth:grant-type:saml2-bearer"}
 				createSPOauthApplication(answersOauth.Name, answersOauth.Name, answersOauth.CallbackURLs, grantTypes)
 			} else {
 				_, err := url.ParseRequestURI(answersOauth.CallbackURLs)
 				if err != nil {
 					log.Fatalln(err)
 				} else {
-					grantTypes := []string{"authorization_code", "implicit", "password", "client_credentials", "refresh_token", "urn:ietf:params:oauth:grant-type:device_code", "iwa:ntlm", "urn:ietf:params:oauth:grant-type:jwt-bearer", "account_switch", "urn:ietf:params:oauth:grant-type:saml2-bearer", "urn:ietf:params:oauth:grant-type:uma-ticket"}
+					grantTypes := []string{"authorization_code", "implicit", "password", "client_credentials", "refresh_token", "urn:ietf:params:oauth:grant-type:device_code", "iwa:ntlm", "urn:ietf:params:oauth:grant-type:jwt-bearer", "account_switch", "urn:ietf:params:oauth:grant-type:saml2-bearer"}
 					createSPOauthApplication(answersOauth.Name, answersOauth.Name, answersOauth.CallbackURLs, grantTypes)
 				}
 			}

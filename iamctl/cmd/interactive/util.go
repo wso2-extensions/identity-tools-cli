@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package cmd
+package interactive
 
 import (
 	"bytes"
@@ -27,6 +27,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 type ServerInfo struct {
@@ -77,11 +79,11 @@ func writeFile(filepath string, writestring string) {
 	}
 }
 
-func readServerDetails() ServerDetails {
+func readServerDetails() utils.ServerDetails {
 
-	var serverConfig ServerDetails
-	var data myJSON
-	file, err := ioutil.ReadFile(path)
+	var serverConfig utils.ServerDetails
+	var data utils.MyJSON
+	file, err := ioutil.ReadFile(utils.Path)
 	if err != nil {
 		fmt.Println("Error while reading the server configurations")
 	}

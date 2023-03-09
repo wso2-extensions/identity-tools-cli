@@ -16,18 +16,20 @@
  * under the License.
  */
 
-package cmd
+package interactive
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/mbndr/figlet4go"
-	"github.com/spf13/cobra"
 	"io/ioutil"
 	"log"
 	"net/url"
-	"os"
+
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/mbndr/figlet4go"
+	"github.com/spf13/cobra"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 var sampleSPCmd = &cobra.Command{
@@ -63,24 +65,16 @@ var sampleSP = []*survey.Question{
 		Validate: survey.Required,
 	},
 }
-var pathSampleSPDetails = dir + "/init.json"
-
-type SampleSP struct {
-	Server       string `json:"server"`
-	ClientID     string `json:"clientID"`
-	ClientSecret string `json:"clientSecret"`
-	Tenant       string `json:"tenant"`
-}
 
 func init() {
 
-	rootCmd.AddCommand(sampleSPCmd)
+	cmd.RootCmd.AddCommand(sampleSPCmd)
 }
 
 func setSampleSP() {
 
 	ascii := figlet4go.NewAsciiRender()
-	renderStr, _ := ascii.Render(appName)
+	renderStr, _ := ascii.Render(utils.AppName)
 	fmt.Print(renderStr)
 
 	sampleServer := struct {
@@ -113,8 +107,8 @@ func setSampleSP() {
 
 func writeSampleAPPFile(server string, clientID string, clientSecret string, tenant string) {
 
-	var data SampleSP
-	file, _ := ioutil.ReadFile(pathSampleSPDetails)
+	var data utils.SampleSP
+	file, _ := ioutil.ReadFile(utils.PathSampleSPDetails)
 
 	err := json.Unmarshal(file, &data)
 	if err != nil {
@@ -131,39 +125,6 @@ func writeSampleAPPFile(server string, clientID string, clientSecret string, ten
 		log.Println(err)
 	}
 
-	err = ioutil.WriteFile(pathSampleSPDetails, jsonData, 0644)
+	_ = ioutil.WriteFile(utils.PathSampleSPDetails, jsonData, 0644)
 	fmt.Println("successfully set service provider  Client_key: " + clientID + " Client_Secret: ****************************  Tenant Domain " + tenant + " in " + server)
-}
-func createSampleSPFile() {
-
-	// detect if file exists
-	var _, err = os.Stat(pathSampleSPDetails)
-	// create file if not exists
-	if os.IsNotExist(err) {
-		var file, err = os.Create(pathSampleSPDetails)
-		checkError(err)
-		defer file.Close()
-		jsonData := &SampleSP{}
-		encodeJson, _ := json.Marshal(jsonData)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		err = ioutil.WriteFile(pathSampleSPDetails, encodeJson, 0644)
-		if err != nil {
-			log.Fatalln(err)
-		}
-	}
-}
-
-func readSPConfig() (string, string, string, string) {
-
-	var data SampleSP
-
-	file, _ := ioutil.ReadFile(pathSampleSPDetails)
-	err := json.Unmarshal(file, &data)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	return data.Server, data.ClientID, data.ClientSecret, data.Tenant
 }

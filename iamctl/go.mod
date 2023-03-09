@@ -1,4 +1,4 @@
-module github.com/wso2-extensions/identity-tools-cli/src
+module github.com/wso2-extensions/identity-tools-cli/iamctl
 
 go 1.13
 

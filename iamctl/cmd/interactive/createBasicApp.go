@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package cmd
+package interactive
 
 import (
 	"bytes"
@@ -25,6 +25,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 type ServiceProvider struct {
@@ -34,13 +36,13 @@ type ServiceProvider struct {
 
 func createSPBasicApplication(spName string, spDescription string) {
 
-	SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = readSPConfig()
+	SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 
 	var ADDAPPURL = SERVER + "/t/" + TENANTDOMAIN + "/api/server/v1/applications"
 	var err error
 	var status int
 
-	token := readFile()
+	token := utils.ReadFile()
 
 	toJson := ServiceProvider{spName, spDescription}
 	jsonData, err := json.Marshal(toJson)
