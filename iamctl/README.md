@@ -4,8 +4,8 @@
 To build the IAM-ctl in your computer, you should have go installed. If you do not have go in your computer, you can install go using this [link](https://golang.org/doc/install).
 
 Now you can build the IAM-ctl.
-Here onwards, the location of the identity-tools-cli repository will be referred as ```<identity-cli_HOME>```.
-1. Open a terminal and set directory to ```<identity-cli_HOME>/iamctl```
+Here onwards, the location of the identity-tools-cli repository will be referred as ```<PROJECT_ROOT>```.
+1. Open a terminal and set directory to ```<PROJECT_ROOT>/iamctl```
 
 2. Then build the IAM-ctl.
 ```
@@ -15,7 +15,7 @@ go build
  
  ### If you want to build for supports to cross platform you can do as follows.
  
-  Open a terminal and set directory to ```<identity-cli_HOME>/iamctl```
+  Open a terminal and set directory to ```<PROJECT_ROOT>/iamctl```
   Then build the IAMCTL.
   
   To build for mac:
