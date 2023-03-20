@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2022, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
+* Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
 *
 * WSO2 LLC. licenses this file to you under the Apache License,
 * Version 2.0 (the "License"); you may not use this file except
@@ -25,19 +25,19 @@ import (
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
-// var SERVER_CONFIGS utils.EnvConfigs
-
 var exportAllCmd = &cobra.Command{
 	Use:   "exportAll",
-	Short: "You can export all service providers",
-	Long:  `You can export all service providers`,
+	Short: "Export all applications",
+	Long:  `You can export all applications available in the target environment`,
 	Run: func(cmd *cobra.Command, args []string) {
 		outputDirPath, _ := cmd.Flags().GetString("outputDir")
 		format, _ := cmd.Flags().GetString("format")
 		configFile, _ := cmd.Flags().GetString("config")
 
-		utils.TOOL_CONFIGS = utils.LoadToolConfigsFromFile(configFile)
-		utils.SERVER_CONFIGS = utils.LoadServerConfigsFromFile(utils.TOOL_CONFIGS.ServerConfigFileLocation)
+		baseDir := utils.LoadConfigs(configFile)
+		if outputDirPath == "" {
+			outputDirPath = baseDir
+		}
 
 		applications.ExportAll(outputDirPath, format)
 	},
@@ -49,4 +49,5 @@ func init() {
 	exportAllCmd.Flags().StringP("outputDir", "o", "", "Path to the output directory")
 	exportAllCmd.Flags().StringP("format", "f", "yaml", "Format of the exported files")
 	exportAllCmd.Flags().StringP("config", "c", "", "Path to the config file")
+	exportAllCmd.MarkFlagRequired("config")
 }

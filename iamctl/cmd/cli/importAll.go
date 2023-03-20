@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2022, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
+* Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
 *
 * WSO2 LLC. licenses this file to you under the Apache License,
 * Version 2.0 (the "License"); you may not use this file except
@@ -27,14 +27,17 @@ import (
 
 var importAllCmd = &cobra.Command{
 	Use:   "importAll",
-	Short: "You can import all service providers",
-	Long:  `You can import all service providers`,
+	Short: "Import all applications",
+	Long:  `You can import all applications to the target environment`,
 	Run: func(cmd *cobra.Command, args []string) {
 		inputDirPath, _ := cmd.Flags().GetString("inputDir")
 		configFile, _ := cmd.Flags().GetString("config")
 
-		utils.TOOL_CONFIGS = utils.LoadToolConfigsFromFile(configFile)
-		utils.SERVER_CONFIGS = utils.LoadServerConfigsFromFile(utils.TOOL_CONFIGS.ServerConfigFileLocation)
+		baseDir := utils.LoadConfigs(configFile)
+		if inputDirPath == "" {
+			inputDirPath = baseDir
+		}
+
 		applications.ImportAll(inputDirPath)
 	},
 }
@@ -44,4 +47,5 @@ func init() {
 	cmd.RootCmd.AddCommand(importAllCmd)
 	importAllCmd.Flags().StringP("inputDir", "i", "", "Path to the input directory")
 	importAllCmd.Flags().StringP("config", "c", "", "Path to the config file")
+	importAllCmd.MarkFlagRequired("config")
 }

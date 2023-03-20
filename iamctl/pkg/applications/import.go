@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2022, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
+* Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
 *
 * WSO2 LLC. licenses this file to you under the Apache License,
 * Version 2.0 (the "License"); you may not use this file except
@@ -29,6 +29,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -36,72 +37,80 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type AppConfig struct {
-	ApplicationName string `yaml:"applicationName"`
-}
-
 func ImportAll(inputDirPath string) {
 
-	var importFilePath = "."
-	if inputDirPath != "" {
-		importFilePath = inputDirPath
-	}
-	importFilePath = importFilePath + "/Applications/"
+	importFilePath := inputDirPath + "/Applications/"
 
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var appFilePath string
-	appList := getAppNames()
+	existingAppList := getDeployedAppNames()
 	for _, file := range files {
-		appFilePath = importFilePath + file.Name()
-		fileName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
+		appFilePath := importFilePath + file.Name()
+		appName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
+		appExists, isValidFile := validateFile(appFilePath, appName, existingAppList)
 
-		// Read the content of the file.
-		fileContent, err := ioutil.ReadFile(appFilePath)
-		if err != nil {
-			log.Fatal(err)
+		if isValidFile && !isAppExcluded(appName) {
+			importApp(appFilePath, appExists)
 		}
-
-		// Parse the YAML content.
-		var appConfig AppConfig
-		err = yaml.Unmarshal(fileContent, &appConfig)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		log.Println(appConfig.ApplicationName)
-
-		// Check if app exists.
-		var appExists bool
-		for _, app := range appList {
-			if app == appConfig.ApplicationName {
-				appExists = true
-				break
-			}
-		}
-
-		if appConfig.ApplicationName != fileName {
-			log.Println("Application name in the file " + appFilePath + " is not matching with the file name.")
-		}
-
-		importApp(appFilePath, appExists)
 	}
 }
 
-func importApp(importFilePath string, update bool) {
+func validateFile(appFilePath string, appName string, appList []string) (appExists bool, isValid bool) {
 
-	var reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/applications/import"
-	var err error
+	appExists = false
 
-	filename := filepath.Base(importFilePath)
-	fileExtension := filepath.Ext(filename)
-	appName := strings.TrimSuffix(filename, fileExtension)
+	fileContent, err := os.ReadFile(appFilePath)
+	if err != nil {
+		log.Println("Error when reading the file for app: ", appName, err)
+		return appExists, false
+	}
+
+	// Validate the YAML format.
+	var appConfig AppConfig
+	err = yaml.Unmarshal(fileContent, &appConfig)
+	if err != nil {
+		log.Println("Invalid file content for app: ", appName, err)
+		return appExists, false
+	}
+
+	for _, app := range appList {
+		if app == appConfig.ApplicationName {
+			appExists = true
+			break
+		}
+	}
+	if appConfig.ApplicationName != appName {
+		log.Println("Warning: Application name in the file " + appFilePath + " is not matching with the file name.")
+	}
+	return appExists, true
+}
+
+func importApp(importFilePath string, isUpdate bool) {
+
+	fileBytes, err := os.ReadFile(importFilePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// TODO: Implement keyword replacement logic.
+	// Replace keywords according to the keyword mappings added in configs.
+	// appName, _, _ := getAppFileInfo(importFilePath)
+	// fileData := utils.ReplaceKeywords(fileBytes, appName)
+	fileData := string(fileBytes)
+	sendImportRequest(isUpdate, importFilePath, fileData)
+
+}
+
+func sendImportRequest(isUpdate bool, importFilePath string, fileData string) {
+
+	reqUrl := utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/applications/import"
+	appName, filename, fileExtension := getAppFileInfo(importFilePath)
 
 	var requestMethod string
-	if update {
+	if isUpdate {
 		log.Println("Updating app: " + appName)
 		requestMethod = "PUT"
 	} else {
@@ -109,19 +118,8 @@ func importApp(importFilePath string, update bool) {
 		requestMethod = "POST"
 	}
 
-	body := new(bytes.Buffer)
-	writer := multipart.NewWriter(body)
-
-	fileBytes, err := ioutil.ReadFile(importFilePath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// TODO: Implement keyword replacement logic.
-	// Replace keywords according to the keyword mappings added in configs.
-	// fileData := utils.ReplaceKeywords(fileBytes, appName)
-	fileData := string(fileBytes)
 	var buf bytes.Buffer
+	var err error
 	_, err = io.WriteString(&buf, fileData)
 	if err != nil {
 		log.Fatal(err)
@@ -132,6 +130,8 @@ func importApp(importFilePath string, update bool) {
 
 	mimeType := mime.TypeByExtension(fileExtension)
 
+	body := new(bytes.Buffer)
+	writer := multipart.NewWriter(body)
 	part, err := writer.CreatePart(textproto.MIMEHeader{
 		"Content-Disposition": []string{fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file", filename)},
 		"Content-Type":        []string{mimeType},
@@ -168,35 +168,16 @@ func importApp(importFilePath string, update bool) {
 	}
 
 	statusCode := resp.StatusCode
-	switch statusCode {
-	case 401:
-		log.Println("Unauthorized access.\nPlease check your Username and password.")
-	case 400:
-		log.Println("Provided parameters are not in correct format.")
-	case 403:
-		log.Println("Forbidden request.")
-	case 409:
+	if statusCode == 201 {
+		log.Println("Application created successfully.")
+	} else if statusCode == 200 {
+		log.Println("Application updated successfully.")
+	} else if statusCode == 409 {
 		log.Println("An application with the same name already exists. Please rename the file accordingly.")
 		importApp(importFilePath, true)
-	case 500:
-		log.Println("Internal server error.")
-	case 201:
-		log.Println("Application imported successfully.")
-	case 200:
-		log.Println("Application updated successfully.")
+	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
+		log.Println(error)
+	} else {
+		log.Println("Error while updating the application.")
 	}
-}
-
-func getAppNames() []string {
-
-	// Get the list of applications.
-	apps := getAppList()
-
-	// Extract application names from the list.
-	var appNames []string
-	for _, app := range apps {
-		appNames = append(appNames, app.Name)
-	}
-
-	return appNames
 }

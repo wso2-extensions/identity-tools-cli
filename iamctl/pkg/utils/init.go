@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2022, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
+* Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
 *
 * WSO2 LLC. licenses this file to you under the Apache License,
 * Version 2.0 (the "License"); you may not use this file except
@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -49,9 +50,8 @@ type ServerConfigs struct {
 }
 
 type ToolConfigs struct {
-	ServerConfigFileLocation string                 `json:"SERVER_CONFIG_FILE_LOCATION"`
-	KeywordMappings          map[string]interface{} `json:"KEYWORD_MAPPINGS"`
-	ApplicationConfigs       map[string]interface{} `json:"APPLICATIONS"`
+	KeywordMappings    map[string]interface{} `json:"KEYWORD_MAPPINGS"`
+	ApplicationConfigs map[string]interface{} `json:"APPLICATIONS"`
 }
 
 type Application struct {
@@ -72,57 +72,62 @@ type List struct {
 var SERVER_CONFIGS ServerConfigs
 var TOOL_CONFIGS ToolConfigs
 
-func LoadToolConfigsFromFile(configFilePath string) (toolConfigs ToolConfigs) {
+func LoadConfigs(toolConfigFile string) (baseDir string) {
 
-	var rootDir, _ = os.Getwd()
-	var configPath = rootDir + "/config.json"
-	if configFilePath != "" {
-		configPath = configFilePath
-	}
+	configDir := filepath.Dir(filepath.Dir(toolConfigFile))
+	fileName := filepath.Base(toolConfigFile)
+	baseDir = filepath.Dir(configDir)
+	serverConfigFile := filepath.Join(configDir, "ServerConfigs", fileName)
 
-	configFile, err := os.Open(configPath)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	defer configFile.Close()
+	// Load configs from files
+	SERVER_CONFIGS = loadServerConfigsFromFile(serverConfigFile)
+	TOOL_CONFIGS = loadToolConfigsFromFile(toolConfigFile)
 
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	jsonParser := json.NewDecoder(configFile)
-	jsonParser.Decode(&toolConfigs)
-
-	fmt.Println("Tool configs loaded succesfully from the config file.")
-
-	return toolConfigs
+	return baseDir
 }
 
-func LoadServerConfigsFromFile(configFilePath string) (serverConfigs ServerConfigs) {
+func loadServerConfigsFromFile(configFilePath string) (serverConfigs ServerConfigs) {
 
-	var rootDir, _ = os.Getwd()
-	var configPath = rootDir + "/config.json"
-	if configFilePath != "" {
-		configPath = configFilePath
-	}
-
-	configFile, err := os.Open(configPath)
+	configFile, err := os.Open(configFilePath)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Fatalln(err.Error())
 	}
 	defer configFile.Close()
 
-	if err != nil {
-		fmt.Println(err.Error())
-	}
 	jsonParser := json.NewDecoder(configFile)
-	jsonParser.Decode(&serverConfigs)
-
+	err = jsonParser.Decode(&serverConfigs)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	fmt.Println("Server configs loaded succesfully from the config file.")
 
+	// Set tenant domain if not defined in the config file
+	if serverConfigs.TenantDomain == "" {
+		log.Println("Tenant domain is not defined in the config file. Using the default tenant domain: carbon.super")
+		serverConfigs.TenantDomain = "carbon.super"
+	}
+
+	// Get access token
 	serverConfigs.Token = getAccessToken(serverConfigs)
 	fmt.Println("Access Token recieved succesfully.")
 
 	return serverConfigs
+}
+
+func loadToolConfigsFromFile(configFilePath string) (toolConfigs ToolConfigs) {
+
+	configFile, err := os.Open(configFilePath)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	defer configFile.Close()
+
+	jsonParser := json.NewDecoder(configFile)
+	jsonParser.Decode(&toolConfigs)
+
+	fmt.Println("Tool configs loaded successfully from the config file.")
+	fmt.Println(toolConfigs)
+	return toolConfigs
 }
 
 func getAccessToken(config ServerConfigs) string {
@@ -130,9 +135,11 @@ func getAccessToken(config ServerConfigs) string {
 	var err error
 	var response oAuthResponse
 
+	if config.ServerUrl == "" {
+		log.Fatalln("Server URL is not defined in the config file.")
+	}
 	authUrl := config.ServerUrl + "/oauth2/token"
 
-	// Build response body to POST :=
 	body := url.Values{}
 	body.Set("grant_type", "password")
 	body.Set("username", config.Username)
@@ -165,19 +172,8 @@ func getAccessToken(config ServerConfigs) string {
 		log.Fatalln(err)
 	}
 
-	if resp.StatusCode == 401 {
-		type clientError struct {
-			Description string `json:"error_description"`
-			Error       string `json:"error"`
-		}
-		var err = new(clientError)
-
-		err2 := json.Unmarshal(body1, &err)
-		if err2 != nil {
-			log.Fatalln(err2)
-		}
-		fmt.Println(err.Error + "\n" + err.Description)
-		return ""
+	if resp.StatusCode != 200 {
+		log.Fatalln("Error in getting access token, response: " + string(body1))
 	}
 
 	err2 := json.Unmarshal(body1, &response)
