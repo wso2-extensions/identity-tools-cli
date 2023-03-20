@@ -36,7 +36,9 @@ var exportAllCmd = &cobra.Command{
 		format, _ := cmd.Flags().GetString("format")
 		configFile, _ := cmd.Flags().GetString("config")
 
-		utils.SERVER_CONFIGS = utils.LoadServerConfigsFromFile(configFile)
+		utils.TOOL_CONFIGS = utils.LoadToolConfigsFromFile(configFile)
+		utils.SERVER_CONFIGS = utils.LoadServerConfigsFromFile(utils.TOOL_CONFIGS.ServerConfigFileLocation)
+
 		applications.ExportAll(outputDirPath, format)
 	},
 }

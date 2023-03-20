@@ -38,16 +38,20 @@ type oAuthResponse struct {
 	Expires      int    `json:"expires_in"`
 }
 
-type EnvConfigs struct {
-	ServerUrl          string                 `json:"SERVER_URL"`
-	ClientId           string                 `json:"CLIENT_ID"`
-	ClientSecret       string                 `json:"CLIENT_SECRET"`
-	TenantDomain       string                 `json:"TENANT_DOMAIN"`
-	Username           string                 `json:"USERNAME"`
-	Password           string                 `json:"PASSWORD"`
-	Token              string                 `json:"TOKEN"`
-	KeywordMappings    map[string]interface{} `json:"KEYWORD_MAPPINGS"`
-	ApplicationConfigs map[string]interface{} `json:"APPLICATIONS"`
+type ServerConfigs struct {
+	ServerUrl    string `json:"SERVER_URL"`
+	ClientId     string `json:"CLIENT_ID"`
+	ClientSecret string `json:"CLIENT_SECRET"`
+	TenantDomain string `json:"TENANT_DOMAIN"`
+	Username     string `json:"USERNAME"`
+	Password     string `json:"PASSWORD"`
+	Token        string `json:"TOKEN"`
+}
+
+type ToolConfigs struct {
+	ServerConfigFileLocation string                 `json:"SERVER_CONFIG_FILE_LOCATION"`
+	KeywordMappings          map[string]interface{} `json:"KEYWORD_MAPPINGS"`
+	ApplicationConfigs       map[string]interface{} `json:"APPLICATIONS"`
 }
 
 type Application struct {
@@ -65,9 +69,10 @@ type List struct {
 	Links        []string      `json:"links"`
 }
 
-var SERVER_CONFIGS EnvConfigs
+var SERVER_CONFIGS ServerConfigs
+var TOOL_CONFIGS ToolConfigs
 
-func LoadServerConfigsFromFile(configFilePath string) (config EnvConfigs) {
+func LoadToolConfigsFromFile(configFilePath string) (toolConfigs ToolConfigs) {
 
 	var rootDir, _ = os.Getwd()
 	var configPath = rootDir + "/config.json"
@@ -85,17 +90,42 @@ func LoadServerConfigsFromFile(configFilePath string) (config EnvConfigs) {
 		fmt.Println(err.Error())
 	}
 	jsonParser := json.NewDecoder(configFile)
-	jsonParser.Decode(&config)
+	jsonParser.Decode(&toolConfigs)
+
+	fmt.Println("Tool configs loaded succesfully from the config file.")
+
+	return toolConfigs
+}
+
+func LoadServerConfigsFromFile(configFilePath string) (serverConfigs ServerConfigs) {
+
+	var rootDir, _ = os.Getwd()
+	var configPath = rootDir + "/config.json"
+	if configFilePath != "" {
+		configPath = configFilePath
+	}
+
+	configFile, err := os.Open(configPath)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	defer configFile.Close()
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	jsonParser := json.NewDecoder(configFile)
+	jsonParser.Decode(&serverConfigs)
 
 	fmt.Println("Server configs loaded succesfully from the config file.")
 
-	config.Token = getAccessToken(config)
+	serverConfigs.Token = getAccessToken(serverConfigs)
 	fmt.Println("Access Token recieved succesfully.")
 
-	return config
+	return serverConfigs
 }
 
-func getAccessToken(config EnvConfigs) string {
+func getAccessToken(config ServerConfigs) string {
 
 	var err error
 	var response oAuthResponse

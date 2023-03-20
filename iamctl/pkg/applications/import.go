@@ -29,7 +29,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -97,19 +96,36 @@ func importApp(importFilePath string, update bool) {
 	var reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/applications/import"
 	var err error
 
-	fmt.Println(reqUrl)
-	file, err := os.Open(importFilePath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	filename := filepath.Base(importFilePath)
+	fileExtension := filepath.Ext(filename)
+	appName := strings.TrimSuffix(filename, fileExtension)
+
+	var requestMethod string
+	if update {
+		log.Println("Updating app: " + appName)
+		requestMethod = "PUT"
+	} else {
+		log.Println("Creating app: " + appName)
+		requestMethod = "POST"
+	}
 
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
 
-	// Get file extension
-	fileExtension := filepath.Ext(filename)
+	fileBytes, err := ioutil.ReadFile(importFilePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// TODO: Implement keyword replacement logic.
+	// Replace keywords according to the keyword mappings added in configs.
+	// fileData := utils.ReplaceKeywords(fileBytes, appName)
+	fileData := string(fileBytes)
+	var buf bytes.Buffer
+	_, err = io.WriteString(&buf, fileData)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	mime.AddExtensionType(".yml", "text/yaml")
 	mime.AddExtensionType(".xml", "application/xml")
@@ -124,21 +140,12 @@ func importApp(importFilePath string, update bool) {
 		log.Fatal(err)
 	}
 
-	_, err = io.Copy(part, file)
+	_, err = io.Copy(part, &buf)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	defer writer.Close()
-
-	var requestMethod string
-	if update {
-		log.Println("Updating app: " + filename)
-		requestMethod = "PUT"
-	} else {
-		log.Println("Creating app: " + filename)
-		requestMethod = "POST"
-	}
 
 	request, err := http.NewRequest(requestMethod, reqUrl, body)
 	request.Header.Add("Content-Type", writer.FormDataContentType())
@@ -161,7 +168,6 @@ func importApp(importFilePath string, update bool) {
 	}
 
 	statusCode := resp.StatusCode
-	fmt.Println(statusCode)
 	switch statusCode {
 	case 401:
 		log.Println("Unauthorized access.\nPlease check your Username and password.")
@@ -176,6 +182,8 @@ func importApp(importFilePath string, update bool) {
 		log.Println("Internal server error.")
 	case 201:
 		log.Println("Application imported successfully.")
+	case 200:
+		log.Println("Application updated successfully.")
 	}
 }
 

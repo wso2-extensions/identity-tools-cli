@@ -22,6 +22,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"mime"
@@ -112,7 +113,11 @@ func exportApp(appId string, outputDirPath string, format string) {
 			log.Fatalln(err)
 		}
 		exportedFile := outputDirPath + fileName
-		ioutil.WriteFile(exportedFile, body1, 0644)
+		fmt.Println("Writing to file: " + exportedFile)
+		// TODO: Add keywords to the exported file
+		// modifiedFile := utils.AddKeywords(body1, exportedFile)
+		modifiedFile := body1
+		ioutil.WriteFile(exportedFile, modifiedFile, 0644)
 		log.Println("Successfully created the export file : " + exportedFile)
 	}
 }

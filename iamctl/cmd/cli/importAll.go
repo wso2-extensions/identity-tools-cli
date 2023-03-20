@@ -33,7 +33,8 @@ var importAllCmd = &cobra.Command{
 		inputDirPath, _ := cmd.Flags().GetString("inputDir")
 		configFile, _ := cmd.Flags().GetString("config")
 
-		utils.SERVER_CONFIGS = utils.LoadServerConfigsFromFile(configFile)
+		utils.TOOL_CONFIGS = utils.LoadToolConfigsFromFile(configFile)
+		utils.SERVER_CONFIGS = utils.LoadServerConfigsFromFile(utils.TOOL_CONFIGS.ServerConfigFileLocation)
 		applications.ImportAll(inputDirPath)
 	},
 }
