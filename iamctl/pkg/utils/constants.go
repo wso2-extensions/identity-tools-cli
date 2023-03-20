@@ -27,3 +27,22 @@ var ErrorCodes = map[int]string{
 	409: "An application with the same name already exists.",
 	500: "Internal server error.",
 }
+
+var arrayIdentifiers = map[string]string{
+
+	"inboundAuthenticationRequestConfigs": "inboundAuthKey",
+	"spProperties":                        "name",
+	"authenticationSteps":                 "stepOrder",
+	"localAuthenticatorConfigs":           "name",
+	"federatedIdentityProviders":          "identityProviderName",
+	"federatedAuthenticatorConfigs":       "name",
+	"properties":                          "name",
+	"subProperties":                       "name",
+	"idpProperties":                       "name",
+	"provisioningConnectorConfigs":        "name",
+	"provisioningIdentityProviders":       "identityProviderName",
+	"requestPathAuthenticatorConfigs":     "name",
+	"roleMappings":                        "localRole",
+	"claimMappings":                       "localClaim",
+}
+
