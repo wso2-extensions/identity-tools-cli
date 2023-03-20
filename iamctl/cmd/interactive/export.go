@@ -20,7 +20,6 @@ package interactive
 
 import (
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -60,26 +59,6 @@ func init() {
 	exportCmd.Flags().StringP("fileType", "t", "application/yaml", "set the file type")
 }
 
-type applicationsStruct struct {
-	TotalResults int `json:"totalResults"`
-	StartIndex   int `json:"startIndex"`
-	Count        int `json:"count"`
-	Applications []struct {
-		appSummary
-	} `json:"applications"`
-	Links []interface{} `json:"links"`
-}
-
-type appSummary struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Image       string `json:"image,omitempty"`
-	AccessURL   string `json:"accessUrl"`
-	Access      string `json:"access"`
-	Self        string `json:"self"`
-}
-
 var exportQuestions = []*survey.Question{
 	{
 		Name:     "exportlocation",
@@ -115,7 +94,7 @@ func setExportInfo() {
 	exportApplication(exportAnswers.ServiceProviderID, exportAnswers.Exportlocation, exportAnswers.FileType)
 }
 
-func exportApplication(exportlocation string, serviceProviderID string, fileType string) bool {
+func exportApplication(serviceProviderID string, exportlocation string, fileType string) bool {
 
 	exported := false
 
@@ -153,12 +132,11 @@ func exportApplication(exportlocation string, serviceProviderID string, fileType
 	defer resp.Body.Close()
 
 	var attachmentDetail = resp.Header.Get("Content-Disposition")
-	disposition, params, err := mime.ParseMediaType(attachmentDetail)
+	_, params, err := mime.ParseMediaType(attachmentDetail)
 
 	if err != nil {
 		panic(err)
 	}
-	log.Println("Disposition" + disposition)
 
 	var fileName = params["filename"]
 

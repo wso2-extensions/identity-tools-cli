@@ -22,10 +22,14 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
+	"mime"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
+	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
@@ -59,28 +63,36 @@ func importApplication(importFilePath string) bool {
 	start(SERVER, "admin", "admin")
 
 	var ADDAPPURL = SERVER + "/t/" + TENANTDOMAIN + "/api/server/v1/applications/import"
-	var err error
 
 	token := utils.ReadFile()
 
-	fileBytes, err := ioutil.ReadFile(importFilePath)
+	file, err := os.Open(importFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	extraParams := map[string]string{
-		"file": string(fileBytes),
-	}
+	filename := filepath.Base(importFilePath)
+	fileExtension := filepath.Ext(filename)
 
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
 
-	for key, val := range extraParams {
-		err := writer.WriteField(key, val)
-		if err != nil {
-			log.Fatal(err)
-		}
+	mime.AddExtensionType(".yml", "text/yaml")
+	mime.AddExtensionType(".xml", "application/xml")
+
+	mimeType := mime.TypeByExtension(fileExtension)
+
+	part, err := writer.CreatePart(textproto.MIMEHeader{
+		"Content-Disposition": []string{fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file", filename)},
+		"Content-Type":        []string{mimeType},
+	})
+	if err != nil {
+		log.Fatal(err)
 	}
+	_, err = io.Copy(part, file)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	defer writer.Close()
 
 	request, err := http.NewRequest("POST", ADDAPPURL, body)
@@ -98,19 +110,26 @@ func importApplication(importFilePath string) bool {
 			},
 		},
 	}
+
 	resp, err := client.Do(request)
 	if err != nil {
 		log.Fatal(err)
-	} else {
-		fmt.Println(resp.StatusCode)
-		fmt.Println(resp.Header)
-		bodyBytes, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(string(bodyBytes))
+	}
 
-		importedSp = true
+	statusCode := resp.StatusCode
+	switch statusCode {
+	case 401:
+		log.Println("Unauthorized access.\nPlease check your Username and password.")
+	case 400:
+		log.Println("Provided parameters are not in correct format.")
+	case 403:
+		log.Println("Forbidden request.")
+	case 409:
+		log.Println("An application with the same name already exists.")
+	case 500:
+		log.Println("Internal server error.")
+	case 201:
+		log.Println("Application imported successfully.")
 	}
 
 	return importedSp
