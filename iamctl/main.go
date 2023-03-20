@@ -23,6 +23,7 @@ import (
 	"os"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
+	_ "github.com/wso2-extensions/identity-tools-cli/iamctl/cmd/cli"
 	_ "github.com/wso2-extensions/identity-tools-cli/iamctl/cmd/interactive"
 )
 
