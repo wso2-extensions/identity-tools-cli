@@ -44,7 +44,7 @@ var setupCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		baseDirPath, _ := cmd.Flags().GetString("baseDir")
 
-		createConfigFolders(baseDirPath)
+		createConfigFolder(baseDirPath)
 	},
 }
 
@@ -54,9 +54,9 @@ func init() {
 	setupCmd.Flags().StringP("baseDir", "d", "", "Path to the base directory")
 }
 
-func createConfigFolders(baseDirPath string) {
+func createConfigFolder(baseDirPath string) {
 
-	configFileName := "config.json"
+	templateEnvName := "env"
 
 	// If baseDirPath is not provided, create the config folder in the current working directory
 	var err error
@@ -67,21 +67,19 @@ func createConfigFolders(baseDirPath string) {
 		}
 	}
 
-	// Create server config directory
-	serverConfigDir := baseDirPath + "/configs/ServerConfigs/"
-	os.MkdirAll(serverConfigDir, 0700)
+	// Create environment specific config folder with the name "env"
+	envConfigDir := baseDirPath + "/configs/" + templateEnvName + "/"
+	os.MkdirAll(envConfigDir, 0700)
 
+	// Create server config file
 	serverConfigs, err := json.Marshal(serverConfigTemplate)
 	if err != nil {
 		fmt.Println("Error in creating the server config template", err)
 	}
-	os.WriteFile(serverConfigDir+configFileName, serverConfigs, 0644)
+	os.WriteFile(envConfigDir+"serverConfig.json", serverConfigs, 0644)
 
 	// Create tool config directory
-	toolConfigDir := baseDirPath + "/configs/ToolConfigs/"
-	os.MkdirAll(toolConfigDir, 0700)
-
-	file, err := os.OpenFile(toolConfigDir+configFileName, os.O_CREATE, 0644)
+	file, err := os.OpenFile(envConfigDir+"toolConfig.json", os.O_CREATE, 0644)
 	if err != nil {
 		fmt.Println("Error in creating the tool config file", err)
 	}

@@ -72,12 +72,11 @@ type List struct {
 var SERVER_CONFIGS ServerConfigs
 var TOOL_CONFIGS ToolConfigs
 
-func LoadConfigs(toolConfigFile string) (baseDir string) {
+func LoadConfigs(envConfigPath string) (baseDir string) {
 
-	configDir := filepath.Dir(filepath.Dir(toolConfigFile))
-	fileName := filepath.Base(toolConfigFile)
-	baseDir = filepath.Dir(configDir)
-	serverConfigFile := filepath.Join(configDir, "ServerConfigs", fileName)
+	baseDir = filepath.Dir(filepath.Dir(envConfigPath))
+	serverConfigFile := filepath.Join(envConfigPath, "serverConfig.json")
+	toolConfigFile := filepath.Join(envConfigPath, "toolConfig.json")
 
 	// Load configs from files
 	SERVER_CONFIGS = loadServerConfigsFromFile(serverConfigFile)
@@ -119,6 +118,7 @@ func loadToolConfigsFromFile(configFilePath string) (toolConfigs ToolConfigs) {
 	configFile, err := os.Open(configFilePath)
 	if err != nil {
 		fmt.Println(err.Error())
+		return toolConfigs
 	}
 	defer configFile.Close()
 
@@ -126,7 +126,6 @@ func loadToolConfigsFromFile(configFilePath string) (toolConfigs ToolConfigs) {
 	jsonParser.Decode(&toolConfigs)
 
 	fmt.Println("Tool configs loaded successfully from the config file.")
-	fmt.Println(toolConfigs)
 	return toolConfigs
 }
 

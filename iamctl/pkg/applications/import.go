@@ -46,19 +46,18 @@ func ImportAll(inputDirPath string) {
 		log.Fatal(err)
 	}
 
-	existingAppList := getDeployedAppNames()
 	for _, file := range files {
 		appFilePath := importFilePath + file.Name()
 		appName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
-		appExists, isValidFile := validateFile(appFilePath, appName, existingAppList)
+		appExists, isValidFile := validateFile(appFilePath, appName)
 
-		if isValidFile && !isAppExcluded(appName) {
+		if isValidFile && !utils.IsResourceExcluded(appName, utils.TOOL_CONFIGS.ApplicationConfigs) {
 			importApp(appFilePath, appExists)
 		}
 	}
 }
 
-func validateFile(appFilePath string, appName string, appList []string) (appExists bool, isValid bool) {
+func validateFile(appFilePath string, appName string) (appExists bool, isValid bool) {
 
 	appExists = false
 
@@ -76,7 +75,8 @@ func validateFile(appFilePath string, appName string, appList []string) (appExis
 		return appExists, false
 	}
 
-	for _, app := range appList {
+	existingAppList := getDeployedAppNames()
+	for _, app := range existingAppList {
 		if app == appConfig.ApplicationName {
 			appExists = true
 			break

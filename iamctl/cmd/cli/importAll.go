@@ -46,6 +46,6 @@ func init() {
 
 	cmd.RootCmd.AddCommand(importAllCmd)
 	importAllCmd.Flags().StringP("inputDir", "i", "", "Path to the input directory")
-	importAllCmd.Flags().StringP("config", "c", "", "Path to the config file")
+	importAllCmd.Flags().StringP("config", "c", "", "Path to the environment specific config folder")
 	importAllCmd.MarkFlagRequired("config")
 }

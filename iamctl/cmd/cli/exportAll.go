@@ -48,6 +48,6 @@ func init() {
 	cmd.RootCmd.AddCommand(exportAllCmd)
 	exportAllCmd.Flags().StringP("outputDir", "o", "", "Path to the output directory")
 	exportAllCmd.Flags().StringP("format", "f", "yaml", "Format of the exported files")
-	exportAllCmd.Flags().StringP("config", "c", "", "Path to the config file")
+	exportAllCmd.Flags().StringP("config", "c", "", "Path to the environment specific config folder")
 	exportAllCmd.MarkFlagRequired("config")
 }

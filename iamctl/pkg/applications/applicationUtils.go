@@ -46,33 +46,6 @@ func getAppFileInfo(filePath string) (string, string, string) {
 	return appName, filename, fileExtension
 }
 
-func isAppExcluded(appName string) bool {
-
-	// Include only the applications added to INCLUDE_ONLY config
-	includeOnlyApps, ok := utils.TOOL_CONFIGS.ApplicationConfigs["INCLUDE_ONLY"].([]interface{})
-	if ok {
-		for _, app := range includeOnlyApps {
-			if app.(string) == appName {
-				return false
-			}
-		}
-		log.Println("Application " + appName + " is excluded.")
-		return true
-	} else {
-		// Exclude applications added to EXCLUDE_APPLICATIONS config
-		appsToExclude, ok := utils.TOOL_CONFIGS.ApplicationConfigs["EXCLUDE"].([]interface{})
-		if ok {
-			for _, app := range appsToExclude {
-				if app.(string) == appName {
-					log.Println("Application " + appName + " is excluded.")
-					return true
-				}
-			}
-		}
-		return false
-	}
-}
-
 func getDeployedAppNames() []string {
 
 	apps := getAppList()

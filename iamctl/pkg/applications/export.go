@@ -38,7 +38,7 @@ func ExportAll(exportFilePath string, format string) {
 
 	apps := getAppList()
 	for _, app := range apps {
-		if !isAppExcluded(app.Name) {
+		if !utils.IsResourceExcluded(app.Name, utils.TOOL_CONFIGS.ApplicationConfigs) {
 			exportApp(app.Id, exportFilePath, format)
 		}
 	}
