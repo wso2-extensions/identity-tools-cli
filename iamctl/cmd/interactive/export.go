@@ -99,8 +99,7 @@ func exportApplication(serviceProviderID string, exportlocation string, fileType
 	exported := false
 
 	SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
-
-	start(SERVER, "admin", "admin")
+	setServer()
 
 	var ADDAPPURL = SERVER + "/t/" + TENANTDOMAIN + "/api/server/v1/applications"
 	var err error
@@ -140,17 +139,17 @@ func exportApplication(serviceProviderID string, exportlocation string, fileType
 
 	var fileName = params["filename"]
 
-	body1, err := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	if body1 != nil {
+	if body != nil {
 		exported = true
 	}
 
 	var exportedFilePath = exportlocation + "/" + fileName
-	ioutil.WriteFile(exportedFilePath, body1, 0644)
+	ioutil.WriteFile(exportedFilePath, body, 0644)
 	print("Successfully created the export file : " + exportedFilePath)
 
 	return exported

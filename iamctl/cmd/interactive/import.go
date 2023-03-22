@@ -56,11 +56,11 @@ func init() {
 }
 
 func importApplication(importFilePath string) bool {
+
 	importedSp := false
 
 	SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
-
-	start(SERVER, "admin", "admin")
+	setServer()
 
 	var ADDAPPURL = SERVER + "/t/" + TENANTDOMAIN + "/api/server/v1/applications/import"
 
@@ -75,6 +75,7 @@ func importApplication(importFilePath string) bool {
 
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
+    defer writer.Close()
 
 	mime.AddExtensionType(".yml", "text/yaml")
 	mime.AddExtensionType(".xml", "application/xml")
@@ -92,8 +93,6 @@ func importApplication(importFilePath string) bool {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	defer writer.Close()
 
 	request, err := http.NewRequest("POST", ADDAPPURL, body)
 	request.Header.Add("Content-Type", writer.FormDataContentType())
@@ -116,8 +115,7 @@ func importApplication(importFilePath string) bool {
 		log.Fatal(err)
 	}
 
-	statusCode := resp.StatusCode
-	switch statusCode {
+	switch resp.StatusCode {
 	case 401:
 		log.Println("Unauthorized access.\nPlease check your Username and password.")
 	case 400:
