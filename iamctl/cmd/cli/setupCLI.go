@@ -21,6 +21,7 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -65,6 +66,7 @@ func createConfigFolder(baseDirPath string) {
 		if err != nil {
 			baseDirPath = "."
 		}
+		log.Println("Since the base directory path is not provided, defaulting to the current working directory: " + baseDirPath)
 	}
 
 	// Create environment specific config folder with the name "env"

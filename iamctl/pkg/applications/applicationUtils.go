@@ -59,7 +59,7 @@ func getDeployedAppNames() []string {
 func getAppList() (spIdList []utils.Application) {
 
 	var APPURL = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/applications"
-	var list utils.List
+	var list utils.AppList
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 

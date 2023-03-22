@@ -20,6 +20,7 @@ package applications
 
 import (
 	"crypto/tls"
+	"errors"
 	"io/ioutil"
 	"log"
 	"mime"
@@ -39,12 +40,17 @@ func ExportAll(exportFilePath string, format string) {
 	apps := getAppList()
 	for _, app := range apps {
 		if !utils.IsResourceExcluded(app.Name, utils.TOOL_CONFIGS.ApplicationConfigs) {
-			exportApp(app.Id, exportFilePath, format)
+			err := exportApp(app.Id, exportFilePath, format)
+			if err != nil {
+				log.Println("Error while exporting application: ", app.Name)
+			} else {
+				log.Println("Application exported successfully: ", app.Name)
+			}
 		}
 	}
 }
 
-func exportApp(appId string, outputDirPath string, format string) {
+func exportApp(appId string, outputDirPath string, format string) error {
 
 	var fileType = "application/yaml"
 	if format == "json" {
@@ -59,7 +65,8 @@ func exportApp(appId string, outputDirPath string, format string) {
 
 	req, err := http.NewRequest("GET", reqUrl, strings.NewReader(""))
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("Error: ", err)
+		return err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("accept", fileType)
@@ -76,7 +83,8 @@ func exportApp(appId string, outputDirPath string, format string) {
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("Error: ", err)
+		return err
 	}
 	defer resp.Body.Close()
 
@@ -85,28 +93,33 @@ func exportApp(appId string, outputDirPath string, format string) {
 		var attachmentDetail = resp.Header.Get("Content-Disposition")
 		_, params, err := mime.ParseMediaType(attachmentDetail)
 		if err != nil {
-			log.Println("Error while parsing the content disposition header")
-			panic(err)
+			log.Println("Error while parsing the content disposition header", err)
+			return err
 		}
 
 		var fileName = params["filename"]
 
-		body1, err := ioutil.ReadAll(resp.Body)
+		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			log.Fatalln(err)
+			log.Println("Error: ", err)
+			return err
 		}
 		exportedFile := outputDirPath + fileName
 
 		// TODO: Add keywords to the exported file
 		// Add keywords to the exported file according to the keyword locations in the local file.
 		// appName, _, _ := getAppFileInfo(exportedFile)
-		// modifiedFile := utils.AddKeywords(body1, exportedFile)
-		modifiedFile := body1
-		ioutil.WriteFile(exportedFile, modifiedFile, 0644)
-		log.Println("Successfully created the export file : " + exportedFile)
+		// modifiedFile := utils.AddKeywords(body, exportedFile)
+		modifiedFile := body
+		err = ioutil.WriteFile(exportedFile, modifiedFile, 0644)
+		if err != nil {
+			log.Println("Error when writing the exported content to file: ", err)
+			return err
+		}
+		return nil
 	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		log.Println(error)
+		return errors.New(error)
 	} else {
-		log.Println("Error while exporting the application")
+		return errors.New("Unexpected error while exporting the application")
 	}
 }

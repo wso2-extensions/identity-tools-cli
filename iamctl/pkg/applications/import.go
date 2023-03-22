@@ -132,6 +132,8 @@ func sendImportRequest(isUpdate bool, importFilePath string, fileData string) {
 
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
+	defer writer.Close()
+
 	part, err := writer.CreatePart(textproto.MIMEHeader{
 		"Content-Disposition": []string{fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file", filename)},
 		"Content-Type":        []string{mimeType},
@@ -144,8 +146,6 @@ func sendImportRequest(isUpdate bool, importFilePath string, fileData string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	defer writer.Close()
 
 	request, err := http.NewRequest(requestMethod, reqUrl, body)
 	request.Header.Add("Content-Type", writer.FormDataContentType())
