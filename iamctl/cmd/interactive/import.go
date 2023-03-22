@@ -55,9 +55,7 @@ func init() {
 	importCmd.Flags().StringP("importFilePath", "i", "", "set the export file name")
 }
 
-func importApplication(importFilePath string) bool {
-
-	importedSp := false
+func importApplication(importFilePath string) {
 
 	SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 	setServer()
@@ -129,6 +127,4 @@ func importApplication(importFilePath string) bool {
 	case 201:
 		log.Println("Application imported successfully.")
 	}
-
-	return importedSp
 }

@@ -32,8 +32,6 @@ import (
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
-var ADDAPPURL string
-
 var exportCmd = &cobra.Command{
 	Use:   "export",
 	Short: "You can export a service provider",
@@ -94,9 +92,7 @@ func setExportInfo() {
 	exportApplication(exportAnswers.ServiceProviderID, exportAnswers.Exportlocation, exportAnswers.FileType)
 }
 
-func exportApplication(serviceProviderID string, exportlocation string, fileType string) bool {
-
-	exported := false
+func exportApplication(serviceProviderID string, exportlocation string, fileType string) {
 
 	SERVER, CLIENTID, CLIENTSECRET, TENANTDOMAIN = utils.ReadSPConfig()
 	setServer()
@@ -144,16 +140,10 @@ func exportApplication(serviceProviderID string, exportlocation string, fileType
 		log.Fatalln(err)
 	}
 
-	if body != nil {
-		exported = true
-	}
-
 	var exportedFilePath = exportlocation + "/" + fileName
 	err = ioutil.WriteFile(exportedFilePath, body, 0644)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	log.Println("Successfully created the export file : " + exportedFilePath)
-
-	return exported
 }
