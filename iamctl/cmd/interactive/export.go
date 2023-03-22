@@ -149,8 +149,11 @@ func exportApplication(serviceProviderID string, exportlocation string, fileType
 	}
 
 	var exportedFilePath = exportlocation + "/" + fileName
-	ioutil.WriteFile(exportedFilePath, body, 0644)
-	print("Successfully created the export file : " + exportedFilePath)
+	err = ioutil.WriteFile(exportedFilePath, body, 0644)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Println("Successfully created the export file : " + exportedFilePath)
 
 	return exported
 }
