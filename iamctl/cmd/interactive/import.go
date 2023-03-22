@@ -75,7 +75,7 @@ func importApplication(importFilePath string) bool {
 
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
-    defer writer.Close()
+	defer writer.Close()
 
 	mime.AddExtensionType(".yml", "text/yaml")
 	mime.AddExtensionType(".xml", "application/xml")
