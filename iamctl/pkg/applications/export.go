@@ -108,7 +108,9 @@ func exportApp(appId string, outputDirPath string, format string) error {
 
 		// Add keywords to the exported file according to the keyword locations in the local file.
 		appName, _, _ := getAppFileInfo(exportedFile)
-		modifiedFile := utils.AddKeywords(body, exportedFile)
+		appKeywordMapping := getAppKeywordMapping(appName)
+		modifiedFile := utils.AddKeywords(body, exportedFile, appKeywordMapping)
+
 		err = ioutil.WriteFile(exportedFile, modifiedFile, 0644)
 		if err != nil {
 			log.Println("Error when writing the exported content to file: ", err)

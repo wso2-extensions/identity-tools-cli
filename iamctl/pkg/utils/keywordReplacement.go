@@ -31,50 +31,56 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func ReplaceKeywords(fileData []byte, appName string) string {
+func ReplaceKeywords(fileContent string, keywordMapping map[string]interface{}) string {
 
-	appKeywordMap := getAppKeywordMappings(appName)
-
-	re := regexp.MustCompile(`\${([^}]+)}`)
-	output := re.ReplaceAllStringFunc(string(fileData), func(match string) string {
-		keyword := strings.Trim(match, "${}")
-		if val, ok := appKeywordMap[keyword]; ok {
-			if val, ok := val.(string); ok {
-				return string(val)
-			} else {
-				log.Printf("Keyword %s is not a string", keyword)
-			}
+	// Loop over the keyword mapping and replace each keyword in the file.
+	for keyword, value := range keywordMapping {
+		if value, ok := value.(string); ok {
+			fileContent = strings.ReplaceAll(fileContent, "{{"+keyword+"}}", value)
 		} else {
-			log.Printf("Removing the keyword %s from exported file, since it is not defined in the configs.", keyword)
-		}
-		return ""
-	})
-	return output
-}
-
-func getAppKeywordMappings(appName string) (keywordMappings map[string]interface{}) {
-
-	keywordMappings = TOOL_CONFIGS.KeywordMappings
-	if TOOL_CONFIGS.ApplicationConfigs != nil {
-		if appConfigs, ok := TOOL_CONFIGS.ApplicationConfigs[appName]; ok {
-			if appKeywordMappings, ok := appConfigs.(map[string]interface{})["KEYWORD_MAPPINGS"]; ok {
-				mergedKeywordMap := make(map[string]interface{})
-				for key, value := range keywordMappings {
-					mergedKeywordMap[key] = value.(string)
-				}
-				for key, value := range appKeywordMappings.(map[string]interface{}) {
-					mergedKeywordMap[key] = value.(string)
-				}
-				return mergedKeywordMap
-			}
+			log.Printf("Keyword value for %s is not a string", keyword)
 		}
 	}
-	return keywordMappings
+	return fileContent
 }
 
 // Functions for keyword replacement during export
 
-func AddKeywords(exportedData []byte, localFilePath string, appName string) []byte {
+// func AddKeywords(exportedData []byte, localFilePath string, appName string) []byte {
+
+// 	// Load local file data as a yaml object
+// 	localFileData, err := loadYAMLFile(localFilePath)
+// 	if err != nil {
+// 		log.Printf("Local file %s is not available. Exported data will not be modified.", localFilePath)
+// 	}
+
+// 	// If the local file is empty or not available, return the exported data as it is.
+// 	if localFileData != nil {
+// 		// Get keyword locations in local file
+// 		keywordLocations := getKeywordLocations(localFileData, []string{})
+
+// 		// Load exported app data as a yaml object
+// 		var exportedYaml interface{}
+// 		err = yaml.Unmarshal(exportedData, &exportedYaml)
+
+// 		if err != nil {
+// 			fmt.Println("Error: ", err)
+// 		}
+
+// 		appKeywordMap := getAppKeywordMappings(appName)
+
+// 		// Compare the fields with keywords in the exported file and the local file and modify the exported file
+// 		exportedYaml = modifyFieldsWithKeywords(localFileData, exportedYaml, keywordLocations, appKeywordMap)
+
+// 		exportedData, err = yaml.Marshal(exportedYaml)
+// 		if err != nil {
+// 			panic(err)
+// 		}
+// 	}
+// 	return exportedData
+// }
+
+func AddKeywords(exportedData []byte, localFilePath string, keywordMapping map[string]interface{}) []byte {
 
 	// Load local file data as a yaml object
 	localFileData, err := loadYAMLFile(localFilePath)
@@ -95,10 +101,8 @@ func AddKeywords(exportedData []byte, localFilePath string, appName string) []by
 			fmt.Println("Error: ", err)
 		}
 
-		appKeywordMap := getAppKeywordMappings(appName)
-
 		// Compare the fields with keywords in the exported file and the local file and modify the exported file
-		exportedYaml = modifyFieldsWithKeywords(localFileData, exportedYaml, keywordLocations, appKeywordMap)
+		exportedYaml = modifyFieldsWithKeywords(exportedYaml, localFileData, keywordLocations, keywordMapping)
 
 		exportedData, err = yaml.Marshal(exportedYaml)
 		if err != nil {
@@ -111,13 +115,14 @@ func AddKeywords(exportedData []byte, localFilePath string, appName string) []by
 func loadYAMLFile(filename string) (interface{}, error) {
 	yamlFile, err := ioutil.ReadFile(filename)
 	if err != nil {
+		log.Println("Error in loading file: ", filename, err)
 		return nil, err
 	}
+
 	var data interface{}
 	err = yaml.Unmarshal(yamlFile, &data)
-
 	if err != nil {
-		fmt.Println("Error: ", err)
+		fmt.Println("Error when loading YAML content from file: ", filename, err)
 		return nil, err
 	}
 	return data, nil
@@ -166,13 +171,11 @@ func resolvePathWithIdentifiers(arrayName string, element interface{}, identifie
 		identifier = "name"
 	}
 	identifierValue := elementMap[identifier]
-	// TODO: Handle the case where the identifier value is a path
-	// identifierValue := GetValue(elementMap, identifier)
 	// TODO: Handle the case where the identifier value is empty
 	return fmt.Sprintf("[%s=%s]", identifier, identifierValue)
 }
 
-func modifyFieldsWithKeywords(localFileData interface{}, exportedFileData interface{}, keywordLocations map[string][]string, keywordMap map[string]interface{}) interface{} {
+func modifyFieldsWithKeywords(exportedFileData interface{}, localFileData interface{}, keywordLocations map[string][]string, keywordMap map[string]interface{}) interface{} {
 
 	for location, keyword := range keywordLocations {
 

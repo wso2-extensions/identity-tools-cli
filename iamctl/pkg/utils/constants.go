@@ -18,6 +18,8 @@
 
 package utils
 
+var KEYWORD_MAPPINGS_PROPERTY = "KEYWORD_MAPPINGS"
+
 var ErrorCodes = map[int]string{
 
 	400: "Bad request. Provided parameters are not in correct format.",
@@ -45,4 +47,3 @@ var arrayIdentifiers = map[string]string{
 	"roleMappings":                        "localRole",
 	"claimMappings":                       "localClaim",
 }
-

@@ -97,7 +97,8 @@ func importApp(importFilePath string, isUpdate bool) {
 
 	// Replace keywords according to the keyword mappings added in configs.
 	appName, _, _ := getAppFileInfo(importFilePath)
-	fileData := utils.ReplaceKeywords(fileBytes, appName)
+	appKeywordMapping := getAppKeywordMapping(appName)
+	fileData := utils.ReplaceKeywords(string(fileBytes), appKeywordMapping)
 
 	sendImportRequest(isUpdate, importFilePath, fileData)
 
