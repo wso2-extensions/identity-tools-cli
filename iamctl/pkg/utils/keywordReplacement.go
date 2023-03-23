@@ -21,10 +21,8 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"reflect"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -46,63 +44,26 @@ func ReplaceKeywords(fileContent string, keywordMapping map[string]interface{}) 
 
 // Functions for keyword replacement during export
 
-// func AddKeywords(exportedData []byte, localFilePath string, appName string) []byte {
+func AddKeywords(exportedData []byte, localFileData []byte, keywordMapping map[string]interface{}) []byte {
 
-// 	// Load local file data as a yaml object
-// 	localFileData, err := loadYAMLFile(localFilePath)
-// 	if err != nil {
-// 		log.Printf("Local file %s is not available. Exported data will not be modified.", localFilePath)
-// 	}
-
-// 	// If the local file is empty or not available, return the exported data as it is.
-// 	if localFileData != nil {
-// 		// Get keyword locations in local file
-// 		keywordLocations := getKeywordLocations(localFileData, []string{})
-
-// 		// Load exported app data as a yaml object
-// 		var exportedYaml interface{}
-// 		err = yaml.Unmarshal(exportedData, &exportedYaml)
-
-// 		if err != nil {
-// 			fmt.Println("Error: ", err)
-// 		}
-
-// 		appKeywordMap := getAppKeywordMappings(appName)
-
-// 		// Compare the fields with keywords in the exported file and the local file and modify the exported file
-// 		exportedYaml = modifyFieldsWithKeywords(localFileData, exportedYaml, keywordLocations, appKeywordMap)
-
-// 		exportedData, err = yaml.Marshal(exportedYaml)
-// 		if err != nil {
-// 			panic(err)
-// 		}
-// 	}
-// 	return exportedData
-// }
-
-func AddKeywords(exportedData []byte, localFilePath string, keywordMapping map[string]interface{}) []byte {
-
-	// Load local file data as a yaml object
-	localFileData, err := loadYAMLFile(localFilePath)
+	var localYaml interface{}
+	err := yaml.Unmarshal(localFileData, &localYaml)
 	if err != nil {
-		log.Printf("Local file %s is not available. Exported data will not be modified.", localFilePath)
+		log.Println("Error: ", err)
 	}
-
 	// If the local file is empty or not available, return the exported data as it is.
-	if localFileData != nil {
+	if err == nil && localYaml != nil {
 		// Get keyword locations in local file
-		keywordLocations := getKeywordLocations(localFileData, []string{})
-
+		keywordLocations := GetKeywordLocations(localYaml, []string{}, keywordMapping)
 		// Load exported app data as a yaml object
 		var exportedYaml interface{}
 		err = yaml.Unmarshal(exportedData, &exportedYaml)
-
 		if err != nil {
-			fmt.Println("Error: ", err)
+			log.Println("Error: ", err)
 		}
 
 		// Compare the fields with keywords in the exported file and the local file and modify the exported file
-		exportedYaml = modifyFieldsWithKeywords(exportedYaml, localFileData, keywordLocations, keywordMapping)
+		exportedYaml = ModifyFieldsWithKeywords(exportedYaml, localYaml, keywordLocations, keywordMapping)
 
 		exportedData, err = yaml.Marshal(exportedYaml)
 		if err != nil {
@@ -112,75 +73,85 @@ func AddKeywords(exportedData []byte, localFilePath string, keywordMapping map[s
 	return exportedData
 }
 
-func loadYAMLFile(filename string) (interface{}, error) {
-	yamlFile, err := ioutil.ReadFile(filename)
-	if err != nil {
-		log.Println("Error in loading file: ", filename, err)
-		return nil, err
-	}
+// func LoadYAMLFile(filename string) (interface{}, error) {
+// 	yamlFile, err := ioutil.ReadFile(filename)
+// 	if err != nil {
+// 		log.Println("Error in loading file: ", filename, err)
+// 		return nil, err
+// 	}
+// 	fmt.Println("YAML file content: ", string(yamlFile))
+// 	var data interface{}
+// 	err = yaml.Unmarshal(yamlFile, &data)
+// 	if err != nil {
+// 		fmt.Println("Error when loading YAML content from file: ", filename, err)
+// 		return nil, err
+// 	}
+// 	return data, nil
+// }
 
-	var data interface{}
-	err = yaml.Unmarshal(yamlFile, &data)
-	if err != nil {
-		fmt.Println("Error when loading YAML content from file: ", filename, err)
-		return nil, err
-	}
-	return data, nil
-}
+func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map[string]interface{}) []string {
 
-func getKeywordLocations(fileData interface{}, path []string) map[string][]string {
-
-	var keys = make(map[string][]string)
+	var keys []string
 	switch v := fileData.(type) {
 	case map[interface{}]interface{}:
 		for k, val := range v {
 			newPath := append(path, fmt.Sprintf("%v", k))
-			for path, key := range getKeywordLocations(val, newPath) {
-				keys[path] = key
-			}
+			keys = append(keys, GetKeywordLocations(val, newPath, keywordMapping)...)
 		}
 	case []interface{}:
 		for _, val := range v {
-			newPath := append(path, resolvePathWithIdentifiers(path[len(path)-1], val, arrayIdentifiers))
-			for path, key := range getKeywordLocations(val, newPath) {
-				keys[path] = key
+			arrayElementPath, err := resolvePathWithIdentifiers(path[len(path)-1], val, arrayIdentifiers)
+			if err != nil {
+				log.Println("Error: ", err)
+				break
+			} else {
+				newPath := append(path, arrayElementPath)
+				keys = append(keys, GetKeywordLocations(val, newPath, keywordMapping)...)
 			}
 		}
 	case string:
-		containKeywords, keywords := getKeywords(fileData.(string))
-		if containKeywords {
+		if ContainsKeywords(fileData.(string), keywordMapping) {
 			thisPath := strings.Join(path, ".")
-			for _, match := range keywords {
-				keys[thisPath] = append(keys[thisPath], match[1])
-			}
+			keys = append(keys, thisPath)
 		}
 	}
 	return keys
 }
 
-func resolvePathWithIdentifiers(arrayName string, element interface{}, identifiers map[string]string) string {
+func resolvePathWithIdentifiers(arrayName string, element interface{}, identifiers map[string]string) (string, error) {
 
 	elementMap, ok := element.(map[interface{}]interface{})
-
 	if !ok {
-		fmt.Printf("cannot convert %T to map[string]string", element)
+		log.Printf("cannot convert %T to a map", element)
 	}
 	identifier := identifiers[arrayName]
 	// If an identifier is not defined for the array, use the default identifier "name".
 	if identifier == "" {
 		identifier = "name"
 	}
-	identifierValue := elementMap[identifier]
-	// TODO: Handle the case where the identifier value is empty
-	return fmt.Sprintf("[%s=%s]", identifier, identifierValue)
+	identifierValue, ok := elementMap[identifier]
+	if !ok {
+		return "", fmt.Errorf("identifier not found for the array %s", arrayName)
+	}
+	return fmt.Sprintf("[%s=%s]", identifier, identifierValue), nil
 }
 
-func modifyFieldsWithKeywords(exportedFileData interface{}, localFileData interface{}, keywordLocations map[string][]string, keywordMap map[string]interface{}) interface{} {
+func ContainsKeywords(data string, keywordMapping map[string]interface{}) bool {
 
-	for location, keyword := range keywordLocations {
+	for keyword, _ := range keywordMapping {
+		if strings.Contains(data, "{{"+keyword+"}}") {
+			return true
+		}
+	}
+	return false
+}
+
+func ModifyFieldsWithKeywords(exportedFileData interface{}, localFileData interface{}, keywordLocations []string, keywordMap map[string]interface{}) interface{} {
+
+	for _, location := range keywordLocations {
 
 		localValue := GetValue(localFileData, location)
-		localReplacedValue := replaceKeywords(localValue, keyword, keywordMap)
+		localReplacedValue := ReplaceKeywords(localValue, keywordMap)
 		exportedValue := GetValue(exportedFileData, location)
 
 		if exportedValue != localReplacedValue {
@@ -189,10 +160,9 @@ func modifyFieldsWithKeywords(exportedFileData interface{}, localFileData interf
 			log.Println("Exported Value: ", exportedValue)
 		} else {
 			log.Printf("Keyword added at %s field\n", location)
-			ReplaceValue(exportedFileData, location, localValue)
+			ReplaceValue(exportedFileData, strings.Split(location, "."), localValue)
 		}
 	}
-	// fmt.Println("Exported Value: ", exportedFileData)
 	return exportedFileData
 }
 
@@ -206,12 +176,14 @@ func GetValue(data interface{}, key string) string {
 		case map[string]interface{}:
 			data = v[part]
 		case []interface{}:
-			index, err := getArrayIndex(v, part)
-			if err == nil {
-				if len(v) > index {
-					data = v[index]
-				}
+			index, err := GetArrayIndex(v, part)
+			if err != nil {
+				return ""
 			}
+			if len(v) > index {
+				data = v[index]
+			}
+
 		default:
 			return ""
 		}
@@ -225,61 +197,58 @@ func GetValue(data interface{}, key string) string {
 	return data.(string)
 }
 
-func ReplaceValue(data interface{}, key string, replacement string) interface{} {
+func ReplaceValue(data interface{}, path []string, replacement string) interface{} {
 
-	parts := strings.Split(key, ".")
-	for i, part := range parts {
-		if i == len(parts)-1 {
-			data.(map[interface{}]interface{})[part] = replacement
-		} else {
-			switch v := data.(type) {
-			case map[interface{}]interface{}:
-				data = v[part]
-			case map[string]interface{}:
-				data = v[part]
-			case []interface{}:
-				index, err := getArrayIndex(v, part)
-				if err == nil {
-					if len(v) > index {
-						data = v[index]
-					}
-				}
-			default:
-				return nil
+	if len(path) == 1 {
+		switch data.(type) {
+		case map[interface{}]interface{}:
+			data.(map[interface{}]interface{})[path[0]] = replacement
+		case map[string]interface{}:
+			data.(map[string]interface{})[path[0]] = replacement
+		}
+	} else {
+		switch v := data.(type) {
+		case map[interface{}]interface{}:
+			currentKey := path[0]
+			data.(map[interface{}]interface{})[currentKey] = ReplaceValue(v[currentKey], path[1:], replacement)
+		case map[string]interface{}:
+			currentKey := path[0]
+			data.(map[string]interface{})[currentKey] = ReplaceValue(v[currentKey], path[1:], replacement)
+		case []interface{}:
+			currentKey := path[0]
+			index, err := GetArrayIndex(v, currentKey)
+			if err != nil {
+				return data
 			}
+			if len(v) > index {
+				data.([]interface{})[index] = ReplaceValue(v[index], path[1:], replacement)
+			}
+		default:
+			return data
 		}
 	}
 	return data
 }
 
-func getKeywords(data string) (bool, [][]string) {
+func GetArrayIndex(arrayMap []interface{}, elementIdentifier string) (int, error) {
 
-	re := regexp.MustCompile(`\${([^}]+)}`)
-	matches := re.FindAllStringSubmatch(data, -1)
-	return (len(matches) > 0), matches
-}
-
-func replaceKeywords(data string, keywords []string, keywordMapping map[string]interface{}) (replacedData string) {
-
-	replacedData = data
-	for _, keyword := range keywords {
-		replacedData = strings.ReplaceAll(replacedData, "${"+keyword+"}", keywordMapping[keyword].(string))
-	}
-	return replacedData
-}
-
-func getArrayIndex(arrayMap []interface{}, elementIdentifier string) (int, error) {
-
-	for k, v := range arrayMap {
-		if strings.HasPrefix(elementIdentifier, "[") && strings.HasSuffix(elementIdentifier, "]") {
-			identifier := elementIdentifier[1 : len(elementIdentifier)-1]
-			parts := strings.SplitN(identifier, "=", 2)
-			if v.(map[interface{}]interface{})[parts[0]] == parts[1] {
-				return k, nil
+	if strings.HasPrefix(elementIdentifier, "[") && strings.HasSuffix(elementIdentifier, "]") {
+		identifier := elementIdentifier[1 : len(elementIdentifier)-1]
+		parts := strings.SplitN(identifier, "=", 2)
+		for k, v := range arrayMap {
+			switch v := v.(type) {
+			case map[interface{}]interface{}:
+				if v[parts[0]] == parts[1] {
+					return k, nil
+				}
+			case map[string]interface{}:
+				if v[parts[0]] == parts[1] {
+					return k, nil
+				}
 			}
-		} else {
-			fmt.Println("String is not in the expected format")
 		}
+	} else {
+		log.Println("Element identifier is not in the expected format")
 	}
-	return -1, errors.New("Element not found")
+	return -1, errors.New("element not found")
 }
