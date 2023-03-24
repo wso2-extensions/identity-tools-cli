@@ -1,86 +1,97 @@
 # IAM-CTL
 
-This will use to get support for create service providers inside the Identity Server.
-Here you can create service providers by entering inputs as a command  and flags or entering inputs in an interactive way.
-
+The IAM-CTL is a tool that can be used to manage WSO2 Identity Server configurations from the command line. It is written in Go and uses the WSO2 Identity Server management REST APIs to manage configurations.
 
 ### Pre-Requisites
-* WSO2IS 5.10.0 alpha2 and start the server.
+* WSO2 Identity Server 6.1.0 
 
-### How to run the executable file 
+### How to run the tool 
 
-1. Download latest release binary file from [Releases](https://github.com/wso2-extensions/identity-tools-cli/releases)
+1. Download the latest release binary file from [Releases](https://github.com/wso2-extensions/identity-tools-cli/releases)
  based on your Operating System.
 2. Extract the tar or zip file.
-* linux:
-
-```<iamct-{version}>/bin/iamctl```
-
-* mac:
-
-```<iamct-{version}>/bin/iamctl```
-
-* windows
-
-```<iamct-{version}>/bin/iamctl.exe```
-
-Eg: If it is mac and the released version is 1.0.0, then the extracted binary file looks like ```iamct-1.0.0/bin/iamctl```
-
-
-3. Then you select your directory to work and open a terminal. Here onwards refer the location of ```<iamct-{version}> ``` directory as ```<IDENTITY-CLI-PATH>```
-4. You can choose any name as keyword of IAM-CTL and set that using following command according to your platform.
-Here I have chosen 'iamctl' as keyword.
-
-* linux:
+Here onwards the extracted directory path is referred as ```<IAM-CTL-PATH>```.
+3. Open a terminal and create an alias for the IAM-CTL executable file using following command according to your platform.
+* linux/mac:
  
     ```
-    alias iamctl="<IDENTITY-CLI-PATH>/bin/iamctl" 
+    alias iamctl="<IAM-CTL-PATH>/bin/iamctl" 
     ```
-  
-* mac:
- 
-  ```
-   alias iamctl="<IDENTITY-CLI-PATH>/bin/iamctl" 
-  ```
 
 * windows
 
     ```
-    doskey iamctl=<IDENTITY-CLI-PATH>/bin/iamctl.exe $*
+    doskey iamctl=<IAM-CTL-PATH>/bin/iamctl.exe $*
     ```
  
- 
-5. Now you can run IAM-ctl using your keyword.
+5. Run the tool using the following command to get the basic details.
+    ```
+    iamctl -h
+    ```
+6. Start the IS server and [create an application](https://is.docs.wso2.com/en/6.1.0/guides/applications/register-sp) with **Management Application** enabled.
+7. Configure Oauth inbound authentication configuration with a dummy callback URL and make note of the client ID and client secret.
+
+
+The IAM CTL can be used in two basic modes.
+## CLI Mode
+
+The CLI mode can be used to handle bulk configurations in the target environment. This can be used to propagate resources across multiple environments, deploy new configurations to target environments and will act as a backup of each environment's configurations.
+
+This mode consists of the exportAll and importAll commands which can be used to export and import all configurations of the supported resources types from or to a target environment. 
+
+Currently, supported resource types are: 
+* Applications
+
+### Running the tool in the CLI mode
+The following steps will provide the basic steps to run the tool in the simplest way. Find more comprehensive details about the commands used in the CLI mode [here](docs/cli-mode.md).
+
+#### Tool Initialization
+The tool should be initialized against the environment it is run against.
+1. Create a new folder and open a terminal inside it.
+2. Run the following command to create the configuration files needed to initialize the tool.
+    ```
+    iamctl setupCLI
+    ```
+3. A new folder named ```configs``` will be created with a ```env``` folder inside it, having the 2 configuration files ```serverConfig.json``` and ```toolConfig.json```.
+> **Note:** If you have multiple environments, copy the ```env``` folder and rename it according to the environments you have. For example, if you have 2 environments: dev and prod, have 2 separate config folders ```dev``` and ```prod```. 
+4. Open the ```serverConfig.json``` file and provide the IS server details and client ID/secret of the app you created earlier.
+
+Example configurations:
+
+    ```
+    "SERVER_URL" : "https://localhost:9443",
+    "CLIENT-ID" : "********",
+    "CLIENT-SECRET" : "********",
+    "USERNAME" : "admin",
+    "PASSWORD" : "admin",
+    "TENANT-DOMAIN" : "carbon.super"
+    ```
+
+#### Export
+Run the following command to export all supported configurations from the target environment to the current directory.
 ```
-iamctl -h
+iamctl exportAll -c ./configs/env
 ```
-It gives following details.
+A new folder named ```Applications``` will be created with exported yaml files for each application available in the IS server.
+
+#### Import
+Run the following command to import all supported configurations from the current directory to the target environment.
 ```
-:~$ iamctl -h
-Service Provider configuration
-
-Usage:
-  IAM-CTL [flags]
-  IAM-CTL [command]
-
-Available Commands:
-  application         Create a service provider
-  help                Help about any command
-  init                you can set your sample SP
-  serverConfiguration you can set your server domain
-
-Flags:
-  -h, --help   help for IAM-CTL
-
-Use "IAM-CTL [command] --help" for more information about a command.
+iamctl importAll -c ./configs/env
 ```
-6. First you need to configure service provider to get access from identity server. For that this [link](https://docs.wso2.com/display/IS570/Configuring+OAuth2-OpenID+Connect+Single-Sign-On) will help to you..
-7. Then use  client_key, client_secret of created service provider to do the authorization relevant to server domain. It should be completed as follows.
+All applications available inside the ```Applications``` folder in the current directory will be imported to the IS server.
 
+## Interactive Mode
+The interactive mode can be used to handle application configurations in an interactive manner. This can be used to add, list, export and import applications in the target environment.
+> Note: This mode does not provide support for bulk resource export or import.
+
+### Running the tool in the interactive mode
+#### Tool Initialization
+1. Run the following command to initialize the tool by providing the Identity server details and client ID/secret of the app you created earlier.
 ```
 iamctl init
 ```
-Now you should gives answers for questions asked by CTL.
+Provide the details as prompted by the tool.
 ```
 :~$ iamctl init
   ___      _      __  __            ____   _____   _     
@@ -90,194 +101,60 @@ Now you should gives answers for questions asked by CTL.
  |___| /_/   \_\ |_|  |_|          \____|   |_|   |_____|
       
 ? Enter IAM URL [<schema>://<host>]: https://localhost:9443                                                   
-? Enter clientID: M4fucPehFTuFkHHLNGfxIEf6ydka
-? Enter clientSecret: DWXnw7UgvsRUKWXrftvnU_vclzAa
+? Enter clientID: *******
+? Enter clientSecret: *******
 ? Enter Tenant domain: carbon.super
 ```
-8. Then you need to configure server domain as follows.
-### Set server domain by entering inputs as a command and flags.
-```
-iamctl serverConfiguration [flags]
-```
-
-Flags:
-```
-  -h, --help              help for serverConfiguration
-  -p, --password string   enter your password
-  -s, --server string     set server domain
-  -u, --username string   enter your username
-```
-example:-
-```
-iamctl serverConfiguration -h                                           //help for serverConfiguration
-iamctl serverConfiguration -s=https://localhost:9443 -u=admin -p=*****  //to complete the authorization
-```
-### Set server domain by entering inputs in an interactive way.
+2. Run the following command to provide admin user credentials.
 ```
 iamctl serverConfiguration
 ```
-example:-
 ```
 ~$ iamctl serverConfiguration
-  ___      _      __  __            ____   _____   _     
- |_ _|    / \    |  \/  |          / ___| |_   _| | |    
-  | |    / _ \   | |\/| |  _____  | |       | |   | |    
-  | |   / ___ \  | |  | | |_____| | |___    | |   | |___ 
- |___| /_/   \_\ |_|  |_|          \____|   |_|   |_____|
-                                                         
 ? Enter IAM URL [<schema>://<host>]: https://localhost:9443
 ? Enter Username: admin
-? Enter Password: *****
-```
-9.Now authorization part is completed. You can add application and get list of applications using IAM-CTL. Structure as follows.
-
-### create service providers by entering inputs as a command and flags.
-**Add application**
-```
-iamctl application [commands]
-iamctl application     add      [flags]
+? Enter Password: admin
 ```
 
- Flags:
- ```
-   -c, --callbackURl string    callbackURL  of SP - **for oauth application
-   -d, --description string    description of SP - **for basic application
-   -h, --help                  help for add
-   -n, --name string           name of service provider - **compulsory
-   -p, --password string       Password for Identity Server
-   -s, --serverDomain string   server Domain
-   -t, --type string           Enter application type (default "oauth")
-   -u, --userName string       Username for Identity Server
- ```
-Users have freedom to set flags and values according to their choices.
-
-This ```-t, --type string           Enter application type (default "oauth")``` flag  is not mandatory. If user wants to create basic application, then should declare ```-t=basic```. Otherwise will create the oauth application as default type. 
-
-example:-
-```
-//create an oauth application
-iamctl application add  -n=TestApplication 
-iamctl application add -t=oauth -n=TestApplication
-iamctl application add -t=oauth -n=TestApplication -d=description
-iamctl application add -t=oauth -n=TestApplication -c=https://localhost:8010/oauth
-iamctl application add -t=oauth -n=TestApplication -c=https://localhost:8010/oauth -d=description
-
-//create an basic application
-iamctl application add -t=basic -n=TestApplication
-iamctl application add -t=basic -n=TestApplication -d=description
-```
-You cat set server domain and create application at the same time.
-
-example:-
-```
-//create an oauth application
-iamctl application add -s=https://localhost:9443 -u=admin -p=***** -n=TestApplication 
-iamctl application add -s=https://localhost:9443 -u=admin -p=***** -t=oauth -n=TestApplication
-iamctl application add -s=https://localhost:9443 -u=admin -p=***** -t=oauth -n=TestApplication -d=description
-iamctl application add -s=https://localhost:9443 -u=admin -p=***** -t=oauth -n=TestApplication -c=https://localhost:8010/oauth
-iamctl application add -s=https://localhost:9443 -u=admin -p=***** -t=oauth -n=TestApplication -c=https://localhost:8010/oauth -d=description
-
-//create an basic application
-iamctl application add -s=https://localhost:9443 -u=admin -p=***** -t=basic -n=TestApplication
-iamctl application add -s=https://localhost:9443 -u=admin -p=***** -t=basic -n=TestApplication -d=description
-```
-
-**Get list of applications**
-```
-iamctl application     list     [flags]
-```
-Flags:
-```
-  -h, --help              help for list
-  -p, --password string   Password for Identity Server
-  -s, --server string     server
-  -u, --userName string   User name for Identity Server
-```
-example:-
-```
-//get list of applications
-iamctl application list 
-```
-You cat set server domain and get the list of applications at the same time.
-example:-
-```
-//get list of applications
-iamctl application list -s=https://localhost:9443 -u=admin -p=*****
-```
-
-### create service providers by entering inputs in an interactive way.
-**Add application and get list of applications**
-
+### Create new applications and list existing applications interactively
+Run the following command to get the options available for applications.
 ```
 iamctl application
 ```
-It gives following output after entering the server domain.
 ```
-$ iamctl application
-  ___      _      __  __            ____   _____   _     
- |_ _|    / \    |  \/  |          / ___| |_   _| | |    
-  | |    / _ \   | |\/| |  _____  | |       | |   | |    
-  | |   / ___ \  | |  | | |_____| | |___    | |   | |___ 
- |___| /_/   \_\ |_|  |_|          \____|   |_|   |_____|
-                                                         
+$ iamctl application                                                      
 ? Select the option to move on:  [Use arrows to move, type to filter]
 > Add application
   Get List
   Exit
 ```
-To add application you should select ```add application``` from selections.
-example:-
-```
-~$ iamctl application
-  ___      _      __  __            ____   _____   _     
- |_ _|    / \    |  \/  |          / ___| |_   _| | |    
-  | |    / _ \   | |\/| |  _____  | |       | |   | |    
-  | |   / ___ \  | |  | | |_____| | |___    | |   | |___ 
- |___| /_/   \_\ |_|  |_|          \____|   |_|   |_____|
-                                                         
-? Select the option to move on: Add application
-? Select the configuration type:  [Use arrows to move, type to filter]
-> Basic application
-  oauth
-```
-To view list of applications you should select ```Get List``` from selections.
- 
-example:-
-```
-$ iamctl application
+* To add application, select ```Add application``` option and proceed by providing the application details.
 
-  ___      _      __  __            ____   _____   _     
- |_ _|    / \    |  \/  |          / ___| |_   _| | |    
-  | |    / _ \   | |\/| |  _____  | |       | |   | |    
-  | |   / ___ \  | |  | | |_____| | |___    | |   | |___ 
- |___| /_/   \_\ |_|  |_|          \____|   |_|   |_____|
-                                                         
-? Select the option to move on: Get List
-```
-**Create a client application by getting framework specific artifacts**
-```
-iamctl createclientapp
-```
-It gives the following output 
-example:-
-```
-~$ iamctl createclientapp
-  ___      _      __  __            ____   _____   _     
- |_ _|    / \    |  \/  |          / ___| |_   _| | |    
-  | |    / _ \   | |\/| |  _____  | |       | |   | |    
-  | |   / ___ \  | |  | | |_____| | |___    | |   | |___ 
- |___| /_/   \_\ |_|  |_|          \____|   |_|   |_____|
-                                                         
-? Enter your web app technology (Eg: spring-boot) : spring-boot
-? Enter the package name of the project (Eg: com.example.demo) : com.example.demo
-? Enter your OAuth application Name (Eg:TestApp) : Testapp
-```
+* To view list of applications, select ```Get List``` option.
 
-Flags:
+### Application related commands
+After initializing the tool, the following commands can be used to add, list, export and import applications in the target environment.
+#### Add application
 ```
-  -h, --help                  Help for list
-  -t, --technology   string   Technology or Framework of the web app. Eg: spring-boot
-  -k, --package      string   Package name of the project where artifacts are going to be placed. Eg: com.example.demo
-  -a, --application  string   Name of the application Eg:TestApp
+iamctl application add -n=TestApplication 
 ```
-Now you have successfully installed the artifacts and secured with OIDC using WSO2 IS..
+#### List applications
+```
+iamctl application list
+```
+#### Export application
+```
+iamctl application export -s <applicationID> -p <path-to-export-location>
+```
+#### Import application
+```
+iamctl application import -i <path-to-import-file>
+```
+Find more comprehensive details about the commands used in the interactive mode [here](docs/interactive-mode.md).
+
+## Documentation
+
+* [CLI Mode](docs/cli-mode.md)
+* [Interactive Mode](docs/interactive-mode.md)
+* [Environment Specific Variables](docs/env-specific-variables.md)
+* [Resource Propagation](docs/resource-propagation.md)
