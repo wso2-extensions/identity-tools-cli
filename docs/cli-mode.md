@@ -16,27 +16,26 @@ Currently, supported resource types are:
 Before running the tool to export or import any resource, the tool should be configured against the target environment.
 
 First, create the config files using the ```setupCLI``` command:
-
-    ```
-   iamctl setupCLI
-   ```
-   Use the ```--help``` flag to get more information on the command.
+```
+iamctl setupCLI
+```
+Use the ```--help``` flag to get more information on the command.
    ```
    Flags:
     -d, --baseDir string   Path to the base directory
     -h, --help             help for setupCLI
    ```
-   The above command will create a new folder named ```configs``` which will contain all the config files needed to setup the tool. 
-    The folder structure of the ```configs``` directory will be as follows:
-    ```
-    configs
-    └── env
-        │── serverConfig.json
-        └── toolConfig.json
-    ``` 
+The above command will create a new folder named ```configs``` which will contain all the config files needed to setup the tool. 
+The folder structure of the ```configs``` directory will be as follows:
+```
+configs
+└── env
+    │── serverConfig.json
+    └── toolConfig.json
+``` 
    It is recommended to place the ```configs``` folder inside local directory created to maintain the resource configuration files. 
    Example local directory structure if multiple environments: dev, stage, prod exist:
-    ```
+   ```
    local directory
    │── configs
    │    │── dev
