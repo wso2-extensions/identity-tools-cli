@@ -82,7 +82,7 @@ func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map
 		}
 	case []interface{}:
 		for _, val := range v {
-			arrayElementPath, err := resolvePathWithIdentifiers(path[len(path)-1], val, arrayIdentifiers)
+			arrayElementPath, err := resolvePathWithIdentifiers(path[len(path)-1], val, appArrayIdentifiers)
 			if err != nil {
 				log.Println("Error: ", err)
 				break
@@ -120,7 +120,7 @@ func resolvePathWithIdentifiers(arrayName string, element interface{}, identifie
 
 func ContainsKeywords(data string, keywordMapping map[string]interface{}) bool {
 
-	for keyword, _ := range keywordMapping {
+	for keyword := range keywordMapping {
 		if strings.Contains(data, "{{"+keyword+"}}") {
 			return true
 		}

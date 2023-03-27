@@ -25,7 +25,7 @@ import (
 func IsResourceExcluded(resourceName string, resourceConfigs map[string]interface{}) bool {
 
 	// Include only the resources added to INCLUDE_ONLY config. Note: INCLUDE_ONLY config overrides the EXCLUDE config.
-	includeOnlyResources, ok := resourceConfigs["INCLUDE_ONLY"].([]interface{})
+	includeOnlyResources, ok := resourceConfigs[INCLUDE_ONLY_CONFIG].([]interface{})
 	if ok {
 		for _, resource := range includeOnlyResources {
 			if resource.(string) == resourceName {
@@ -36,7 +36,7 @@ func IsResourceExcluded(resourceName string, resourceConfigs map[string]interfac
 		return true
 	} else {
 		// Exclude resources added to EXCLUDE config.
-		resourcesToExclude, ok := resourceConfigs["EXCLUDE"].([]interface{})
+		resourcesToExclude, ok := resourceConfigs[EXCLUDE_CONFIG].([]interface{})
 		if ok {
 			for _, resource := range resourcesToExclude {
 				if resource.(string) == resourceName {
@@ -56,8 +56,7 @@ func ResolveAdvancedKeywordMapping(resourceName string, resourceConfigs map[stri
 	// Check if resource specific configs exist for the given resource and if not return the default keyword mappings.
 	if resourceSpecificConfigs, ok := resourceConfigs[resourceName]; ok {
 		// Check if advanced keyword mappings exist for the given resource.
-		if resourceKeywordMap, ok :=
-			resourceSpecificConfigs.(map[string]interface{})[KEYWORD_MAPPINGS_PROPERTY].(map[string]interface{}); ok {
+		if resourceKeywordMap, ok := resourceSpecificConfigs.(map[string]interface{})[KEYWORD_MAPPINGS_CONFIG].(map[string]interface{}); ok {
 
 			mergedKeywordMap := make(map[string]interface{})
 			for key, value := range defaultKeywordMapping {
