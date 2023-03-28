@@ -78,7 +78,7 @@ func LoadConfigs(envConfigPath string) (baseDir string) {
 	serverConfigFile := filepath.Join(envConfigPath, "serverConfig.json")
 	toolConfigFile := filepath.Join(envConfigPath, "toolConfig.json")
 
-	// Load configs from files
+	// Load configs from files.
 	SERVER_CONFIGS = loadServerConfigsFromFile(serverConfigFile)
 	TOOL_CONFIGS = loadToolConfigsFromFile(toolConfigFile)
 
@@ -100,13 +100,13 @@ func loadServerConfigsFromFile(configFilePath string) (serverConfigs ServerConfi
 	}
 	fmt.Println("Server configs loaded succesfully from the config file.")
 
-	// Set tenant domain if not defined in the config file
+	// Set tenant domain if not defined in the config file.
 	if serverConfigs.TenantDomain == "" {
 		log.Println("Tenant domain is not defined in the config file. Using the default tenant domain: carbon.super")
 		serverConfigs.TenantDomain = "carbon.super"
 	}
 
-	// Get access token
+	// Get access token.
 	serverConfigs.Token = getAccessToken(serverConfigs)
 	fmt.Println("Access Token recieved succesfully.")
 

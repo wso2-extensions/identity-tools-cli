@@ -59,7 +59,7 @@ func createConfigFolder(baseDirPath string) {
 
 	templateEnvName := "env"
 
-	// If baseDirPath is not provided, create the config folder in the current working directory
+	// If baseDirPath is not provided, create the config folder in the current working directory.
 	var err error
 	if baseDirPath == "" {
 		baseDirPath, err = os.Getwd()
@@ -73,14 +73,14 @@ func createConfigFolder(baseDirPath string) {
 	envConfigDir := baseDirPath + "/configs/" + templateEnvName + "/"
 	os.MkdirAll(envConfigDir, 0700)
 
-	// Create server config file
+	// Create server config file.
 	serverConfigs, err := json.Marshal(serverConfigTemplate)
 	if err != nil {
 		fmt.Println("Error in creating the server config template", err)
 	}
 	os.WriteFile(envConfigDir+"serverConfig.json", serverConfigs, 0644)
 
-	// Create tool config directory
+	// Create tool config directory.
 	file, err := os.OpenFile(envConfigDir+"toolConfig.json", os.O_CREATE, 0644)
 	if err != nil {
 		fmt.Println("Error in creating the tool config file", err)

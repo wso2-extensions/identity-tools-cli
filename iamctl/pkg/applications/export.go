@@ -33,7 +33,7 @@ import (
 
 func ExportAll(exportFilePath string, format string) {
 
-	// Export all applications to the Applications folder
+	// Export all applications to the Applications folder.
 	exportFilePath = exportFilePath + "/Applications/"
 	os.MkdirAll(exportFilePath, 0700)
 

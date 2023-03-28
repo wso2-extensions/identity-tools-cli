@@ -93,7 +93,6 @@ func getAppList() (spIdList []utils.Application) {
 		resp.Body.Close()
 
 		spIdList = list.Applications
-
 	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
 		log.Println(error)
 	} else {
