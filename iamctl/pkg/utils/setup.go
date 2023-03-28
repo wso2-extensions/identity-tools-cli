@@ -21,7 +21,6 @@ package utils
 import (
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -44,8 +43,6 @@ type ServerConfigs struct {
 	ClientId     string `json:"CLIENT_ID"`
 	ClientSecret string `json:"CLIENT_SECRET"`
 	TenantDomain string `json:"TENANT_DOMAIN"`
-	Username     string `json:"USERNAME"`
-	Password     string `json:"PASSWORD"`
 	Token        string `json:"TOKEN"`
 }
 
@@ -98,7 +95,7 @@ func loadServerConfigsFromFile(configFilePath string) (serverConfigs ServerConfi
 	if err != nil {
 		log.Fatalln(err)
 	}
-	fmt.Println("Server configs loaded succesfully from the config file.")
+	log.Println("Server configs loaded succesfully from the config file.")
 
 	// Set tenant domain if not defined in the config file.
 	if serverConfigs.TenantDomain == "" {
@@ -108,7 +105,7 @@ func loadServerConfigsFromFile(configFilePath string) (serverConfigs ServerConfi
 
 	// Get access token.
 	serverConfigs.Token = getAccessToken(serverConfigs)
-	fmt.Println("Access Token recieved succesfully.")
+	log.Println("Access Token recieved succesfully.")
 
 	return serverConfigs
 }
@@ -144,9 +141,7 @@ func getAccessToken(config ServerConfigs) string {
 	authUrl := config.ServerUrl + "/oauth2/token"
 
 	body := url.Values{}
-	body.Set("grant_type", "password")
-	body.Set("username", config.Username)
-	body.Set("password", config.Password)
+	body.Set("grant_type", "client_credentials")
 	body.Set("scope", SCOPE)
 
 	req, err := http.NewRequest("POST", authUrl, strings.NewReader(body.Encode()))

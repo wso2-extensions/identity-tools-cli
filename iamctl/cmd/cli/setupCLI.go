@@ -20,7 +20,6 @@ package cli
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 
@@ -34,8 +33,6 @@ var serverConfigTemplate = map[string]string{
 	"CLIENT_ID":     "",
 	"CLIENT_SECRET": "",
 	"TENANT_DOMAIN": "",
-	"USERNAME":      "",
-	"PASSWORD":      "",
 }
 
 var setupCmd = &cobra.Command{
@@ -76,14 +73,14 @@ func createConfigFolder(baseDirPath string) {
 	// Create server config file.
 	serverConfigs, err := json.Marshal(serverConfigTemplate)
 	if err != nil {
-		fmt.Println("Error in creating the server config template", err)
+		log.Println("Error in creating the server config template", err)
 	}
 	os.WriteFile(envConfigDir+"serverConfig.json", serverConfigs, 0644)
 
 	// Create tool config directory.
 	file, err := os.OpenFile(envConfigDir+"toolConfig.json", os.O_CREATE, 0644)
 	if err != nil {
-		fmt.Println("Error in creating the tool config file", err)
+		log.Println("Error in creating the tool config file", err)
 	}
 	defer file.Close()
 }
