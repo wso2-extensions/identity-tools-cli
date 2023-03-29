@@ -42,8 +42,6 @@ func ReplaceKeywords(fileContent string, keywordMapping map[string]interface{}) 
 	return fileContent
 }
 
-// Functions for keyword replacement during export
-
 func AddKeywords(exportedData []byte, localFileData []byte, keywordMapping map[string]interface{}) []byte {
 
 	var localYaml interface{}
@@ -53,16 +51,16 @@ func AddKeywords(exportedData []byte, localFileData []byte, keywordMapping map[s
 	}
 	// If the local file is empty or not available, return the exported data as it is.
 	if err == nil && localYaml != nil {
-		// Get keyword locations in local file
+		// Get keyword locations in local file.
 		keywordLocations := GetKeywordLocations(localYaml, []string{}, keywordMapping)
-		// Load exported app data as a yaml object
+		// Load exported app data as a yaml object.
 		var exportedYaml interface{}
 		err = yaml.Unmarshal(exportedData, &exportedYaml)
 		if err != nil {
 			log.Println("Error: ", err)
 		}
 
-		// Compare the fields with keywords in the exported file and the local file and modify the exported file
+		// Compare the fields with keywords in the exported file and the local file and modify the exported file.
 		exportedYaml = ModifyFieldsWithKeywords(exportedYaml, localYaml, keywordLocations, keywordMapping)
 
 		exportedData, err = yaml.Marshal(exportedYaml)
@@ -72,22 +70,6 @@ func AddKeywords(exportedData []byte, localFileData []byte, keywordMapping map[s
 	}
 	return exportedData
 }
-
-// func LoadYAMLFile(filename string) (interface{}, error) {
-// 	yamlFile, err := ioutil.ReadFile(filename)
-// 	if err != nil {
-// 		log.Println("Error in loading file: ", filename, err)
-// 		return nil, err
-// 	}
-// 	fmt.Println("YAML file content: ", string(yamlFile))
-// 	var data interface{}
-// 	err = yaml.Unmarshal(yamlFile, &data)
-// 	if err != nil {
-// 		fmt.Println("Error when loading YAML content from file: ", filename, err)
-// 		return nil, err
-// 	}
-// 	return data, nil
-// }
 
 func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map[string]interface{}) []string {
 
@@ -146,7 +128,8 @@ func ContainsKeywords(data string, keywordMapping map[string]interface{}) bool {
 	return false
 }
 
-func ModifyFieldsWithKeywords(exportedFileData interface{}, localFileData interface{}, keywordLocations []string, keywordMap map[string]interface{}) interface{} {
+func ModifyFieldsWithKeywords(exportedFileData interface{}, localFileData interface{},
+	keywordLocations []string, keywordMap map[string]interface{}) interface{} {
 
 	for _, location := range keywordLocations {
 

@@ -66,7 +66,7 @@ func createConfigFolder(baseDirPath string) {
 		log.Println("Since the base directory path is not provided, defaulting to the current working directory: " + baseDirPath)
 	}
 
-	// Create environment specific config folder with the name "env"
+	// Create environment specific config folder with the name "env".
 	envConfigDir := baseDirPath + "/configs/" + templateEnvName + "/"
 	os.MkdirAll(envConfigDir, 0700)
 

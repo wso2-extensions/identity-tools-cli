@@ -56,7 +56,8 @@ func ResolveAdvancedKeywordMapping(resourceName string, resourceConfigs map[stri
 	// Check if resource specific configs exist for the given resource and if not return the default keyword mappings.
 	if resourceSpecificConfigs, ok := resourceConfigs[resourceName]; ok {
 		// Check if advanced keyword mappings exist for the given resource.
-		if resourceKeywordMap, ok := resourceSpecificConfigs.(map[string]interface{})[KEYWORD_MAPPINGS_PROPERTY].(map[string]interface{}); ok {
+		if resourceKeywordMap, ok :=
+			resourceSpecificConfigs.(map[string]interface{})[KEYWORD_MAPPINGS_PROPERTY].(map[string]interface{}); ok {
 
 			mergedKeywordMap := make(map[string]interface{})
 			for key, value := range defaultKeywordMapping {
