@@ -2,6 +2,7 @@ package tests
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"sort"
 	"testing"
@@ -505,7 +506,10 @@ func TestAddKeywords(t *testing.T) {
 		"ENV":     "dev",
 		"KEYWORD": "keyword value",
 	}
-	result := utils.AddKeywords(exportedData, localFileData, keywordMapping)
+	result, err := utils.AddKeywords(exportedData, localFileData, keywordMapping)
+	if err != nil {
+		log.Println("Error when adding keywords: ", err)
+	}
 
 	if normalizedYamlString(result) != normalizedYamlString(expectedData) {
 		t.Errorf("Unexpected result: expected %v, but got %v", string(expectedData), string(result))

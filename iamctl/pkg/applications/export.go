@@ -133,7 +133,11 @@ func handleESVs(exportedFileName string, exportedFileContent []byte) []byte {
 	if err != nil {
 		log.Printf("Local file not found at %s. Skip adding keywords to exported data.", exportedFileName)
 		return exportedFileContent
-	} else {
-		return utils.AddKeywords(exportedFileContent, localFileData, appKeywordMapping)
 	}
+	modifiedExportedContent, err := utils.AddKeywords(exportedFileContent, localFileData, appKeywordMapping)
+	if err != nil {
+		log.Println("Error when adding keywords to the exported file. Overriding local file with exported content. ", err)
+		return exportedFileContent
+	}
+	return modifiedExportedContent
 }

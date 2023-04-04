@@ -36,39 +36,42 @@ func ReplaceKeywords(fileContent string, keywordMapping map[string]interface{}) 
 		if value, ok := value.(string); ok {
 			fileContent = strings.ReplaceAll(fileContent, "{{"+keyword+"}}", value)
 		} else {
-			log.Printf("Keyword value for %s is not a string", keyword)
+			log.Printf("Error: keyword value for %s is not a string", keyword)
 		}
 	}
 	return fileContent
 }
 
-func AddKeywords(exportedData []byte, localFileData []byte, keywordMapping map[string]interface{}) []byte {
+func AddKeywords(exportedData []byte, localFileData []byte, keywordMapping map[string]interface{}) ([]byte, error) {
 
 	var localYaml interface{}
 	err := yaml.Unmarshal(localFileData, &localYaml)
+	if err != nil || localYaml == nil {
+		err1 := fmt.Errorf("empty or invalid local file data. %w", err)
+		return exportedData, err1
+	}
+
+	// Load exported app data as a yaml object.
+	var exportedYaml interface{}
+	err = yaml.Unmarshal(exportedData, &exportedYaml)
 	if err != nil {
-		log.Println("Error: ", err)
+		err1 := fmt.Errorf("error when parsing exported data to YAML. %w", err)
+		return exportedData, err1
 	}
-	// If the local file is empty or not available, return the exported data as it is.
-	if err == nil && localYaml != nil {
-		// Get keyword locations in local file.
-		keywordLocations := GetKeywordLocations(localYaml, []string{}, keywordMapping)
-		// Load exported app data as a yaml object.
-		var exportedYaml interface{}
-		err = yaml.Unmarshal(exportedData, &exportedYaml)
-		if err != nil {
-			log.Println("Error: ", err)
-		}
 
-		// Compare the fields with keywords in the exported file and the local file and modify the exported file.
-		exportedYaml = ModifyFieldsWithKeywords(exportedYaml, localYaml, keywordLocations, keywordMapping)
+	// Get keyword locations in local file.
+	keywordLocations := GetKeywordLocations(localYaml, []string{}, keywordMapping)
 
-		exportedData, err = yaml.Marshal(exportedYaml)
-		if err != nil {
-			panic(err)
-		}
+	// Compare the fields with keywords in the exported file and the local file and modify the exported file.
+	exportedYaml = ModifyFieldsWithKeywords(exportedYaml, localYaml, keywordLocations, keywordMapping)
+
+	exportedData, err = yaml.Marshal(exportedYaml)
+	if err != nil {
+		err1 := fmt.Errorf("error when creating exported data with keywords. %w", err)
+		return exportedData, err1
 	}
-	return exportedData
+
+	return exportedData, nil
 }
 
 func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map[string]interface{}) []string {
@@ -84,7 +87,7 @@ func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map
 		for _, val := range v {
 			arrayElementPath, err := resolvePathWithIdentifiers(path[len(path)-1], val, appArrayIdentifiers)
 			if err != nil {
-				log.Println("Error: ", err)
+				log.Printf("Error: cannot resolve path for the field %s. %s.\n", strings.Join(path, "."), err)
 				break
 			} else {
 				newPath := append(path, arrayElementPath)
@@ -104,7 +107,7 @@ func resolvePathWithIdentifiers(arrayName string, element interface{}, identifie
 
 	elementMap, ok := element.(map[interface{}]interface{})
 	if !ok {
-		log.Printf("cannot convert %T to a map", element)
+		log.Printf("Error: cannot convert %T to a map", element)
 	}
 	identifier := identifiers[arrayName]
 	// If an identifier is not defined for the array, use the default identifier "name".
@@ -113,7 +116,7 @@ func resolvePathWithIdentifiers(arrayName string, element interface{}, identifie
 	}
 	identifierValue, ok := elementMap[identifier]
 	if !ok {
-		return "", fmt.Errorf("identifier not found for the array %s", arrayName)
+		return "", fmt.Errorf("identifier not found for array %s", arrayName)
 	}
 	return fmt.Sprintf("[%s=%s]", identifier, identifierValue), nil
 }
@@ -139,10 +142,10 @@ func ModifyFieldsWithKeywords(exportedFileData interface{}, localFileData interf
 
 		if exportedValue != localReplacedValue {
 			log.Printf("Warning: Keywords at %s field in the local file will be replaced by exported content.", location)
-			log.Println("Local Value with Keyword Replaced: ", localReplacedValue)
-			log.Println("Exported Value: ", exportedValue)
+			log.Println("Info: Local Value with Keyword Replaced: ", localReplacedValue)
+			log.Println("Info: Exported Value: ", exportedValue)
 		} else {
-			log.Printf("Keyword added at %s field\n", location)
+			log.Printf("Info: Keyword added at %s field\n", location)
 			ReplaceValue(exportedFileData, strings.Split(location, "."), localValue)
 		}
 	}
@@ -201,6 +204,7 @@ func ReplaceValue(data interface{}, path []string, replacement string) interface
 			currentKey := path[0]
 			index, err := GetArrayIndex(v, currentKey)
 			if err != nil {
+				log.Printf("Error: when resolving array index for element %s.", currentKey)
 				return data
 			}
 			if len(v) > index {
@@ -231,7 +235,7 @@ func GetArrayIndex(arrayMap []interface{}, elementIdentifier string) (int, error
 			}
 		}
 	} else {
-		log.Println("Element identifier is not in the expected format")
+		return -1, fmt.Errorf("element identifier is not in the expected format.")
 	}
 	return -1, errors.New("element not found")
 }
