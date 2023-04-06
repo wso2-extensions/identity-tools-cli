@@ -37,7 +37,7 @@ The IAM CTL can be used in two basic modes.
 
 The CLI mode can be used to handle bulk configurations in the target environment. This can be used to propagate resources across multiple environments, deploy new configurations to target environments and will act as a backup of each environment's configurations.
 
-This mode consists of the exportAll and importAll commands which can be used to export and import all configurations of the supported resources types from or to a target environment. 
+This mode consists of the exportAll and importAll commands which can be used to export and import all configurations of the supported resource types from or to a target environment. 
 
 Currently, supported resource types are: 
 * Applications
@@ -46,14 +46,14 @@ Currently, supported resource types are:
 The following steps will provide the basic steps to run the tool in the simplest way. Find more comprehensive details about the commands used in the CLI mode [here](docs/cli-mode.md).
 
 #### Tool Initialization
-The tool should be initialized against the environment it is run against.
+The tool should be initialized with the server details of the environment it is run against.
 1. Create a new folder and open a terminal inside it.
 2. Run the following command to create the configuration files needed to initialize the tool.
     ```
     iamctl setupCLI
     ```
-3. A new folder named ```configs``` will be created with a ```env``` folder inside it, having the 2 configuration files ```serverConfig.json``` and ```toolConfig.json```.
-> **Note:** If you have multiple environments, copy the ```env``` folder and rename it according to the environments you have. For example, if you have 2 environments: dev and prod, have 2 separate config folders ```dev``` and ```prod```. 
+3. A new folder named ```configs``` will be created with a ```env``` folder inside it, having 2 configuration files: ```serverConfig.json``` and ```toolConfig.json```.
+> **Note:** If you have multiple environments, get a copy of the ```env``` folder and rename it according to the environments you have. For example, if you have 2 environments: dev and prod, have 2 separate config folders as ```dev``` and ```prod```. 
 4. Open the ```serverConfig.json``` file and provide the IS server details and client ID/secret of the app you created earlier.
 
 Example configurations:
@@ -62,20 +62,18 @@ Example configurations:
     "SERVER_URL" : "https://localhost:9443",
     "CLIENT-ID" : "********",
     "CLIENT-SECRET" : "********",
-    "USERNAME" : "admin",
-    "PASSWORD" : "admin",
     "TENANT-DOMAIN" : "carbon.super"
     ```
 
 #### Export
-Run the following command to export all supported configurations from the target environment to the current directory.
+Run the following command to export all supported resource configurations from the target environment to the current directory.
 ```
 iamctl exportAll -c ./configs/env
 ```
 A new folder named ```Applications``` will be created with exported yaml files for each application available in the IS server.
 
 #### Import
-Run the following command to import all supported configurations from the current directory to the target environment.
+Run the following command to import all supported resource configurations from the current directory to the target environment.
 ```
 iamctl importAll -c ./configs/env
 ```

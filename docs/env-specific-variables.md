@@ -49,16 +49,16 @@ As mentioned above, when dealing with multiple environments we will have to add 
 If some property value is both environment specific and resource specific, you can add a separate keyword mapping for each resource where the default keyword mapping should be overridden.
 
 ``` 
-"KEYWORD_MAPPINGS" : {
-    "KEYWORD1" : "default value",
+{
+    "KEYWORD_MAPPINGS" : {
+        "KEYWORD1" : "default value",
+    },
+    
     <RESOURCE_TYPE_NAME> : {
         "RESOURCE_NAME" : {
             "KEYWORD1" : "resource specific value"
-            }
         }
     }
-    
-   
 }
 ```
 The resource specific keyword mapping can be added as a special configuration with the same placeholder name, but during execution the default keyword mapping will be overridden with the resource specific keyword mapping only for that resource.
@@ -70,6 +70,7 @@ If there are 5 applications that needs to imported to a target environment, and 
     "KEYWORD_MAPPINGS" : {
         "CALLBACK_URL" : "https://demo.prod.io/callback",
     },
+    
     "APPLICATIONS" : {
         "App5" : {
             "CALLBACK_URL" : "https://demo.prod.io/callback2"
