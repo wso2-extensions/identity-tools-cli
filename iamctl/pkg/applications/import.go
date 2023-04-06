@@ -29,7 +29,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -61,7 +60,7 @@ func validateFile(appFilePath string, appName string) (appExists bool, isValid b
 
 	appExists = false
 
-	fileContent, err := os.ReadFile(appFilePath)
+	fileContent, err := ioutil.ReadFile(appFilePath)
 	if err != nil {
 		log.Println("Error when reading the file for app: ", appName, err)
 		return appExists, false
@@ -90,7 +89,7 @@ func validateFile(appFilePath string, appName string) (appExists bool, isValid b
 
 func importApp(importFilePath string, isUpdate bool) {
 
-	fileBytes, err := os.ReadFile(importFilePath)
+	fileBytes, err := ioutil.ReadFile(importFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
