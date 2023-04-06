@@ -25,14 +25,15 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 var serverConfigTemplate = map[string]string{
 
-	"SERVER_URL":    "",
-	"CLIENT_ID":     "",
-	"CLIENT_SECRET": "",
-	"TENANT_DOMAIN": "",
+	utils.SERVER_URL_CONFIG:    "",
+	utils.CLIENT_ID_CONFIG:     "",
+	utils.CLIENT_SECRET_CONFIG: "",
+	utils.TENANT_DOMAIN_CONFIG: "",
 }
 
 var setupCmd = &cobra.Command{
@@ -66,7 +67,7 @@ func createConfigFolder(baseDirPath string) {
 		log.Println("Since the base directory path is not provided, defaulting to the current working directory: " + baseDirPath)
 	}
 
-	// Create environment specific config folder with the name "env"
+	// Create environment specific config folder with the name "env".
 	envConfigDir := baseDirPath + "/configs/" + templateEnvName + "/"
 	os.MkdirAll(envConfigDir, 0700)
 
@@ -75,10 +76,10 @@ func createConfigFolder(baseDirPath string) {
 	if err != nil {
 		log.Println("Error in creating the server config template", err)
 	}
-	os.WriteFile(envConfigDir+"serverConfig.json", serverConfigs, 0644)
+	os.WriteFile(envConfigDir+utils.SERVER_CONFIG_FILE, serverConfigs, 0644)
 
 	// Create tool config directory.
-	file, err := os.OpenFile(envConfigDir+"toolConfig.json", os.O_CREATE, 0644)
+	file, err := os.OpenFile(envConfigDir+utils.TOOL_CONFIG_FILE, os.O_CREATE, 0644)
 	if err != nil {
 		log.Println("Error in creating the tool config file", err)
 	}

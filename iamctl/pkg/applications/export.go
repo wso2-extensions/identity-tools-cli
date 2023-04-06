@@ -104,14 +104,12 @@ func exportApp(appId string, outputDirPath string, format string) error {
 			log.Println("Error: ", err)
 			return err
 		}
-		exportedFile := outputDirPath + fileName
+		exportedFileName := outputDirPath + fileName
 
-		// TODO: Add keywords to the exported file
-		// Add keywords to the exported file according to the keyword locations in the local file.
-		// appName, _, _ := getAppFileInfo(exportedFile)
-		// modifiedFile := utils.AddKeywords(body, exportedFile)
-		modifiedFile := body
-		err = ioutil.WriteFile(exportedFile, modifiedFile, 0644)
+		// Handle Environment Specific Variables.
+		modifiedFile := handleESVs(exportedFileName, body)
+
+		err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 		if err != nil {
 			log.Println("Error when writing the exported content to file: ", err)
 			return err
@@ -120,6 +118,26 @@ func exportApp(appId string, outputDirPath string, format string) error {
 	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
 		return errors.New(error)
 	} else {
-		return errors.New("Unexpected error while exporting the application")
+		return errors.New("unexpected error while exporting the application")
 	}
+}
+
+func handleESVs(exportedFileName string, exportedFileContent []byte) []byte {
+
+	// Replace ESVs in the exported file according to the keyword placeholders added in the local file.
+	appName, _, _ := getAppFileInfo(exportedFileName)
+	appKeywordMapping := getAppKeywordMapping(appName)
+
+	// Load local file data as a yaml object.
+	localFileData, err := ioutil.ReadFile(exportedFileName)
+	if err != nil {
+		log.Printf("Local file not found at %s. Skip adding keywords to exported data.", exportedFileName)
+		return exportedFileContent
+	}
+	modifiedExportedContent, err := utils.AddKeywords(exportedFileContent, localFileData, appKeywordMapping)
+	if err != nil {
+		log.Println("Error when adding keywords to the exported file. Overriding local file with exported content. ", err)
+		return exportedFileContent
+	}
+	return modifiedExportedContent
 }

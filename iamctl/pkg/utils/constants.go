@@ -18,6 +18,26 @@
 
 package utils
 
+// Resource type names
+const APPLICATIONS_CONFIG = "APPLICATIONS"
+
+// Tool configs
+const KEYWORD_MAPPINGS_CONFIG = "KEYWORD_MAPPINGS"
+const EXCLUDE_CONFIG = "EXCLUDE"
+const INCLUDE_ONLY_CONFIG = "INCLUDE_ONLY"
+
+// Server configs
+const SERVER_URL_CONFIG = "SERVER_URL"
+const CLIENT_ID_CONFIG = "CLIENT_ID"
+const CLIENT_SECRET_CONFIG = "CLIENT_SECRET"
+const TENANT_DOMAIN_CONFIG = "TENANT_DOMAIN"
+const TOKEN_CONFIG = "TOKEN"
+
+// Config file names
+const SERVER_CONFIG_FILE = "serverConfig.json"
+const TOOL_CONFIG_FILE = "toolConfig.json"
+
+// Error codes
 var ErrorCodes = map[int]string{
 
 	400: "Bad request. Provided parameters are not in correct format.",
@@ -26,4 +46,23 @@ var ErrorCodes = map[int]string{
 	404: "Service Provider not found for the given ID.",
 	409: "An application with the same name already exists.",
 	500: "Internal server error.",
+}
+
+// Identifiers of each array types for Applications
+var appArrayIdentifiers = map[string]string{
+
+	"inboundAuthenticationRequestConfigs": "inboundAuthKey",
+	"spProperties":                        "name",
+	"authenticationSteps":                 "stepOrder",
+	"localAuthenticatorConfigs":           "name",
+	"federatedIdentityProviders":          "identityProviderName",
+	"federatedAuthenticatorConfigs":       "name",
+	"properties":                          "name",
+	"subProperties":                       "name",
+	"idpProperties":                       "name",
+	"provisioningConnectorConfigs":        "name",
+	"provisioningIdentityProviders":       "identityProviderName",
+	"requestPathAuthenticatorConfigs":     "name",
+	"roleMappings":                        "localRole",
+	"claimMappings":                       "localClaim",
 }

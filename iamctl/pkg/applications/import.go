@@ -95,12 +95,12 @@ func importApp(importFilePath string, isUpdate bool) {
 		log.Fatal(err)
 	}
 
-	// TODO: Implement keyword replacement logic.
-	// Replace keywords according to the keyword mappings added in configs.
-	// appName, _, _ := getAppFileInfo(importFilePath)
-	// fileData := utils.ReplaceKeywords(fileBytes, appName)
-	fileData := string(fileBytes)
-	sendImportRequest(isUpdate, importFilePath, fileData)
+	// Replace keyword placeholders in the local file according to the keyword mappings added in configs.
+	appName, _, _ := getAppFileInfo(importFilePath)
+	appKeywordMapping := getAppKeywordMapping(appName)
+	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), appKeywordMapping)
+
+	sendImportRequest(isUpdate, importFilePath, modifiedFileData)
 
 }
 
