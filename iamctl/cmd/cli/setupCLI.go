@@ -20,6 +20,7 @@ package cli
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"os"
 
@@ -76,7 +77,7 @@ func createConfigFolder(baseDirPath string) {
 	if err != nil {
 		log.Println("Error in creating the server config template", err)
 	}
-	os.WriteFile(envConfigDir+utils.SERVER_CONFIG_FILE, serverConfigs, 0644)
+	ioutil.WriteFile(envConfigDir+utils.SERVER_CONFIG_FILE, serverConfigs, 0644)
 
 	// Create tool config directory.
 	file, err := os.OpenFile(envConfigDir+utils.TOOL_CONFIG_FILE, os.O_CREATE, 0644)
