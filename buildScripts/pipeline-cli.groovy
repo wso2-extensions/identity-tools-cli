@@ -85,10 +85,11 @@ node('PRODUCT_ECS') {
 
     }
     stage('Results') {
-        archive 'iamctl/build/*.tar.gz'
-        archive 'iamctl/build/*.zip'
+        steps {
+            archiveArtifacts artifacts: 'iamctl/build/*.tar.gz'
+            archiveArtifacts artifacts: 'iamctl/build/*.zip'
+        }
     }
-
 }
 
 def version() {
