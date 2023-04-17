@@ -18,13 +18,15 @@
 
 package utils
 
-// Resource type names
+// Resource type configs
 const APPLICATIONS_CONFIG = "APPLICATIONS"
+const IDP_CONFIG = "IDENTITY_PROVIDERS"
 
 // Tool configs
 const KEYWORD_MAPPINGS_CONFIG = "KEYWORD_MAPPINGS"
 const EXCLUDE_CONFIG = "EXCLUDE"
 const INCLUDE_ONLY_CONFIG = "INCLUDE_ONLY"
+const EXCLUDE_SECRETS_CONFIG = "EXCLUDE_SECRETS"
 
 // Server configs
 const SERVER_URL_CONFIG = "SERVER_URL"
@@ -33,9 +35,20 @@ const CLIENT_SECRET_CONFIG = "CLIENT_SECRET"
 const TENANT_DOMAIN_CONFIG = "TENANT_DOMAIN"
 const TOKEN_CONFIG = "TOKEN"
 
+// Resource types
+const APPLICATIONS = "Applications"
+const IDENTITY_PROVIDERS = "IdentityProviders"
+
 // Config file names
 const SERVER_CONFIG_FILE = "serverConfig.json"
 const TOOL_CONFIG_FILE = "toolConfig.json"
+
+// Media types
+const MEDIA_TYPE_JSON = "application/json"
+const MEDIA_TYPE_XML = "application/xml"
+const MEDIA_TYPE_YAML = "application/yaml"
+
+const DEFAULT_TENANT_DOMAIN = "carbon.super"
 
 // Error codes
 var ErrorCodes = map[int]string{
@@ -48,8 +61,8 @@ var ErrorCodes = map[int]string{
 	500: "Internal server error.",
 }
 
-// Identifiers of each array types for Applications
-var appArrayIdentifiers = map[string]string{
+// Identifiers of array types
+var arrayIdentifiers = map[string]string{
 
 	"inboundAuthenticationRequestConfigs": "inboundAuthKey",
 	"spProperties":                        "name",
@@ -63,6 +76,8 @@ var appArrayIdentifiers = map[string]string{
 	"provisioningConnectorConfigs":        "name",
 	"provisioningIdentityProviders":       "identityProviderName",
 	"requestPathAuthenticatorConfigs":     "name",
-	"roleMappings":                        "localRole",
-	"claimMappings":                       "localClaim",
+	"roleMappings":                        "localRole.localRoleName",
+	"claimMappings":                       "localClaim.claimUri",
+	"idpClaims":                           "claimId",
+	"provisioningProperties":              "name",
 }

@@ -30,7 +30,8 @@ var dir, _ = os.Getwd()
 var Path = dir + "/iamctl.json"
 var PathSampleSPDetails = dir + "/init.json"
 
-const SCOPE string = "/permission/admin/manage/identity/applicationmgt/update /permission/admin/manage/identity/applicationmgt/create /permission/admin/manage/identity/applicationmgt/view internal_application_mgt_update internal_application_mgt_create internal_application_mgt_view"
+const SCOPE string = "/permission/admin/manage/identity/applicationmgt/update /permission/admin/manage/identity/applicationmgt/create /permission/admin/manage/identity/applicationmgt/view internal_application_mgt_update internal_application_mgt_create internal_application_mgt_view " +
+	"/permission/admin/manage/identity/idpmgt/update /permission/admin/manage/identity/idpmgt/create /permission/admin/manage/identity/idpmgt/view internal_idp_update internal_idp_create internal_idp_view"
 
 const (
 	AppName       = "IAM-CTL"

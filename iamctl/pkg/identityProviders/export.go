@@ -16,7 +16,7 @@
 * under the License.
  */
 
-package applications
+package identityproviders
 
 import (
 	"crypto/tls"
@@ -35,27 +35,32 @@ import (
 
 func ExportAll(exportFilePath string, format string) {
 
-	// Export all applications to the Applications folder.
-	log.Println("Exporting applications...")
-	exportFilePath = filepath.Join(exportFilePath, utils.APPLICATIONS)
+	// Export all identity providers to the IdentityProviders folder.
+	log.Println("Exporting identity providers...")
+	exportFilePath = filepath.Join(exportFilePath, utils.IDENTITY_PROVIDERS)
 	os.MkdirAll(exportFilePath, 0700)
 
-	apps := getAppList()
-	for _, app := range apps {
-		excludeSecrets := utils.AreSecretsExcluded(utils.TOOL_CONFIGS.ApplicationConfigs)
-		if !utils.IsResourceExcluded(app.Name, utils.TOOL_CONFIGS.ApplicationConfigs) {
-			log.Println("Exporting application: ", app.Name)
-			err := exportApp(app.Id, exportFilePath, format, excludeSecrets)
-			if err != nil {
-				log.Printf("Error while exporting application: %s. %s", app.Name, err)
-			} else {
-				log.Println("Application exported successfully: ", app.Name)
+	idps, err := getIdpList()
+	if err != nil {
+		log.Println("Error: when exporting identity providers.", err)
+	} else {
+		excludeSecerts := utils.AreSecretsExcluded(utils.TOOL_CONFIGS.IdpConfigs)
+		for _, idp := range idps {
+			if !utils.IsResourceExcluded(idp.Name, utils.TOOL_CONFIGS.IdpConfigs) {
+				log.Println("Exporting identity provider: ", idp.Name)
+
+				err := exportIdp(idp.Id, exportFilePath, format, excludeSecerts)
+				if err != nil {
+					log.Printf("Error while exporting identity providers: %s. %s", idp.Name, err)
+				} else {
+					log.Println("Identity provider exported successfully: ", idp.Name)
+				}
 			}
 		}
 	}
 }
 
-func exportApp(appId string, outputDirPath string, format string, excludeSecrets bool) error {
+func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets bool) error {
 
 	var fileType string
 	// TODO: Extend support for json and xml formats.
@@ -68,18 +73,19 @@ func exportApp(appId string, outputDirPath string, format string, excludeSecrets
 		fileType = utils.MEDIA_TYPE_YAML
 	}
 
-	var reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/applications/" + appId + "/exportFile"
+	var reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/identity-providers/file" + idpId
+
 	var err error
 	req, err := http.NewRequest("GET", reqUrl, strings.NewReader(""))
 	if err != nil {
-		return fmt.Errorf("error while creating the request to export application: %s", err)
+		return fmt.Errorf("error while creating the request to export identity provider: %s", err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("accept", fileType)
 	req.Header.Set("Authorization", "Bearer "+utils.SERVER_CONFIGS.Token)
 
 	query := req.URL.Query()
-	query.Add("exportSecrets", strconv.FormatBool(!excludeSecrets))
+	query.Add("excludeSecrets", strconv.FormatBool(!excludeSecrets))
 	req.URL.RawQuery = query.Encode()
 
 	defer req.Body.Close()
@@ -94,7 +100,7 @@ func exportApp(appId string, outputDirPath string, format string, excludeSecrets
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("error while exporting the application: %s", err)
+		return fmt.Errorf("error while exporting the identity provider: %s", err)
 	}
 	defer resp.Body.Close()
 
@@ -112,12 +118,13 @@ func exportApp(appId string, outputDirPath string, format string, excludeSecrets
 
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return fmt.Errorf("error while reading the response body when exporting app: %s. %s", fileName, err)
+			return fmt.Errorf("error while reading the response body when exporting IDP: %s. %s", fileName, err)
 		}
 
+		fmt.Println(string(body))
 		// Handle Environment Specific Variables.
-		appKeywordMapping := getAppKeywordMapping(fileInfo.ResourceName)
-		modifiedFile := utils.HandleESVs(exportedFileName, body, appKeywordMapping)
+		idpKeywordMapping := getIdpKeywordMapping(fileInfo.ResourceName)
+		modifiedFile := utils.HandleESVs(exportedFileName, body, idpKeywordMapping)
 
 		err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 		if err != nil {
@@ -126,8 +133,8 @@ func exportApp(appId string, outputDirPath string, format string, excludeSecrets
 		}
 		return nil
 	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		return fmt.Errorf("error while exporting the application: %s", error)
+		return fmt.Errorf("error while exporting the identity provider: %s", error)
 	} else {
-		return fmt.Errorf("unexpected error while exporting the application: %s", "")
+		return fmt.Errorf("unexpected error while exporting the identity provider: %s", "")
 	}
 }

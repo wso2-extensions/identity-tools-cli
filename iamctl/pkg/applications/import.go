@@ -38,15 +38,16 @@ import (
 
 func ImportAll(inputDirPath string) {
 
-	importFilePath := inputDirPath + "/Applications/"
+	log.Println("Importing applications...")
+	importFilePath := filepath.Join(inputDirPath, utils.APPLICATIONS)
 
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Error importing applications: ", err)
 	}
 
 	for _, file := range files {
-		appFilePath := importFilePath + file.Name()
+		appFilePath := filepath.Join(importFilePath, file.Name())
 		appName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 		appExists, isValidFile := validateFile(appFilePath, appName)
 
@@ -54,6 +55,102 @@ func ImportAll(inputDirPath string) {
 			importApp(appFilePath, appExists)
 		}
 	}
+}
+
+func importApp(importFilePath string, isUpdate bool) error {
+
+	fileBytes, err := ioutil.ReadFile(importFilePath)
+	if err != nil {
+		return fmt.Errorf("error when reading the file for application: %s", err)
+	}
+
+	// Replace keyword placeholders in the local file according to the keyword mappings added in configs.
+	fileInfo := utils.GetFileInfo(importFilePath)
+	appKeywordMapping := getAppKeywordMapping(fileInfo.ResourceName)
+	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), appKeywordMapping)
+
+	sendImportRequest(isUpdate, importFilePath, modifiedFileData)
+	return nil
+}
+
+func sendImportRequest(isUpdate bool, importFilePath string, fileData string) error {
+
+	reqUrl := utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/applications/import"
+	fileInfo := utils.GetFileInfo(importFilePath)
+
+	var requestMethod string
+	if isUpdate {
+		log.Println("Updating app: " + fileInfo.ResourceName)
+		requestMethod = "PUT"
+	} else {
+		log.Println("Creating app: " + fileInfo.ResourceName)
+		requestMethod = "POST"
+	}
+
+	var buf bytes.Buffer
+	var err error
+	_, err = io.WriteString(&buf, fileData)
+	if err != nil {
+		return fmt.Errorf("error when creating the import request: %s", err)
+	}
+
+	mime.AddExtensionType(".yml", "application/yaml")
+	mime.AddExtensionType(".xml", "application/xml")
+	mime.AddExtensionType(".json", "application/json")
+
+	mimeType := mime.TypeByExtension(fileInfo.FileExtension)
+
+	body := new(bytes.Buffer)
+	writer := multipart.NewWriter(body)
+	defer writer.Close()
+
+	part, err := writer.CreatePart(textproto.MIMEHeader{
+		"Content-Disposition": []string{fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file", fileInfo.FileName)},
+		"Content-Type":        []string{mimeType},
+	})
+	if err != nil {
+		return fmt.Errorf("error when creating the import request: %s", err)
+	}
+
+	_, err = io.Copy(part, &buf)
+	if err != nil {
+		return fmt.Errorf("error when creating the import request: %s", err)
+	}
+
+	request, err := http.NewRequest(requestMethod, reqUrl, body)
+	request.Header.Add("Content-Type", writer.FormDataContentType())
+	request.Header.Set("Authorization", "Bearer "+utils.SERVER_CONFIGS.Token)
+	defer request.Body.Close()
+
+	if err != nil {
+		return fmt.Errorf("error when creating the import request: %s", err)
+	}
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+	resp, err := client.Do(request)
+	if err != nil {
+		return fmt.Errorf("error when sending the import request: %s", err)
+	}
+
+	statusCode := resp.StatusCode
+	if statusCode == 201 {
+		log.Println("Application created successfully.")
+	} else if statusCode == 200 {
+		log.Println("Application updated successfully.")
+	} else if statusCode == 409 {
+		log.Println("An application with the same name already exists. Please rename the file accordingly.")
+		importApp(importFilePath, true)
+	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
+		return fmt.Errorf("error response for the import request: %s", error)
+	} else {
+		return fmt.Errorf("unexpected error when importing application: %s", resp.Status)
+	}
+	return nil
 }
 
 func validateFile(appFilePath string, appName string) (appExists bool, isValid bool) {
@@ -85,98 +182,4 @@ func validateFile(appFilePath string, appName string) (appExists bool, isValid b
 		log.Println("Warning: Application name in the file " + appFilePath + " is not matching with the file name.")
 	}
 	return appExists, true
-}
-
-func importApp(importFilePath string, isUpdate bool) {
-
-	fileBytes, err := ioutil.ReadFile(importFilePath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Replace keyword placeholders in the local file according to the keyword mappings added in configs.
-	appName, _, _ := getAppFileInfo(importFilePath)
-	appKeywordMapping := getAppKeywordMapping(appName)
-	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), appKeywordMapping)
-
-	sendImportRequest(isUpdate, importFilePath, modifiedFileData)
-
-}
-
-func sendImportRequest(isUpdate bool, importFilePath string, fileData string) {
-
-	reqUrl := utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/applications/import"
-	appName, filename, fileExtension := getAppFileInfo(importFilePath)
-
-	var requestMethod string
-	if isUpdate {
-		log.Println("Updating app: " + appName)
-		requestMethod = "PUT"
-	} else {
-		log.Println("Creating app: " + appName)
-		requestMethod = "POST"
-	}
-
-	var buf bytes.Buffer
-	var err error
-	_, err = io.WriteString(&buf, fileData)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	mime.AddExtensionType(".yml", "text/yaml")
-	mime.AddExtensionType(".xml", "application/xml")
-
-	mimeType := mime.TypeByExtension(fileExtension)
-
-	body := new(bytes.Buffer)
-	writer := multipart.NewWriter(body)
-	defer writer.Close()
-
-	part, err := writer.CreatePart(textproto.MIMEHeader{
-		"Content-Disposition": []string{fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file", filename)},
-		"Content-Type":        []string{mimeType},
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = io.Copy(part, &buf)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	request, err := http.NewRequest(requestMethod, reqUrl, body)
-	request.Header.Add("Content-Type", writer.FormDataContentType())
-	request.Header.Set("Authorization", "Bearer "+utils.SERVER_CONFIGS.Token)
-	defer request.Body.Close()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-	resp, err := client.Do(request)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	statusCode := resp.StatusCode
-	if statusCode == 201 {
-		log.Println("Application created successfully.")
-	} else if statusCode == 200 {
-		log.Println("Application updated successfully.")
-	} else if statusCode == 409 {
-		log.Println("An application with the same name already exists. Please rename the file accordingly.")
-		importApp(importFilePath, true)
-	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		log.Println(error)
-	} else {
-		log.Println("Error while updating the application.")
-	}
 }
