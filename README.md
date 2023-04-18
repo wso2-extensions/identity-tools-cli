@@ -41,6 +41,7 @@ This mode consists of the exportAll and importAll commands which can be used to 
 
 Currently, supported resource types are: 
 * Applications
+* Identity Providers
 
 ### Running the tool in the CLI mode
 The following steps will provide the basic steps to run the tool in the simplest way. Find more comprehensive details about the commands used in the CLI mode [here](docs/cli-mode.md).
@@ -70,14 +71,14 @@ Run the following command to export all supported resource configurations from t
 ```
 iamctl exportAll -c ./configs/env
 ```
-A new folder named ```Applications``` will be created with exported yaml files for each application available in the IS server.
+A set of new folders will be created, named after each resource type, with exported yaml files for each available resource in the IS server.
 
 #### Import
 Run the following command to import all supported resource configurations from the current directory to the target environment.
 ```
 iamctl importAll -c ./configs/env
 ```
-All applications available inside the ```Applications``` folder in the current directory will be imported to the IS server.
+All resources available inside each resource type folder in the current directory will be imported to the IS server.
 
 ## Interactive Mode
 The interactive mode can be used to handle application configurations in an interactive manner. This can be used to add, list, export and import applications in the target environment.

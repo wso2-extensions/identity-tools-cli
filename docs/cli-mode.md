@@ -10,6 +10,7 @@ Usages:
 
 Currently, supported resource types are:
 * Applications
+* Identity Providers
 
 ## Running the Tool in the CLI Mode
 ### Initialization
@@ -52,6 +53,12 @@ Example local directory structure if multiple environments: dev, stage, prod exi
    │    │── app1.yml
    │    │── app2.yml
    │    │── ... other exported app files
+   │
+   │── IdentityProviders
+   │    │── idp1.yml
+   │    │── idp2.yml
+   │    │── ... other exported idp files
+   │
    │── ... other resource types
    ```
    Use the ```--baseDir``` flag to specify the path to the local directory when creating the ```configs``` folder. If not specified, the tool will create the ```configs``` folder in the current directory.
@@ -133,7 +140,11 @@ Example configuration file:
    
    "APPLICATIONS" : {
        "EXCLUDE" : ["App1", "App2"]
-   }
+   },
+   "IDENTITY_PROVIDERS" : {
+       "INCLUDE_ONLY" : ["Idp1", "Idp2"],
+       "EXCLUDE_SECRETS" : false
+    }
 }
 
 ```
@@ -195,6 +206,27 @@ Example:
    }
 }
 ```
+#### Exclude Secrets from Exported Resources
+By default, secrets will be removed from the exported resources. For applications, the secret fields will not be included in the exported file and for identity providers, the value of secrets will be masked by a string: ```'********'```.
+The ```EXCLUDE_SECRETS``` config can be used to override this behaviour and include the secrets in the exported resources. 
+
+The ```EXCLUDE_SECRETS``` property can be added to the tool configs under the relevant resource type as shown below.
+```
+{
+   "RESOURCE_TYPE_NAME" : {
+       "EXCLUDE_SECRETS" : false
+   }
+}
+```
+Example:
+```
+{
+    "IDENTITY_PROVIDERS" : {
+        "EXCLUDE_SECRETS" : false
+    }   
+}
+```
+
 
 ## Commands
 ### ExportAll Command
@@ -224,6 +256,11 @@ output directory
 │── Applications
 │    │── My app.yml
 │    │── Pickup Manager.yml
+│
+│── IdentityProviders
+│    │── Google.yml
+│    │── Facebook.yml
+│
 │── ... other resource types
    ```
 
