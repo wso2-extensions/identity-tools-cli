@@ -73,7 +73,7 @@ func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets
 		fileType = utils.MEDIA_TYPE_YAML
 	}
 
-	var reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/identity-providers/file" + idpId
+	var reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/identity-providers/file/" + idpId
 
 	var err error
 	req, err := http.NewRequest("GET", reqUrl, strings.NewReader(""))
@@ -85,7 +85,7 @@ func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets
 	req.Header.Set("Authorization", "Bearer "+utils.SERVER_CONFIGS.Token)
 
 	query := req.URL.Query()
-	query.Add("excludeSecrets", strconv.FormatBool(!excludeSecrets))
+	query.Add("excludeSecrets", strconv.FormatBool(excludeSecrets))
 	req.URL.RawQuery = query.Encode()
 
 	defer req.Body.Close()
@@ -121,7 +121,6 @@ func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets
 			return fmt.Errorf("error while reading the response body when exporting IDP: %s. %s", fileName, err)
 		}
 
-		fmt.Println(string(body))
 		// Handle Environment Specific Variables.
 		idpKeywordMapping := getIdpKeywordMapping(fileInfo.ResourceName)
 		modifiedFile := utils.HandleESVs(exportedFileName, body, idpKeywordMapping)
@@ -135,6 +134,6 @@ func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets
 	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
 		return fmt.Errorf("error while exporting the identity provider: %s", error)
 	} else {
-		return fmt.Errorf("unexpected error while exporting the identity provider: %s", "")
+		return fmt.Errorf("unexpected error while exporting the identity provider with status code: %s", strconv.FormatInt(int64(statusCode), 10))
 	}
 }
