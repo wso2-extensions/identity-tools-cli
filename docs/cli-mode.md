@@ -96,6 +96,9 @@ If the ```--config``` flag is not used when running the exportAll/importAll comm
 * CLIENT_ID
 * CLIENT_SECRET
 * TENANT_DOMAIN
+* TOOL_CONFIG_PATH
+
+> **Note:** The ```TOOL_CONFIG_PATH``` environment variable should be used to specify the path to the tool configs file. 
 
 Example:
 ```
@@ -109,6 +112,9 @@ export CLIENT_SECRET="********"
 ```
 ```   
 export TENANT_DOMAIN="carbon.super"
+```
+```
+export TOOL_CONFIG_PATH="<path to the configs folder>/dev/toolConfig.json"
 ```
 > **Note:** Make sure to export the environment variables with the correct server details that the action should be performed against, before running the CLI commands. 
 > 
