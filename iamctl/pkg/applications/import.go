@@ -57,6 +57,37 @@ func ImportAll(inputDirPath string) {
 	}
 }
 
+func validateFile(appFilePath string, appName string) (appExists bool, isValid bool) {
+
+	appExists = false
+
+	fileContent, err := ioutil.ReadFile(appFilePath)
+	if err != nil {
+		log.Println("Error when reading the file for app: ", appName, err)
+		return appExists, false
+	}
+
+	// Validate the YAML format.
+	var appConfig AppConfig
+	err = yaml.Unmarshal(fileContent, &appConfig)
+	if err != nil {
+		log.Println("Invalid file content for app: ", appName, err)
+		return appExists, false
+	}
+
+	existingAppList := getDeployedAppNames()
+	for _, app := range existingAppList {
+		if app == appConfig.ApplicationName {
+			appExists = true
+			break
+		}
+	}
+	if appConfig.ApplicationName != appName {
+		log.Println("Warning: Application name in the file " + appFilePath + " is not matching with the file name.")
+	}
+	return appExists, true
+}
+
 func importApp(importFilePath string, isUpdate bool) error {
 
 	fileBytes, err := ioutil.ReadFile(importFilePath)
@@ -151,35 +182,4 @@ func sendImportRequest(isUpdate bool, importFilePath string, fileData string) er
 		return fmt.Errorf("unexpected error when importing application: %s", resp.Status)
 	}
 	return nil
-}
-
-func validateFile(appFilePath string, appName string) (appExists bool, isValid bool) {
-
-	appExists = false
-
-	fileContent, err := ioutil.ReadFile(appFilePath)
-	if err != nil {
-		log.Println("Error when reading the file for app: ", appName, err)
-		return appExists, false
-	}
-
-	// Validate the YAML format.
-	var appConfig AppConfig
-	err = yaml.Unmarshal(fileContent, &appConfig)
-	if err != nil {
-		log.Println("Invalid file content for app: ", appName, err)
-		return appExists, false
-	}
-
-	existingAppList := getDeployedAppNames()
-	for _, app := range existingAppList {
-		if app == appConfig.ApplicationName {
-			appExists = true
-			break
-		}
-	}
-	if appConfig.ApplicationName != appName {
-		log.Println("Warning: Application name in the file " + appFilePath + " is not matching with the file name.")
-	}
-	return appExists, true
 }

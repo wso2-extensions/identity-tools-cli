@@ -184,35 +184,3 @@ func validateFile(idpFilePath string, idpName string) (string, error) {
 	}
 	return "", nil
 }
-
-// func validateFile(idpFilePath string, idpName string) (idpExists bool, err error) {
-
-// 	idpExists = false
-
-// 	fileContent, err := ioutil.ReadFile(idpFilePath)
-// 	if err != nil {
-// 		return idpExists, fmt.Errorf("error when reading the file for idp: %s. %s", idpName, err)
-// 	}
-
-// 	var idpConfig idpConfig
-// 	err = yaml.Unmarshal(fileContent, &idpConfig)
-// 	if err != nil {
-// 		return idpExists, fmt.Errorf("invalid file content for idp: %s. %s", idpName, err)
-// 	}
-
-// 	existingIdpList, err := getDeployedIdpNames()
-// 	if err != nil {
-// 		return idpExists, fmt.Errorf("error when retrieving the deployed idp list: %s", err)
-// 	}
-
-// 	for _, idp := range existingIdpList {
-// 		if idp == idpConfig.IdentityProviderName {
-// 			idpExists = true
-// 			break
-// 		}
-// 	}
-// 	if idpConfig.IdentityProviderName != idpName {
-// 		log.Println("Warning: Identity provider name in the file " + idpFilePath + " is not matching with the file name.")
-// 	}
-// 	return idpExists, nil
-// }
