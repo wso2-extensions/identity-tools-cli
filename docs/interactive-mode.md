@@ -1,11 +1,13 @@
 # Interactive Mode
-The interactive mode can be used to handle application configurations in an interactive manner. This can be used to add, list, export and import applications in the target environment.
+The interactive mode can be used to handle application configurations in an interactive manner. This can be used to add, list, export, and import applications in the target environment.
 > Note: This mode does not provide support for bulk resource export or import.
 
-### Running the tool in the interactive mode
-#### Tool Initialization
-1. Setup the tool and the IS, following the steps in the [How to run the tool ](../README.md##How to run the tool ) section.
-2. Run the following command to initialize the tool by providing the Identity server details and client ID/secret of the app you created.
+### Run the tool in the interactive mode
+
+See the topics given below to run the tool in interactive mode.
+#### Tool initialization
+1. Set up the tool and WSO2 IS following the steps in the [How to run the tool ](../README.md##How to run the tool ) section.
+2. Run the following command to initialize the tool by providing details of WSO2 IS and the client ID/secret of the app you created.
 ```
 iamctl init
 ```
@@ -52,7 +54,7 @@ example:-
 ? Enter Password: *****
 ```
 
-### Application Related Commands
+### Application-related commands
 **Add application**
 ```
 iamctl application [commands]
@@ -70,9 +72,9 @@ Flags:
    -t, --type string           Enter application type (default "oauth")
    -u, --userName string       Username for Identity Server
  ```
-Users have freedom to set flags and values according to their choices.
+Users have the freedom to set flags and values according to their choices.
 
-This ```-t, --type string           Enter application type (default "oauth")``` flag  is not mandatory. If user wants to create basic application, then should declare ```-t=basic```. Otherwise will create the oauth application as default type.
+This ```-t, --type string           Enter application type (default "oauth")``` flag  is not mandatory. If the user wants to create a basic application, it is necessary to declare ```-t=basic```. Otherwise, the OAuth application will be created as the default type.
 
 example:-
 ```
@@ -87,7 +89,7 @@ iamctl application add -t=oauth -n=TestApplication -c=https://localhost:8010/oau
 iamctl application add -t=basic -n=TestApplication
 iamctl application add -t=basic -n=TestApplication -d=description
 ```
-You can set server domain and create application at the same time.
+You can set the server domain and create an application at the same time.
 
 example:-
 ```
@@ -103,7 +105,7 @@ iamctl application add -s=https://localhost:9443 -u=admin -p=***** -t=basic -n=T
 iamctl application add -s=https://localhost:9443 -u=admin -p=***** -t=basic -n=TestApplication -d=description
 ```
 
-**Get list of applications**
+**Get a list of applications**
 ```
 iamctl application     list     [flags]
 ```
@@ -119,20 +121,20 @@ example:-
 //get list of applications
 iamctl application list 
 ```
-You cat set server domain and get the list of applications at the same time.
+You can set the server domain and get the list of applications at the same time.
 example:-
 ```
 //get list of applications
 iamctl application list -s=https://localhost:9443 -u=admin -p=*****
 ```
 
-#### Create service providers by entering inputs in an interactive way.
+#### Create service providers by entering inputs in an interactive way
 **Add application and get list of applications**
 
 ```
 iamctl application
 ```
-It gives following output after entering the server domain.
+It gives the following output after entering the server domain.
 ```
 $ iamctl application                                                      
 ? Select the option to move on:  [Use arrows to move, type to filter]

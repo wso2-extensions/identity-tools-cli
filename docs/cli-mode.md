@@ -8,11 +8,11 @@ Usages:
 * Deploy new resources from resource configuration files to an Identity Server.
 * Have a backup of resources in a local directory.
 
-Currently, supported resource types are:
+Currently, the supported resource types are:
 * Applications
 * Identity Providers
 
-## Running the Tool in the CLI Mode
+## Run the tool in CLI mode
 ### Initialization
 Before running the tool to export or import any resource, the tool should be configured against the target environment.
 
@@ -26,17 +26,17 @@ Use the ```--help``` flag to get more information on the command.
     -d, --baseDir string   Path to the base directory
     -h, --help             help for setupCLI
    ```
-The above command will create a new folder named ```configs``` which will contain all the config files needed to setup the tool. 
-The folder structure of the ```configs``` directory will be as follows:
+The above command creates a new folder named ```configs```, which contains all the config files needed to setup the tool. 
+The folder structure of the ```configs``` directory is as follows:
 ```
 configs
 └── env
     │── serverConfig.json
     └── toolConfig.json
 ``` 
-   It is recommended to place the ```configs``` folder inside the local directory created to maintain the resource configuration files. 
+   It is recommended to place the ```configs``` folder inside the local directory that is created to maintain the resource configuration files. 
    
-Example local directory structure if multiple environments: dev, stage, prod exist:
+Example local directory structure if multiple environments (dev, stage, prod) exist:
    ```
    local directory
    │── configs
@@ -61,17 +61,17 @@ Example local directory structure if multiple environments: dev, stage, prod exi
    │
    │── ... other resource types
    ```
-   Use the ```--baseDir``` flag to specify the path to the local directory when creating the ```configs``` folder. If not specified, the tool will create the ```configs``` folder in the current directory.
+   Use the ```--baseDir``` flag to specify the path to the local directory when creating the ```configs``` folder. If not specified, the tool creates the ```configs``` folder in the current directory.
 
-### Server Configurations
-Server configurations are the configurations needed to connect to the target environment. The server configurations can be provided through the ```serverConfig.json``` file or through environment variables. It is mandatory to provide the following parameters relevant to the target Identity Server to run the CLI commands.
-* Server URL of the target IS
+### Server configurations
+Server configurations are the configurations needed for connecting to the target environment. Server configurations can be provided through the ```serverConfig.json``` file or through environment variables. It is mandatory to provide the following parameters relevant to the target identity server to run the CLI commands.
+* Server URL of the target identity server
 * Client ID of a management application in the target IS
 * Client Secret of a management application in the target IS
 * Tenant Domain (optional)
 
 These configurations differ from each environment and therefore should be maintained separately.  
-#### Loading Server Configurations from File
+#### Load server configurations from a file
 Server configurations can be provided through the ```serverConfig.json``` file as a json object in the following format.
 
 Example configurations:
@@ -85,20 +85,20 @@ Example configurations:
 ```
 > **Note:** The CLI tool uses management rest apis of the IS to export and import resources. In order to perform these API requests, the client ID and client secret of a management application is required.
 > 1. [Create an application](https://is.docs.wso2.com/en/6.1.0/guides/applications/register-sp) with **Management Application** enabled in the target IS.
-> 2. Configure Oauth inbound authentication configuration with a dummy callback URL and use the client ID and client secret for the above configurations.
+> 2. Update Oauth inbound authentication configuration with a dummy callback URL and use the client ID and client secret for the above configurations.
 
-> **Note:** Provide the required tenant domain from which the resources should be exported or imported into. If the tenant domain is not provided, the tool will use the super tenant domain (carbon.super) by default.
+> **Note:** Provide the required tenant domain from which the resources should be exported or imported. If the tenant domain is not provided, the tool uses the super tenant domain (carbon.super) by default.
 
-In order to load these configurations from the ```serverConfig.json``` file, the ```--config``` flag should be used when running the exportAll/importAll commands, specifying the path to the environment specific config folder which contains the ```serverConfig.json``` file.
+In order to load these configurations from the ```serverConfig.json``` file, the ```--config``` flag should be used when running the exportAll/importAll commands specifying the path to the environment-specific config folder that contains the ```serverConfig.json``` file.
 
 Example:
 ```
 iamctl exportAll -c <path to the configs folder>/dev 
 ```
-The tool will perform the required action by selecting the target environment based on the path provided to the ```--config``` flag.
-#### Loading Server Configurations from Environment Variables
+The tool performs the required action by selecting the target environment based on the path provided in the ```--config``` flag.
+#### Load server configurations from environment variables
 The server configurations can be provided through environment variables as well. 
-If the ```--config``` flag is not used when running the exportAll/importAll commands, the tool will look for the server configurations in the following environment variables. 
+If the ```--config``` flag is not used when running the exportAll/importAll commands, the tool looks for the server configurations in the following environment variables. 
 * SERVER_URL
 * CLIENT_ID
 * CLIENT_SECRET
@@ -123,12 +123,12 @@ export TENANT_DOMAIN="carbon.super"
 ```
 export TOOL_CONFIG_PATH="<path to the configs folder>/dev/toolConfig.json"
 ```
-> **Note:** Make sure to export the environment variables with the correct server details that the action should be performed against, before running the CLI commands. 
+> **Note:** Before running the CLI commands, be sure to export the environment variables with the correct server details that the action should be performed against.
 > 
-> It is recommended to use the ```serverConfig.json``` file to provide the server configurations as it is more secure and easier to maintain, when dealing with multiple environments.
+> It is recommended to use the ```serverConfig.json``` file to provide the server configurations as it is more secure and easier to maintain when dealing with multiple environments.
 
-### Tool Configurations
-The ```toolConfig.json``` file contains the configurations needed to override the default behaviour of the tool. 
+### Tool configurations
+The ```toolConfig.json``` file contains the configurations needed for overriding the default behaviour of the tool. 
 
 Example configuration file:
 ```
@@ -148,10 +148,10 @@ Example configuration file:
 }
 
 ```
-The following properties can be configured though the tool configs to manage your resources.
+The following properties can be configured through the tool configs to manage your resources.
 
-#### Keyword Replacement for Environment Specific Variables
-The ```KEYWORD_MAPPINGS``` property can be used to replace environment specific variables in the exported resource configuration files, with the actual values needed in the target environment. The keyword mapping should be added as a JSON object to the ```KEYWORD_MAPPINGS``` property in tool configs in the following format.
+#### Keyword replacement for environment-specific variables
+The ```KEYWORD_MAPPINGS``` property can be used to replace environment specific variables in the exported resource configuration files with the actual values needed in the target environment. The keyword mapping should be added as a JSON object to the ```KEYWORD_MAPPINGS``` property in the tool configs in the following format.
 ```
 {
    "KEYWORD_MAPPINGS" : {
@@ -169,10 +169,10 @@ Example:
 ```
 Find more information on the keyword replacement feature [here](../keyword-replacement.md).
 
-#### Exclude Resources
-The ```EXCLUDE``` property can be used to exclude specific resources based on their name during import or export. The resources that needs to be excluded can be added as an array of strings to the ```EXCLUDE``` property in tool configs under the relevant resource type.
+#### Exclude resources
+The ```EXCLUDE``` property can be used to exclude specific resources based on their name during import or export. The resources that need to be excluded can be added as an array of strings to the ```EXCLUDE``` property in tool configs under the relevant resource type.
 
-Here is the format of adding the ```EXCLUDE``` property to the tool configs:
+Here is the format for adding the ```EXCLUDE``` property to the tool configs:
 ```
 {
    "<RESOURCE_TYPE_NAME>" : {
@@ -189,8 +189,8 @@ Example:
    }
 }
 ```
-#### Include Only Selected Resources
-The ```INCLUDE_ONLY``` property can be used to include only specific resources based on their name during import or export. The resources that needs to be included can be added as an array of strings to the ```INCLUDE_ONLY``` property in tool configs under the relevant resource type.
+#### Include only selected resources
+The ```INCLUDE_ONLY``` property can be used to include only specific resources based on their name during import or export. The resources that need to be included can be added as an array of strings to the ```INCLUDE_ONLY``` property in tool configs under the relevant resource type.
 ```
 {
    "RESOURCE_TYPE_NAME" : {
@@ -206,8 +206,8 @@ Example:
    }
 }
 ```
-#### Exclude Secrets from Exported Resources
-By default, secrets will be removed from the exported resources. For applications, the secret fields will not be included in the exported file and for identity providers, the value of secrets will be masked by a string: ```'********'```.
+#### Exclude secrets from exported resources
+By default, secrets are removed from the exported resources. For applications, the secret fields are not included in the exported file, and for identity providers the value of secrets will be masked by a string: ```'********'```.
 The ```EXCLUDE_SECRETS``` config can be used to override this behaviour and include the secrets in the exported resources. 
 
 The ```EXCLUDE_SECRETS``` property can be added to the tool configs under the relevant resource type as shown below.
@@ -229,7 +229,7 @@ Example:
 
 
 ## Commands
-### ExportAll Command
+### ExportAll command
 The ```exportAll``` command can be used to export all resources of all supported resource types from an Identity Server to a local directory.
 ```
 iamctl exportAll -c <path to the env specific config folder> -o <path to the local output directory>
@@ -242,15 +242,15 @@ Flags:
   -h, --help               help for exportAll
   -o, --outputDir string   Path to the output directory
 ```
-The ```--config``` flag can be used to provide the path to the env specific config folder which contains the ```serverConfig.json``` and ```toolConfig.json``` files with the details of the environment that needs the resources to be exported from. If the flag is not provided, the tool will look for the server configurations in the environment variables.
+The ```--config``` flag can be used to provide the path to the env specific config folder that contains the ```serverConfig.json``` and ```toolConfig.json``` files with the details of the environment that needs the resources to be exported from. If the flag is not provided, the tool looks for the server configurations in the environment variables.
 
-The ```--outputDir``` flag can be used to provide the path to the local directory where the exported resource configuration files should be stored. If the flag is not provided, the exported resource configuration files will be created at the current working directory.
+The ```--outputDir``` flag can be used to provide the path to the local directory where the exported resource configuration files should be stored. If the flag is not provided, the exported resource configuration files are created at the current working directory.
 
 The ```--format``` flag defines the format of the exported resource configuration files. Currently, the tool supports only YAML format but will soon provide support for JSON and XML formats as well.
 
-Running this command will create separate folders for each resource type at the provided output directory path. A new file will be created with the resource name, in the given file format for each individual resource, under the relevant resource type folder.
+Running this command creates separate folders for each resource type at the provided output directory path. A new file is created with the resource name, in the given file format for each individual resource, under the relevant resource type folder.
 
-Example local directory structure if multiple environments: dev, stage, prod exist:
+Example local directory structure if multiple environments (dev, stage, prod) exist:
 ```
 output directory
 │── Applications
@@ -264,7 +264,7 @@ output directory
 │── ... other resource types
    ```
 
-### ImportAll Command
+### ImportAll command
 The ```importAll``` command can be used to import all resources of all supported resource types from a local directory to an Identity Server.
 ```
 iamctl importAll -c <path to the env specific config folder> -i <path to the local input directory>
@@ -276,6 +276,6 @@ Flags:
   -h, --help              help for importAll
   -i, --inputDir string   Path to the input directory
 ```
-The ```--config``` flag can be used to provide the path to the env specific config folder which contains the ```serverConfig.json``` and ```toolConfig.json``` files with the details of the environment that needs the resources to be imported into. If the flag is not provided, the tool will look for the server configurations in the environment variables.
+The ```--config``` flag can be used to provide the path to the env specific config folder that contains the ```serverConfig.json``` and ```toolConfig.json``` files with the details of the environment to which the resources should be imported. If the flag is not provided, the tool looks for the server configurations in the environment variables.
 
-The ```--inputDir``` flag can be used to provide the path to the local directory where the resource configuration files are stored. If the flag is not provided, the tool will look for the resource configuration files at the current working directory.
+The ```--inputDir``` flag can be used to provide the path to the local directory where the resource configuration files are stored. If the flag is not provided, the tool looks for the resource configuration files at the current working directory.
