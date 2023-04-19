@@ -9,27 +9,30 @@ The IAM-CTL is a tool that can be used to manage WSO2 Identity Server configurat
 
 1. Download the latest release binary file from [Releases](https://github.com/wso2-extensions/identity-tools-cli/releases)
  based on your Operating System.
+
 2. Extract the tar or zip file.
-Here onwards the extracted directory path is referred as ```<IAM-CTL-PATH>```.
+
+    Here onwards the extracted directory path is referred as ```<IAM-CTL-PATH>```.
+
 3. Open a terminal and create an alias for the IAM-CTL executable file using following command according to your platform.
-* linux/mac:
+   * linux/mac:
  
-    ```
-    alias iamctl="<IAM-CTL-PATH>/bin/iamctl" 
-    ```
+       ```
+       alias iamctl="<IAM-CTL-PATH>/bin/iamctl" 
+       ```
 
-* windows
+   * windows
 
-    ```
-    doskey iamctl=<IAM-CTL-PATH>/bin/iamctl.exe $*
-    ```
+       ```
+       doskey iamctl=<IAM-CTL-PATH>/bin/iamctl.exe $*
+       ```
  
-5. Run the tool using the following command to get the basic details.
+4. Run the tool using the following command to get the basic details.
     ```
     iamctl -h
     ```
-6. Start the IS server and [create an application](https://is.docs.wso2.com/en/6.1.0/guides/applications/register-sp) with **Management Application** enabled.
-7. Configure Oauth inbound authentication configuration with a dummy callback URL and make note of the client ID and client secret.
+5. Start the IS server and [create an application](https://is.docs.wso2.com/en/6.1.0/guides/applications/register-sp) with **Management Application** enabled.
+6. Configure Oauth inbound authentication configuration with a dummy callback URL and make note of the client ID and client secret.
 
 
 The IAM CTL can be used in two basic modes.
