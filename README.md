@@ -3,18 +3,18 @@
 The IAM-CTL is a tool that can be used to manage WSO2 Identity Server configurations from the command line. It is written in Go and uses the WSO2 Identity Server management REST APIs to manage configurations.
 
 ### Pre-Requisites
-* WSO2 Identity Server 6.1.0 
+You need to [setup](https://is.docs.wso2.com/en/6.0.0/get-started/sample-use-cases/set-up/) the WSO2 Identity Server 6.1.0.
 
-### How to run the tool 
+### Run the tool
 
 1. Download the latest release binary file from [Releases](https://github.com/wso2-extensions/identity-tools-cli/releases)
  based on your Operating System.
 
-2. Extract the tar or zip file.
+2. Extract the `tar` or `zip` file.
 
-    Here onwards the extracted directory path is referred as ```<IAM-CTL-PATH>```.
+    Here onwards, the extracted directory path is referred to as `<IAM-CTL-PATH>`.
 
-3. Open a terminal and create an alias for the IAM-CTL executable file using following command according to your platform.
+3. Open a terminal and create an alias for the `IAM-CTL` executable file using the following command according to your platform.
    * linux/mac:
  
        ```
