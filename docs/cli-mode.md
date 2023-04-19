@@ -2,10 +2,10 @@
 The CLI mode can be used for bulk resource management. 
 
 Usages:
-* Export all/selected resources from an Identity Server to a local directory.
-* Import all/selected resources from a local directory to an Identity Server.
+* Export all/selected resources from a WSO2 IS to a local directory.
+* Import all/selected resources from a local directory to a WSO2 IS.
 * Propagate resources across multiple environments.
-* Deploy new resources from resource configuration files to an Identity Server.
+* Deploy new resources from resource configuration files to a WSO2 IS.
 * Have a backup of resources in a local directory.
 
 Currently, the supported resource types are:
@@ -13,7 +13,9 @@ Currently, the supported resource types are:
 * Identity Providers
 
 ## Run the tool in CLI mode
-### Initialization
+To run the tool in CLI mode, follow the steps given below.
+
+### Tool Initialization
 Before running the tool to export or import any resource, the tool should be configured against the target environment.
 
 First, create the config files using the ```setupCLI``` command:
@@ -230,7 +232,7 @@ Example:
 
 ## Commands
 ### ExportAll command
-The ```exportAll``` command can be used to export all resources of all supported resource types from an Identity Server to a local directory.
+The ```exportAll``` command can be used to export all resources of all supported resource types from a WSO2 IS to a local directory.
 ```
 iamctl exportAll -c <path to the env specific config folder> -o <path to the local output directory>
 ```
@@ -265,7 +267,7 @@ output directory
    ```
 
 ### ImportAll command
-The ```importAll``` command can be used to import all resources of all supported resource types from a local directory to an Identity Server.
+The ```importAll``` command can be used to import all resources of all supported resource types from a local directory to a WSO2 IS.
 ```
 iamctl importAll -c <path to the env specific config folder> -i <path to the local input directory>
 ```
