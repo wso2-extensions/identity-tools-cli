@@ -167,7 +167,7 @@ func getAccessToken(config ServerConfigs) string {
 		log.Fatalln(err)
 	}
 	req.SetBasicAuth(config.ClientId, config.ClientSecret)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Content-Type", MEDIA_TYPE_FORM)
 	defer req.Body.Close()
 
 	httpClient := &http.Client{

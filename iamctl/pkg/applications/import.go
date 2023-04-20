@@ -171,15 +171,15 @@ func sendImportRequest(isUpdate bool, importFilePath string, fileData string) er
 	statusCode := resp.StatusCode
 	if statusCode == 201 {
 		log.Println("Application created successfully.")
+		return nil
 	} else if statusCode == 200 {
 		log.Println("Application updated successfully.")
+		return nil
 	} else if statusCode == 409 {
 		log.Println("An application with the same name already exists. Please rename the file accordingly.")
-		importApp(importFilePath, true)
+		return importApp(importFilePath, true)
 	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
 		return fmt.Errorf("error response for the import request: %s", error)
-	} else {
-		return fmt.Errorf("unexpected error when importing application: %s", resp.Status)
 	}
-	return nil
+	return fmt.Errorf("unexpected error when importing application: %s", resp.Status)
 }

@@ -47,6 +47,7 @@ const TOOL_CONFIG_FILE = "toolConfig.json"
 const MEDIA_TYPE_JSON = "application/json"
 const MEDIA_TYPE_XML = "application/xml"
 const MEDIA_TYPE_YAML = "application/yaml"
+const MEDIA_TYPE_FORM = "application/x-www-form-urlencoded"
 
 const DEFAULT_TENANT_DOMAIN = "carbon.super"
 

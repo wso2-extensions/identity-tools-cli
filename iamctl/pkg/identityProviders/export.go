@@ -80,7 +80,7 @@ func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets
 	if err != nil {
 		return fmt.Errorf("error while creating the request to export identity provider: %s", err)
 	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Content-Type", utils.MEDIA_TYPE_FORM)
 	req.Header.Set("accept", fileType)
 	req.Header.Set("Authorization", "Bearer "+utils.SERVER_CONFIGS.Token)
 
@@ -127,13 +127,11 @@ func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets
 
 		err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 		if err != nil {
-			log.Println("Error when writing the exported content to file: ", err)
-			return err
+			return fmt.Errorf("error when writing the exported content to file: %w", err)
 		}
 		return nil
 	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
 		return fmt.Errorf("error while exporting the identity provider: %s", error)
-	} else {
-		return fmt.Errorf("unexpected error while exporting the identity provider with status code: %s", strconv.FormatInt(int64(statusCode), 10))
 	}
+	return fmt.Errorf("unexpected error while exporting the identity provider with status code: %s", strconv.FormatInt(int64(statusCode), 10))
 }

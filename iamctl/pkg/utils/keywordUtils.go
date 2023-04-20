@@ -112,10 +112,9 @@ func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map
 				if err != nil {
 					log.Printf("Error: cannot resolve path for the field %s. %s.\n", strings.Join(path, "."), err)
 					break
-				} else {
-					newPath := append(path, arrayElementPath)
-					keys = append(keys, GetKeywordLocations(val, newPath, keywordMapping)...)
 				}
+				newPath := append(path, arrayElementPath)
+				keys = append(keys, GetKeywordLocations(val, newPath, keywordMapping)...)
 			}
 		}
 	case string:
@@ -288,9 +287,8 @@ func getPathKeys(pathString string) []string {
 				if strings.HasSuffix(pathArray[j], "]") {
 					key = key + "." + pathArray[j]
 					break
-				} else {
-					key = key + "." + pathArray[j]
 				}
+				key = key + "." + pathArray[j]
 			}
 			finalKeys = append(finalKeys, key)
 		}

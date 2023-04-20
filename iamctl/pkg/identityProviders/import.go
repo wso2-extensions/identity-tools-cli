@@ -51,7 +51,7 @@ func ImportAll(inputDirPath string) {
 		idpName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 
 		if !utils.IsResourceExcluded(idpName, utils.TOOL_CONFIGS.IdpConfigs) {
-			idpId, err := validateFile(idpFilePath, idpName)
+			idpId, err := getIdpId(idpFilePath, idpName)
 			if err != nil {
 				log.Printf("Invalid file configurations for identity provider: %s. %s", idpName, err)
 			} else {
@@ -148,20 +148,20 @@ func sendImportRequest(idpId string, importFilePath string, fileData string) err
 	statusCode := resp.StatusCode
 	if statusCode == 201 {
 		log.Println("Identity provider created successfully.")
+		return nil
 	} else if statusCode == 200 {
 		log.Println("Identity provider updated successfully.")
+		return nil
 	} else if statusCode == 409 {
 		log.Println("An identity provider with the same name already exists. Please rename the file accordingly.")
-		importIdp(idpId, importFilePath)
+		return importIdp(idpId, importFilePath)
 	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
 		return fmt.Errorf("error response for the import request: %s", error)
-	} else {
-		return fmt.Errorf("unexpected error when importing identity provider: %s", resp.Status)
 	}
-	return nil
+	return fmt.Errorf("unexpected error when importing identity provider: %s", resp.Status)
 }
 
-func validateFile(idpFilePath string, idpName string) (string, error) {
+func getIdpId(idpFilePath string, idpName string) (string, error) {
 
 	fileContent, err := ioutil.ReadFile(idpFilePath)
 	if err != nil {
