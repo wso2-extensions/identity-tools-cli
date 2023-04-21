@@ -21,6 +21,7 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"reflect"
 	"strconv"
@@ -42,6 +43,22 @@ func ReplaceKeywords(fileContent string, keywordMapping map[string]interface{}) 
 	return fileContent
 }
 
+func HandleESVs(exportedFileName string, exportedFileContent []byte, keywordMapping map[string]interface{}) []byte {
+
+	// Replace ESVs in the exported file according to the keyword placeholders added in the local file.
+	localFileData, err := ioutil.ReadFile(exportedFileName)
+	if err != nil {
+		log.Printf("Local file not found at %s. Creating new file.", exportedFileName)
+		return exportedFileContent
+	}
+	modifiedExportedContent, err := AddKeywords(exportedFileContent, localFileData, keywordMapping)
+	if err != nil {
+		log.Println("Error when adding keywords to the exported file. Overriding local file with exported content. ", err)
+		return exportedFileContent
+	}
+	return modifiedExportedContent
+}
+
 func AddKeywords(exportedData []byte, localFileData []byte, keywordMapping map[string]interface{}) ([]byte, error) {
 
 	var localYaml interface{}
@@ -51,7 +68,6 @@ func AddKeywords(exportedData []byte, localFileData []byte, keywordMapping map[s
 		return exportedData, err1
 	}
 
-	// Load exported app data as a yaml object.
 	var exportedYaml interface{}
 	err = yaml.Unmarshal(exportedData, &exportedYaml)
 	if err != nil {
@@ -85,11 +101,18 @@ func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map
 		}
 	case []interface{}:
 		for _, val := range v {
-			arrayElementPath, err := resolvePathWithIdentifiers(path[len(path)-1], val, appArrayIdentifiers)
-			if err != nil {
-				log.Printf("Error: cannot resolve path for the field %s. %s.\n", strings.Join(path, "."), err)
+			if _, ok := val.(string); ok {
+				if ContainsKeywords(val.(string), keywordMapping) {
+					thisPath := strings.Join(path, ".")
+					keys = append(keys, thisPath)
+				}
 				break
 			} else {
+				arrayElementPath, err := resolvePathWithIdentifiers(path[len(path)-1], val, arrayIdentifiers)
+				if err != nil {
+					log.Printf("Error: cannot resolve path for the field %s. %s.\n", strings.Join(path, "."), err)
+					break
+				}
 				newPath := append(path, arrayElementPath)
 				keys = append(keys, GetKeywordLocations(val, newPath, keywordMapping)...)
 			}
@@ -114,9 +137,9 @@ func resolvePathWithIdentifiers(arrayName string, element interface{}, identifie
 	if identifier == "" {
 		identifier = "name"
 	}
-	identifierValue, ok := elementMap[identifier]
-	if !ok {
-		return "", fmt.Errorf("identifier not found for array %s", arrayName)
+	identifierValue := GetValue(elementMap, identifier)
+	if identifierValue == "" {
+		return identifierValue, fmt.Errorf("identifier not found for array %s", arrayName)
 	}
 	return fmt.Sprintf("[%s=%s]", identifier, identifierValue), nil
 }
@@ -146,7 +169,7 @@ func ModifyFieldsWithKeywords(exportedFileData interface{}, localFileData interf
 			log.Println("Info: Exported Value: ", exportedValue)
 		} else {
 			log.Printf("Info: Keyword added at %s field\n", location)
-			ReplaceValue(exportedFileData, strings.Split(location, "."), localValue)
+			ReplaceValue(exportedFileData, location, localValue)
 		}
 	}
 	return exportedFileData
@@ -154,7 +177,7 @@ func ModifyFieldsWithKeywords(exportedFileData interface{}, localFileData interf
 
 func GetValue(data interface{}, key string) string {
 
-	parts := strings.Split(key, ".")
+	parts := getPathKeys(key)
 	for _, part := range parts {
 		switch v := data.(type) {
 		case map[interface{}]interface{}:
@@ -174,17 +197,25 @@ func GetValue(data interface{}, key string) string {
 			return ""
 		}
 	}
+	if data == nil {
+		return ""
+	}
 	if reflect.TypeOf(data).Kind() == reflect.Int {
 		return strconv.Itoa(data.(int))
 	}
-	if data == nil {
-		return ""
+	if finalArray, ok := data.([]interface{}); ok {
+		strArray := make([]string, len(finalArray))
+		for i, v := range finalArray {
+			strArray[i] = v.(string)
+		}
+		data = strings.Join(strArray, ",")
 	}
 	return data.(string)
 }
 
-func ReplaceValue(data interface{}, path []string, replacement string) interface{} {
+func ReplaceValue(data interface{}, pathString string, replacement string) interface{} {
 
+	path := getPathKeys(pathString)
 	if len(path) == 1 {
 		switch data.(type) {
 		case map[interface{}]interface{}:
@@ -196,10 +227,10 @@ func ReplaceValue(data interface{}, path []string, replacement string) interface
 		switch v := data.(type) {
 		case map[interface{}]interface{}:
 			currentKey := path[0]
-			data.(map[interface{}]interface{})[currentKey] = ReplaceValue(v[currentKey], path[1:], replacement)
+			data.(map[interface{}]interface{})[currentKey] = ReplaceValue(v[currentKey], strings.Join(path[1:], "."), replacement)
 		case map[string]interface{}:
 			currentKey := path[0]
-			data.(map[string]interface{})[currentKey] = ReplaceValue(v[currentKey], path[1:], replacement)
+			data.(map[string]interface{})[currentKey] = ReplaceValue(v[currentKey], strings.Join(path[1:], "."), replacement)
 		case []interface{}:
 			currentKey := path[0]
 			index, err := GetArrayIndex(v, currentKey)
@@ -208,7 +239,7 @@ func ReplaceValue(data interface{}, path []string, replacement string) interface
 				return data
 			}
 			if len(v) > index {
-				data.([]interface{})[index] = ReplaceValue(v[index], path[1:], replacement)
+				data.([]interface{})[index] = ReplaceValue(v[index], strings.Join(path[1:], "."), replacement)
 			}
 		default:
 			return data
@@ -225,17 +256,42 @@ func GetArrayIndex(arrayMap []interface{}, elementIdentifier string) (int, error
 		for k, v := range arrayMap {
 			switch v := v.(type) {
 			case map[interface{}]interface{}:
-				if v[parts[0]] == parts[1] {
+				if GetValue(v, parts[0]) == parts[1] {
 					return k, nil
 				}
 			case map[string]interface{}:
-				if v[parts[0]] == parts[1] {
+				if GetValue(v, parts[0]) == parts[1] {
 					return k, nil
 				}
 			}
 		}
 	} else {
-		return -1, fmt.Errorf("element identifier is not in the expected format.")
+		return -1, fmt.Errorf("element identifier is not in the expected format")
 	}
 	return -1, errors.New("element not found")
+}
+
+func getPathKeys(pathString string) []string {
+
+	pathArray := strings.Split(pathString, ".")
+	finalKeys := []string{}
+	for i := 0; i < len(pathArray); i++ {
+		v := pathArray[i]
+		if !strings.HasPrefix(v, "[") {
+			finalKeys = append(finalKeys, v)
+		} else {
+			key := v
+			var j int
+			for j = i + 1; j < (len(pathArray) - 1); j++ {
+				i += 1
+				if strings.HasSuffix(pathArray[j], "]") {
+					key = key + "." + pathArray[j]
+					break
+				}
+				key = key + "." + pathArray[j]
+			}
+			finalKeys = append(finalKeys, key)
+		}
+	}
+	return finalKeys
 }

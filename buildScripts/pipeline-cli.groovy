@@ -18,17 +18,20 @@
 def VERSION
 def CLI_REPO = "https://github.com/wso2-extensions/identity-tools-cli.git"
 def BRANCH = "master"
-def repo = "wso2-extensions/identity-tools-cli"
+def repo="wso2-extensions/identity-tools-cli"
+def uploadUrl
+
+import groovy.json.JsonSlurper
 
 node('PRODUCT_ECS') {
-    stage('Preparation') {
+    stage('Preparation') { // for display purposes
         // Get some code from a GitHub repository
-        checkout([$class           : 'GitSCM', branches: [[name: BRANCH]],
+        checkout([$class: 'GitSCM', branches: [[name: BRANCH]],
                   userRemoteConfigs: [[url: CLI_REPO]]])
 
     }
     stage('Build') {
-        if (ReleaseVersion != "") {
+        if (ReleaseVersion != ""){
             VERSION = ReleaseVersion
             sh """
                 VERSION=${VERSION} make install-cli
@@ -39,18 +42,19 @@ node('PRODUCT_ECS') {
           """
         }
 
-        if (ReleaseVersion != "") {
+
+        if (ReleaseVersion != ""){
             withCredentials([usernamePassword(credentialsId: '4ff4a55b-1313-45da-8cbf-b2e100b1accd', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
-                def patternToFind = "VERSION" + version()
+                def patternToFind = "VERSION"+version()
                 echo patternToFind
-                textToReplace = "VERSION?=" + DevelopmentVersion
+                textToReplace = "VERSION?="+ DevelopmentVersion
                 echo textToReplace
                 replaceText("Makefile", patternToFind, textToReplace)
 
-                sh 'git config  user.email "email-id"'
+                sh 'git config  user.email "jenkins-bot@wso2.com"'
                 sh 'git status'
                 sh 'git add Makefile'
-                sh 'git commit -m "Update to next development version"'
+                sh 'git commit -m "[WSO2 Release] prepare for next development iteration"'
                 sh 'git push -u https://{GIT_USERNAME}:${GIT_PASSWORD}@github.com/wso2-extensions/identity-tools-cli.git HEAD:master'
 
                 def response = sh returnStdout: true,
@@ -60,10 +64,9 @@ node('PRODUCT_ECS') {
 
                 uploadUrl = getUploadUrl(response)
 
-                macfile = sh(returnStdout: true, script: "basename iamctl/build/iamctl-*-macosx-x64.tar.gz").trim()
-                ubuntufile = sh(returnStdout: true, script: "basename iamctl/build/iamctl-*-linux-x64.tar.gz").trim()
-                windowsfile = sh(returnStdout: true, script: "basename iamctl/build/iamctl-*-windows-x64.zip").trim()
-
+                macfile = sh (returnStdout: true, script: "basename iamctl/build/iamctl-*-macosx-x64.tar.gz").trim()
+                ubuntufile = sh (returnStdout: true, script: "basename iamctl/build/iamctl-*-linux-x64.tar.gz").trim()
+                windowsfile = sh (returnStdout: true, script: "basename iamctl/build/iamctl-*-windows-x64.zip").trim()
 
                 sh returnStdout: true,
                         script: "curl -s -H \"Content-Type: application/octet-stream\" -u ${GIT_USERNAME}:${GIT_PASSWORD} " +
@@ -85,22 +88,21 @@ node('PRODUCT_ECS') {
 
     }
     stage('Results') {
-        steps {
-            archiveArtifacts artifacts: 'iamctl/build/*.tar.gz'
-            archiveArtifacts artifacts: 'iamctl/build/*.zip'
-        }
+        archiveArtifacts artifacts: 'iamctl/build/*.tar.gz'
+        archiveArtifacts artifacts: 'iamctl/build/*.zip'
     }
+
 }
 
 def version() {
-    def matcher = readFile("Makefile") =~ 'VERSION(.*)'
+    def matcher = readFile("Makefile")=~'VERSION(.*)'
     return matcher ? matcher[0][1] : null
 }
 
 def replaceText(String filepath, String pattern, String replaceText) {
     def text = readFile filepath
     def isExists = fileExists filepath
-    if (isExists) {
+    if (isExists){
 
         def fileText = text.replace(pattern, replaceText)
         writeFile file: filepath, text: fileText

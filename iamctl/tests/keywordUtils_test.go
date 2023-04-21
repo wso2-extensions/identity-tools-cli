@@ -172,6 +172,7 @@ func TestContainsKeywords(t *testing.T) {
 func TestGetKeywordLocations(t *testing.T) {
 	fileData := map[interface{}]interface{}{
 		"description": "A sample string with a {{KEYWORD}}.",
+		"stringArray": []interface{}{"Sample string with a {{KEYWORD}}", "Sample string without a keyword"},
 		"nestedObject": map[interface{}]interface{}{
 			"subKey1": map[interface{}]interface{}{
 				"subSubKey1": "A sample string without a keyword.",
@@ -208,15 +209,30 @@ func TestGetKeywordLocations(t *testing.T) {
 			},
 		},
 		"key1": []interface{}{},
+		"claimMappings": []interface{}{
+			map[interface{}]interface{}{
+				"defaultValue": "some string",
+				"localClaim": map[interface{}]interface{}{
+					"claimId":  1,
+					"claimUri": "http://wso2.org/claims/identity/accountLocked",
+				},
+				"remoteClaim": map[interface{}]interface{}{
+					"claimId":  0,
+					"claimUri": "http://wso2.org/claims/identity/{{KEYWORD}}",
+				},
+			},
+		},
 	}
 	keywordMapping := map[string]interface{}{
 		"KEYWORD": "value",
 	}
 	expectedResult := []string{
 		"description",
+		"stringArray",
 		"nestedObject.subKey2.subSubKey1",
 		"properties.[name=element1].subKey1",
 		"array1.[name=element1].subKey2",
+		"claimMappings.[localClaim.claimUri=http://wso2.org/claims/identity/accountLocked].remoteClaim.claimUri",
 	}
 
 	result := utils.GetKeywordLocations(fileData, []string{}, keywordMapping)
@@ -233,6 +249,7 @@ func TestGetValue(t *testing.T) {
 
 	data := map[interface{}]interface{}{
 		"description": "A sample description",
+		"stringArray": []interface{}{"Sample string with a {{KEYWORD}}", "Sample string without a keyword"},
 		"nestedObject": map[interface{}]interface{}{
 			"subKey1": map[interface{}]interface{}{
 				"subSubKey1": "A sample string without a keyword.",
@@ -253,6 +270,21 @@ func TestGetValue(t *testing.T) {
 			},
 		},
 		"key1": []interface{}{},
+		"claimMappings": []interface{}{
+			map[interface{}]interface{}{
+				"defaultValue": "some string",
+				"localClaim": map[interface{}]interface{}{
+					"claimId": 1,
+					"key": map[interface{}]interface{}{
+						"claimUri": "http://wso2.org/claims/identity/accountLocked",
+					},
+				},
+				"remoteClaim": map[interface{}]interface{}{
+					"claimId":  0,
+					"claimUri": "http://wso2.org/claims/identity/{{KEYWORD}}",
+				},
+			},
+		},
 	}
 	testCases := []struct {
 		path           string
@@ -261,6 +293,10 @@ func TestGetValue(t *testing.T) {
 		{
 			path:           "description",
 			expectedResult: "A sample description",
+		},
+		{
+			path:           "stringArray",
+			expectedResult: "Sample string with a {{KEYWORD}},Sample string without a keyword",
 		},
 		{
 			path:           "nestedObject.subKey2.subSubKey1",
@@ -278,6 +314,10 @@ func TestGetValue(t *testing.T) {
 			path:           "key1.[name=element1].subKey2",
 			expectedResult: "",
 		},
+		{
+			path:           "claimMappings.[localClaim.key.claimUri=http://wso2.org/claims/identity/accountLocked].remoteClaim.claimUri",
+			expectedResult: "http://wso2.org/claims/identity/{{KEYWORD}}",
+		},
 	}
 
 	for i, tc := range testCases {
@@ -294,7 +334,7 @@ func TestReplaceValue(t *testing.T) {
 
 	testCases := []struct {
 		data           interface{}
-		path           []string
+		path           string
 		replacement    string
 		expectedResult interface{}
 	}{
@@ -302,10 +342,20 @@ func TestReplaceValue(t *testing.T) {
 			data: map[interface{}]interface{}{
 				"description": "A sample description",
 			},
-			path:        []string{"description"},
+			path:        "description",
 			replacement: "A sample description of the dev environment",
 			expectedResult: map[interface{}]interface{}{
 				"description": "A sample description of the dev environment",
+			},
+		},
+		{
+			data: map[interface{}]interface{}{
+				"stringArray": []interface{}{"Sample string with a {{KEYWORD}}", "Sample string without a keyword"},
+			},
+			path:        "stringArray",
+			replacement: "Sample string with a replaced keyword,Sample string without a keyword",
+			expectedResult: map[interface{}]interface{}{
+				"stringArray": "Sample string with a replaced keyword,Sample string without a keyword",
 			},
 		},
 		{
@@ -319,7 +369,7 @@ func TestReplaceValue(t *testing.T) {
 					},
 				},
 			},
-			path:        []string{"nestedObject", "subKey2", "subSubKey1"},
+			path:        "nestedObject.subKey2.subSubKey1",
 			replacement: "Sample string with the replaced keyword",
 			expectedResult: map[interface{}]interface{}{
 				"nestedObject": map[interface{}]interface{}{
@@ -346,7 +396,7 @@ func TestReplaceValue(t *testing.T) {
 					},
 				},
 			},
-			path:        []string{"properties", "[name=element1]", "subKey2"},
+			path:        "properties.[name=element1].subKey2",
 			replacement: "Sample string with the added {{KEYWORD}}",
 			expectedResult: map[interface{}]interface{}{
 				"properties": []interface{}{
@@ -372,7 +422,7 @@ func TestReplaceValue(t *testing.T) {
 					},
 				},
 			},
-			path:        []string{"properties", "[name=element3]", "subKey1"},
+			path:        "properties.[name=element3].subKey1",
 			replacement: "Sample string in array element which does not exist",
 			expectedResult: map[interface{}]interface{}{
 				"properties": []interface{}{
@@ -388,10 +438,44 @@ func TestReplaceValue(t *testing.T) {
 			data: map[interface{}]interface{}{
 				"key1": []interface{}{},
 			},
-			path:        []string{"key1", "[name=element1]", "subKey2"},
+			path:        "key1.[name=element1].subKey2",
 			replacement: "Sample string in object which does not exist",
 			expectedResult: map[interface{}]interface{}{
 				"key1": []interface{}{},
+			},
+		},
+		{
+			data: map[interface{}]interface{}{
+				"claimMappings": []interface{}{
+					map[interface{}]interface{}{
+						"defaultValue": "some string",
+						"localClaim": map[interface{}]interface{}{
+							"claimId":  1,
+							"claimUri": "http://wso2.org/claims/identity/accountLocked",
+						},
+						"remoteClaim": map[interface{}]interface{}{
+							"claimId":  0,
+							"claimUri": "http://wso2.org/claims/identity/{{KEYWORD}}",
+						},
+					},
+				},
+			},
+			path:        "claimMappings.[localClaim.claimUri=http://wso2.org/claims/identity/accountLocked].remoteClaim.claimUri",
+			replacement: "http://wso2.org/claims/identity/replacedKeyword",
+			expectedResult: map[interface{}]interface{}{
+				"claimMappings": []interface{}{
+					map[interface{}]interface{}{
+						"defaultValue": "some string",
+						"localClaim": map[interface{}]interface{}{
+							"claimId":  1,
+							"claimUri": "http://wso2.org/claims/identity/accountLocked",
+						},
+						"remoteClaim": map[interface{}]interface{}{
+							"claimId":  0,
+							"claimUri": "http://wso2.org/claims/identity/replacedKeyword",
+						},
+					},
+				},
 			},
 		},
 	}

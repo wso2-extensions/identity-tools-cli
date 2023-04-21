@@ -71,3 +71,12 @@ func ResolveAdvancedKeywordMapping(resourceName string, resourceConfigs map[stri
 	}
 	return defaultKeywordMapping
 }
+
+func AreSecretsExcluded(resourceConfigs map[string]interface{}) bool {
+
+	// Check if secrets are excluded for the given resource type.
+	if secretsExcluded, ok := resourceConfigs[EXCLUDE_SECRETS_CONFIG].(bool); ok {
+		return secretsExcluded
+	}
+	return true
+}

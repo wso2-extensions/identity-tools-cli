@@ -49,6 +49,7 @@ type ServerConfigs struct {
 type ToolConfigs struct {
 	KeywordMappings    map[string]interface{} `json:"KEYWORD_MAPPINGS"`
 	ApplicationConfigs map[string]interface{} `json:"APPLICATIONS"`
+	IdpConfigs         map[string]interface{} `json:"IDENTITY_PROVIDERS"`
 }
 
 type Application struct {
@@ -71,23 +72,31 @@ var TOOL_CONFIGS ToolConfigs
 
 func LoadConfigs(envConfigPath string) (baseDir string) {
 
-	var toolConfigFile string
+	baseDir, toolConfigFile := loadServerConfigs(envConfigPath)
+	TOOL_CONFIGS = loadToolConfigsFromFile(toolConfigFile)
+	return baseDir
+}
+
+func loadServerConfigs(envConfigPath string) (baseDir string, toolConfigPath string) {
+
 	if envConfigPath == "" {
-		log.Println("Loading configs from environment variables")
-		toolConfigFile = loadConfigsFromEnvVar()
-		baseDir = filepath.Dir(filepath.Dir(filepath.Dir(toolConfigFile)))
+		log.Println("Loading configs from environment variables.")
+		toolConfigPath = loadConfigsFromEnvVar()
+		baseDir = filepath.Dir(filepath.Dir(filepath.Dir(toolConfigPath)))
 	} else {
-		log.Println("Loading configs from config files")
+		log.Println("Loading configs from config files.")
 		baseDir = filepath.Dir(filepath.Dir(envConfigPath))
 		serverConfigFile := filepath.Join(envConfigPath, SERVER_CONFIG_FILE)
-		toolConfigFile = filepath.Join(envConfigPath, TOOL_CONFIG_FILE)
+		toolConfigPath = filepath.Join(envConfigPath, TOOL_CONFIG_FILE)
 
-		// Load configs from files.
 		SERVER_CONFIGS = loadServerConfigsFromFile(serverConfigFile)
 	}
-	TOOL_CONFIGS = loadToolConfigsFromFile(toolConfigFile)
+	sanitizeServerConfigs()
 
-	return baseDir
+	// Get access token.
+	SERVER_CONFIGS.Token = getAccessToken(SERVER_CONFIGS)
+	log.Println("Access Token recieved succesfully.")
+	return baseDir, toolConfigPath
 }
 
 func loadConfigsFromEnvVar() string {
@@ -97,12 +106,6 @@ func loadConfigsFromEnvVar() string {
 	SERVER_CONFIGS.ClientId = os.Getenv(CLIENT_ID_CONFIG)
 	SERVER_CONFIGS.ClientSecret = os.Getenv(CLIENT_SECRET_CONFIG)
 	SERVER_CONFIGS.TenantDomain = os.Getenv(TENANT_DOMAIN_CONFIG)
-
-	// Set tenant domain if not defined in the config file.
-	if SERVER_CONFIGS.TenantDomain == "" {
-		log.Println("Tenant domain is not defined in the config file. Using the default tenant domain: carbon.super")
-		SERVER_CONFIGS.TenantDomain = "carbon.super"
-	}
 
 	// Load tool config file path from environment variables.
 	toolConfigPath := os.Getenv("TOOL_CONFIG_PATH")
@@ -122,17 +125,6 @@ func loadServerConfigsFromFile(configFilePath string) (serverConfigs ServerConfi
 		log.Fatalln(err)
 	}
 	log.Println("Server configs loaded succesfully from the config file.")
-
-	// Set tenant domain if not defined in the config file.
-	if serverConfigs.TenantDomain == "" {
-		log.Println("Tenant domain is not defined in the config file. Using the default tenant domain: carbon.super")
-		serverConfigs.TenantDomain = "carbon.super"
-	}
-
-	// Get access token.
-	serverConfigs.Token = getAccessToken(serverConfigs)
-	log.Println("Access Token recieved succesfully.")
-
 	return serverConfigs
 }
 
@@ -175,7 +167,7 @@ func getAccessToken(config ServerConfigs) string {
 		log.Fatalln(err)
 	}
 	req.SetBasicAuth(config.ClientId, config.ClientSecret)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Content-Type", MEDIA_TYPE_FORM)
 	defer req.Body.Close()
 
 	httpClient := &http.Client{
@@ -206,4 +198,15 @@ func getAccessToken(config ServerConfigs) string {
 	}
 
 	return response.AccessToken
+}
+
+func sanitizeServerConfigs() {
+
+	SERVER_CONFIGS.ServerUrl = strings.TrimSuffix(SERVER_CONFIGS.ServerUrl, "/")
+
+	// Set tenant domain if not defined in the config file.
+	if SERVER_CONFIGS.TenantDomain == "" {
+		log.Println("Tenant domain not defined. Defaulting to: carbon.super")
+		SERVER_CONFIGS.TenantDomain = DEFAULT_TENANT_DOMAIN
+	}
 }

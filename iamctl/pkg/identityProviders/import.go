@@ -16,7 +16,7 @@
 * under the License.
  */
 
-package applications
+package identityproviders
 
 import (
 	"bytes"
@@ -38,83 +38,60 @@ import (
 
 func ImportAll(inputDirPath string) {
 
-	log.Println("Importing applications...")
-	importFilePath := filepath.Join(inputDirPath, utils.APPLICATIONS)
+	log.Println("Importing identity providers...")
+	importFilePath := filepath.Join(inputDirPath, utils.IDENTITY_PROVIDERS)
 
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Println("Error importing applications: ", err)
+		log.Println("Error importing identity providers: ", err)
 	}
 
 	for _, file := range files {
-		appFilePath := filepath.Join(importFilePath, file.Name())
-		appName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
-		appExists, isValidFile := validateFile(appFilePath, appName)
+		idpFilePath := filepath.Join(importFilePath, file.Name())
+		idpName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 
-		if isValidFile && !utils.IsResourceExcluded(appName, utils.TOOL_CONFIGS.ApplicationConfigs) {
-			importApp(appFilePath, appExists)
+		if !utils.IsResourceExcluded(idpName, utils.TOOL_CONFIGS.IdpConfigs) {
+			idpId, err := getIdpId(idpFilePath, idpName)
+			if err != nil {
+				log.Printf("Invalid file configurations for identity provider: %s. %s", idpName, err)
+			} else {
+				err := importIdp(idpId, idpFilePath)
+				if err != nil {
+					log.Println("Error importing identity provider: ", err)
+				}
+			}
 		}
 	}
 }
 
-func validateFile(appFilePath string, appName string) (appExists bool, isValid bool) {
-
-	appExists = false
-
-	fileContent, err := ioutil.ReadFile(appFilePath)
-	if err != nil {
-		log.Println("Error when reading the file for app: ", appName, err)
-		return appExists, false
-	}
-
-	// Validate the YAML format.
-	var appConfig AppConfig
-	err = yaml.Unmarshal(fileContent, &appConfig)
-	if err != nil {
-		log.Println("Invalid file content for app: ", appName, err)
-		return appExists, false
-	}
-
-	existingAppList := getDeployedAppNames()
-	for _, app := range existingAppList {
-		if app == appConfig.ApplicationName {
-			appExists = true
-			break
-		}
-	}
-	if appConfig.ApplicationName != appName {
-		log.Println("Warning: Application name in the file " + appFilePath + " is not matching with the file name.")
-	}
-	return appExists, true
-}
-
-func importApp(importFilePath string, isUpdate bool) error {
+func importIdp(idpId string, importFilePath string) error {
 
 	fileBytes, err := ioutil.ReadFile(importFilePath)
 	if err != nil {
-		return fmt.Errorf("error when reading the file for application: %s", err)
+		return fmt.Errorf("error when reading the file for identity provider: %s", err)
 	}
 
 	// Replace keyword placeholders in the local file according to the keyword mappings added in configs.
 	fileInfo := utils.GetFileInfo(importFilePath)
-	appKeywordMapping := getAppKeywordMapping(fileInfo.ResourceName)
-	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), appKeywordMapping)
+	idpKeywordMapping := getIdpKeywordMapping(fileInfo.ResourceName)
+	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), idpKeywordMapping)
 
-	sendImportRequest(isUpdate, importFilePath, modifiedFileData)
+	sendImportRequest(idpId, importFilePath, modifiedFileData)
 	return nil
 }
 
-func sendImportRequest(isUpdate bool, importFilePath string, fileData string) error {
+func sendImportRequest(idpId string, importFilePath string, fileData string) error {
 
-	reqUrl := utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/applications/import"
 	fileInfo := utils.GetFileInfo(importFilePath)
 
-	var requestMethod string
-	if isUpdate {
-		log.Println("Updating app: " + fileInfo.ResourceName)
+	var requestMethod, reqUrl string
+	if idpId != "" {
+		log.Println("Updating IdP: " + fileInfo.ResourceName)
+		reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/identity-providers/file/" + idpId
 		requestMethod = "PUT"
 	} else {
-		log.Println("Creating app: " + fileInfo.ResourceName)
+		log.Println("Creating new IdP: " + fileInfo.ResourceName)
+		reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/identity-providers/file"
 		requestMethod = "POST"
 	}
 
@@ -170,16 +147,40 @@ func sendImportRequest(isUpdate bool, importFilePath string, fileData string) er
 
 	statusCode := resp.StatusCode
 	if statusCode == 201 {
-		log.Println("Application created successfully.")
+		log.Println("Identity provider created successfully.")
 		return nil
 	} else if statusCode == 200 {
-		log.Println("Application updated successfully.")
+		log.Println("Identity provider updated successfully.")
 		return nil
 	} else if statusCode == 409 {
-		log.Println("An application with the same name already exists. Please rename the file accordingly.")
-		return importApp(importFilePath, true)
+		log.Println("An identity provider with the same name already exists. Please rename the file accordingly.")
+		return importIdp(idpId, importFilePath)
 	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
 		return fmt.Errorf("error response for the import request: %s", error)
 	}
-	return fmt.Errorf("unexpected error when importing application: %s", resp.Status)
+	return fmt.Errorf("unexpected error when importing identity provider: %s", resp.Status)
+}
+
+func getIdpId(idpFilePath string, idpName string) (string, error) {
+
+	fileContent, err := ioutil.ReadFile(idpFilePath)
+	if err != nil {
+		return "", fmt.Errorf("error when reading the file for idp: %s. %s", idpName, err)
+	}
+	var idpConfig idpConfig
+	err = yaml.Unmarshal(fileContent, &idpConfig)
+	if err != nil {
+		return "", fmt.Errorf("invalid file content for idp: %s. %s", idpName, err)
+	}
+	existingIdpList, err := getIdpList()
+	if err != nil {
+		return "", fmt.Errorf("error when retrieving the deployed idp list: %s", err)
+	}
+
+	for _, idp := range existingIdpList {
+		if idp.Name == idpConfig.IdentityProviderName {
+			return idp.Id, nil
+		}
+	}
+	return "", nil
 }
