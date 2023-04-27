@@ -16,11 +16,12 @@
 * under the License.
  */
 
-package identityproviders
+package userstores
 
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -34,70 +35,73 @@ import (
 	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
-	"gopkg.in/yaml.v2"
 )
 
 func ImportAll(inputDirPath string) {
 
-	log.Println("Importing identity providers...")
-	importFilePath := filepath.Join(inputDirPath, utils.IDENTITY_PROVIDERS)
+	fmt.Println(utils.SERVER_CONFIGS.Token)
+	log.Println("Importing user stores...")
+	importFilePath := filepath.Join(inputDirPath, utils.USERSTORES)
 
 	var files []os.FileInfo
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Println("No identity providers to import.")
+		log.Println("No user stores to import.")
 	} else {
 		files, err = ioutil.ReadDir(importFilePath)
 		if err != nil {
-			log.Println("Error importing identity providers: ", err)
+			log.Println("Error importing user stores: ", err)
 		}
 	}
 
 	for _, file := range files {
-		idpFilePath := filepath.Join(importFilePath, file.Name())
-		idpName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
+		userStoreFilePath := filepath.Join(importFilePath, file.Name())
+		userStoreName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 
-		if !utils.IsResourceExcluded(idpName, utils.TOOL_CONFIGS.IdpConfigs) {
-			idpId, err := getIdpId(idpFilePath, idpName)
+		if !utils.IsResourceExcluded(userStoreName, utils.TOOL_CONFIGS.UserStoreConfigs) {
+			userStoreId, err := getUserStoreId(userStoreFilePath, userStoreName)
 			if err != nil {
-				log.Printf("Invalid file configurations for identity provider: %s. %s", idpName, err)
+				log.Printf("Invalid file configurations for user store: %s. %s", userStoreName, err)
 			} else {
-				err := importIdp(idpId, idpFilePath)
+				err := importUserStore(userStoreId, userStoreFilePath)
 				if err != nil {
-					log.Println("Error importing identity provider: ", err)
+					log.Println("Error importing user store: ", err)
 				}
 			}
 		}
 	}
 }
 
-func importIdp(idpId string, importFilePath string) error {
+func importUserStore(userStoreId string, importFilePath string) error {
 
 	fileBytes, err := ioutil.ReadFile(importFilePath)
 	if err != nil {
-		return fmt.Errorf("error when reading the file for identity provider: %s", err)
+		return fmt.Errorf("error when reading the file for user store: %s", err)
 	}
 
 	// Replace keyword placeholders in the local file according to the keyword mappings added in configs.
 	fileInfo := utils.GetFileInfo(importFilePath)
-	idpKeywordMapping := getIdpKeywordMapping(fileInfo.ResourceName)
-	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), idpKeywordMapping)
+	userStoreKeywordMapping := getUserStoreKeywordMapping(fileInfo.ResourceName)
+	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), userStoreKeywordMapping)
 
-	sendImportRequest(idpId, importFilePath, modifiedFileData)
+	err = sendImportRequest(userStoreId, importFilePath, modifiedFileData)
+	if err != nil {
+		return fmt.Errorf("error when importing user store: %s", err)
+	}
 	return nil
 }
 
-func sendImportRequest(idpId string, importFilePath string, fileData string) error {
+func sendImportRequest(userStoreId string, importFilePath string, fileData string) error {
 
 	fileInfo := utils.GetFileInfo(importFilePath)
 
 	var requestMethod, reqUrl string
-	if idpId != "" {
-		log.Println("Updating IdP: " + fileInfo.ResourceName)
-		reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/identity-providers/file/" + idpId
+	if userStoreId != "" {
+		log.Println("Updating user store: " + fileInfo.ResourceName)
+		reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/userstores/" + userStoreId + "/file"
 		requestMethod = "PUT"
 	} else {
-		log.Println("Creating new IdP: " + fileInfo.ResourceName)
-		reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/identity-providers/file"
+		log.Println("Creating new user store: " + fileInfo.ResourceName)
+		reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/userstores/file"
 		requestMethod = "POST"
 	}
 
@@ -153,39 +157,42 @@ func sendImportRequest(idpId string, importFilePath string, fileData string) err
 
 	statusCode := resp.StatusCode
 	if statusCode == 201 {
-		log.Println("Identity provider created successfully.")
+		log.Println("User store created successfully.")
 		return nil
 	} else if statusCode == 200 {
-		log.Println("Identity provider updated successfully.")
+		log.Println("User store updated successfully.")
 		return nil
 	} else if statusCode == 409 {
-		log.Println("An identity provider with the same name already exists. Please rename the file accordingly.")
-		return importIdp(idpId, importFilePath)
+		log.Println("An user store with the same name already exists. Please rename the file accordingly.")
+		return importUserStore(userStoreId, importFilePath)
 	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
 		return fmt.Errorf("error response for the import request: %s", error)
 	}
-	return fmt.Errorf("unexpected error when importing identity provider: %s", resp.Status)
+	return fmt.Errorf("unexpected error when importing user store: %s", resp.Status)
 }
 
-func getIdpId(idpFilePath string, idpName string) (string, error) {
+func getUserStoreId(userStoreFilePath string, userStoreName string) (string, error) {
 
-	fileContent, err := ioutil.ReadFile(idpFilePath)
+	// fileContent, err := ioutil.ReadFile(userStoreFilePath)
+	// if err != nil {
+	// 	return "", fmt.Errorf("error when reading the file for userstore: %s. %s", userStoreName, err)
+	// }
+	// fmt.Println("File content", string(fileContent))
+	// var userStoreConfig userStoreConfig
+	// err = yaml.Unmarshal(fileContent, &userStoreConfig)
+	// if err != nil {
+	// 	return "", fmt.Errorf("invalid file content for userstore: %s. %s", userStoreName, err)
+	// }
+	// fmt.Println("User store configs", userStoreConfig)
+	existingUserStoreList, err := getUserStoreList()
 	if err != nil {
-		return "", fmt.Errorf("error when reading the file for idp: %s. %s", idpName, err)
-	}
-	var idpConfig idpConfig
-	err = yaml.Unmarshal(fileContent, &idpConfig)
-	if err != nil {
-		return "", fmt.Errorf("invalid file content for idp: %s. %s", idpName, err)
-	}
-	existingIdpList, err := getIdpList()
-	if err != nil {
-		return "", fmt.Errorf("error when retrieving the deployed idp list: %s", err)
+		return "", fmt.Errorf("error when retrieving the deployed userstore list: %s", err)
 	}
 
-	for _, idp := range existingIdpList {
-		if idp.Name == idpConfig.IdentityProviderName {
-			return idp.Id, nil
+	domainId := base64.URLEncoding.EncodeToString([]byte(userStoreName))
+	for _, userstore := range existingUserStoreList {
+		if userstore.Id == domainId {
+			return userstore.Id, nil
 		}
 	}
 	return "", nil

@@ -50,6 +50,7 @@ type ToolConfigs struct {
 	KeywordMappings    map[string]interface{} `json:"KEYWORD_MAPPINGS"`
 	ApplicationConfigs map[string]interface{} `json:"APPLICATIONS"`
 	IdpConfigs         map[string]interface{} `json:"IDENTITY_PROVIDERS"`
+	UserStoreConfigs   map[string]interface{} `json:"USERSTORES"`
 }
 
 type Application struct {

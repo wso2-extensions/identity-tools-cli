@@ -29,6 +29,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -41,9 +42,14 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing applications...")
 	importFilePath := filepath.Join(inputDirPath, utils.APPLICATIONS)
 
-	files, err := ioutil.ReadDir(importFilePath)
-	if err != nil {
-		log.Println("Error importing applications: ", err)
+	var files []os.FileInfo
+	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
+		log.Println("No applications to import.")
+	} else {
+		files, err = ioutil.ReadDir(importFilePath)
+		if err != nil {
+			log.Println("Error importing applications: ", err)
+		}
 	}
 
 	for _, file := range files {
