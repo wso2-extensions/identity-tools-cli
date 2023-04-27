@@ -21,7 +21,6 @@ package userstores
 import (
 	"bytes"
 	"crypto/tls"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -35,11 +34,11 @@ import (
 	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
+	"gopkg.in/yaml.v2"
 )
 
 func ImportAll(inputDirPath string) {
 
-	fmt.Println(utils.SERVER_CONFIGS.Token)
 	log.Println("Importing user stores...")
 	importFilePath := filepath.Join(inputDirPath, utils.USERSTORES)
 
@@ -58,7 +57,7 @@ func ImportAll(inputDirPath string) {
 		userStoreName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 
 		if !utils.IsResourceExcluded(userStoreName, utils.TOOL_CONFIGS.UserStoreConfigs) {
-			userStoreId, err := getUserStoreId(userStoreFilePath, userStoreName)
+			userStoreId, err := getUserStoreId(userStoreFilePath)
 			if err != nil {
 				log.Printf("Invalid file configurations for user store: %s. %s", userStoreName, err)
 			} else {
@@ -163,35 +162,32 @@ func sendImportRequest(userStoreId string, importFilePath string, fileData strin
 		log.Println("User store updated successfully.")
 		return nil
 	} else if statusCode == 409 {
-		log.Println("An user store with the same name already exists. Please rename the file accordingly.")
-		return importUserStore(userStoreId, importFilePath)
+		log.Println("A user store with the same name already exists.")
 	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
 		return fmt.Errorf("error response for the import request: %s", error)
 	}
 	return fmt.Errorf("unexpected error when importing user store: %s", resp.Status)
 }
 
-func getUserStoreId(userStoreFilePath string, userStoreName string) (string, error) {
+func getUserStoreId(userStoreFilePath string) (string, error) {
 
-	// fileContent, err := ioutil.ReadFile(userStoreFilePath)
-	// if err != nil {
-	// 	return "", fmt.Errorf("error when reading the file for userstore: %s. %s", userStoreName, err)
-	// }
-	// fmt.Println("File content", string(fileContent))
-	// var userStoreConfig userStoreConfig
-	// err = yaml.Unmarshal(fileContent, &userStoreConfig)
-	// if err != nil {
-	// 	return "", fmt.Errorf("invalid file content for userstore: %s. %s", userStoreName, err)
-	// }
-	// fmt.Println("User store configs", userStoreConfig)
+	fileContent, err := ioutil.ReadFile(userStoreFilePath)
+	if err != nil {
+		return "", fmt.Errorf("error when reading the file: %s. %s", userStoreFilePath, err)
+	}
+	var userStoreConfig UserStoreConfigurations
+	err = yaml.Unmarshal(fileContent, &userStoreConfig)
+	if err != nil {
+		return "", fmt.Errorf("invalid file content at: %s. %s", userStoreFilePath, err)
+	}
+
 	existingUserStoreList, err := getUserStoreList()
 	if err != nil {
 		return "", fmt.Errorf("error when retrieving the deployed userstore list: %s", err)
 	}
 
-	domainId := base64.URLEncoding.EncodeToString([]byte(userStoreName))
 	for _, userstore := range existingUserStoreList {
-		if userstore.Id == domainId {
+		if userstore.Id == userStoreConfig.ID {
 			return userstore.Id, nil
 		}
 	}

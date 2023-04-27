@@ -29,15 +29,17 @@ import (
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
+const USERSTORE_SECRET_MASK = "ENCRYPTED PROPERTY"
+
 type userStore struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
 }
 
-// type userStoreConfig struct {
-// 	userStoreName string `yaml:"name"`
-// 	userStoreId   string
-// }
+type UserStoreConfigurations struct {
+	Name string `yaml:"name"`
+	ID   string `yaml:"id"`
+}
 
 func getUserStoreList() ([]userStore, error) {
 

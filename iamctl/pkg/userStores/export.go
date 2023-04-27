@@ -45,7 +45,7 @@ func ExportAll(exportFilePath string, format string) {
 		log.Println("Error: when exporting userstores.", err)
 	} else {
 		if !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.ApplicationConfigs) {
-			log.Println("Warn: Secrets exclution cannot be disabled for userstores. All secrets will be masked.")
+			log.Println("Warn: Secrets exclusion cannot be disabled for userstores. All secrets will be masked.")
 		}
 		for _, userstore := range userstores {
 			if !utils.IsResourceExcluded(userstore.Name, utils.TOOL_CONFIGS.UserStoreConfigs) {
@@ -119,12 +119,12 @@ func exportUserStore(userStoreId string, outputDirPath string, format string) er
 			return fmt.Errorf("error while reading the response body when exporting userstore: %s. %s", fileName, err)
 		}
 
+		// Use the common mask for senstive data.
+		modifiedBody := []byte(strings.ReplaceAll(string(body), USERSTORE_SECRET_MASK, utils.SENSITIVE_FIELD_MASK))
+
 		// Handle Environment Specific Variables.
 		userStoreKeywordMapping := getUserStoreKeywordMapping(fileInfo.ResourceName)
-		modifiedFile := utils.HandleESVs(exportedFileName, body, userStoreKeywordMapping)
-
-		// Use the common mask for senstive data.
-		modifiedFile = []byte(strings.ReplaceAll(string(modifiedFile), "ENCRYPTED PROPERTY", utils.SENSITIVE_FIELD_MASK))
+		modifiedFile := utils.HandleESVs(exportedFileName, modifiedBody, userStoreKeywordMapping)
 
 		err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 		if err != nil {

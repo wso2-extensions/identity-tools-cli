@@ -164,12 +164,17 @@ func ModifyFieldsWithKeywords(exportedFileData interface{}, localFileData interf
 		exportedValue := GetValue(exportedFileData, location)
 
 		if exportedValue != localReplacedValue {
-			log.Printf("Warning: Keywords at %s field in the local file will be replaced by exported content.", location)
-			log.Println("Info: Local Value with Keyword Replaced: ", localReplacedValue)
-			log.Println("Info: Exported Value: ", exportedValue)
+			if exportedValue == strings.ReplaceAll(SENSITIVE_FIELD_MASK, "'", "") {
+				ReplaceValue(exportedFileData, location, localValue)
+				log.Printf("Info: Keyword added at %s field\n", location)
+			} else {
+				log.Printf("Warning: Keywords at %s field in the local file will be replaced by exported content.", location)
+				log.Println("Info: Local Value with Keyword Replaced: ", localReplacedValue)
+				log.Println("Info: Exported Value: ", exportedValue)
+			}
 		} else {
-			log.Printf("Info: Keyword added at %s field\n", location)
 			ReplaceValue(exportedFileData, location, localValue)
+			log.Printf("Info: Keyword added at %s field\n", location)
 		}
 	}
 	return exportedFileData
@@ -177,7 +182,7 @@ func ModifyFieldsWithKeywords(exportedFileData interface{}, localFileData interf
 
 func GetValue(data interface{}, key string) string {
 
-	parts := getPathKeys(key)
+	parts := GetPathKeys(key)
 	for _, part := range parts {
 		switch v := data.(type) {
 		case map[interface{}]interface{}:
@@ -215,7 +220,7 @@ func GetValue(data interface{}, key string) string {
 
 func ReplaceValue(data interface{}, pathString string, replacement string) interface{} {
 
-	path := getPathKeys(pathString)
+	path := GetPathKeys(pathString)
 	if len(path) == 1 {
 		switch data.(type) {
 		case map[interface{}]interface{}:
@@ -271,7 +276,7 @@ func GetArrayIndex(arrayMap []interface{}, elementIdentifier string) (int, error
 	return -1, errors.New("element not found")
 }
 
-func getPathKeys(pathString string) []string {
+func GetPathKeys(pathString string) []string {
 
 	pathArray := strings.Split(pathString, ".")
 	finalKeys := []string{}
@@ -282,13 +287,13 @@ func getPathKeys(pathString string) []string {
 		} else {
 			key := v
 			var j int
-			for j = i + 1; j < (len(pathArray) - 1); j++ {
-				i += 1
+			for j = i; j < (len(pathArray) - 1); j++ {
+
 				if strings.HasSuffix(pathArray[j], "]") {
-					key = key + "." + pathArray[j]
 					break
 				}
-				key = key + "." + pathArray[j]
+				key = key + "." + pathArray[j+1]
+				i += 1
 			}
 			finalKeys = append(finalKeys, key)
 		}

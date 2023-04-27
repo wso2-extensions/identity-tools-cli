@@ -678,3 +678,35 @@ func normalizedYamlString(yamlContent []byte) string {
 	normalizedData, _ := yaml.Marshal(yamlData)
 	return string(normalizedData)
 }
+
+func TestGetPathKeys(t *testing.T) {
+
+	testCases := []struct {
+		path     string
+		expected []string
+	}{
+		{
+			path:     "key1",
+			expected: []string{"key1"},
+		},
+		{
+			path:     "nestedObject.subKey1.subSubKey2",
+			expected: []string{"nestedObject", "subKey1", "subSubKey2"},
+		},
+		{
+			path:     "properties.[name=element1.element2].subKey2",
+			expected: []string{"properties", "[name=element1.element2]", "subKey2"},
+		},
+		{
+			path:     "federatedAuthenticatorConfigs.[name=GoogleOIDCAuthenticator].properties.[name=ClientSecret].value",
+			expected: []string{"federatedAuthenticatorConfigs", "[name=GoogleOIDCAuthenticator]", "properties", "[name=ClientSecret]", "value"},
+		},
+	}
+
+	for _, testCase := range testCases {
+		result := utils.GetPathKeys(testCase.path)
+		if !reflect.DeepEqual(result, testCase.expected) {
+			t.Errorf("Expected %+v, but got %+v", testCase.expected, result)
+		}
+	}
+}
