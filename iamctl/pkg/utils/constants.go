@@ -58,10 +58,10 @@ const SENSITIVE_FIELD_MASK = "'********'"
 var ErrorCodes = map[int]string{
 
 	400: "Bad request. Provided parameters are not in correct format.",
-	401: "Unauthorized access.\nPlease check your Username and password.",
+	401: "Unauthorized access.\nPlease check your server configurations.",
 	403: "Forbidden request.",
-	404: "Service Provider not found for the given ID.",
-	409: "An application with the same name already exists.",
+	404: "Resource not found for the given ID.",
+	409: "A resource with the same name already exists.",
 	500: "Internal server error.",
 }
 

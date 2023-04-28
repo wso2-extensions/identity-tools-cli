@@ -75,7 +75,7 @@ func exportUserStore(userStoreId string, outputDirPath string, format string) er
 		fileType = utils.MEDIA_TYPE_YAML
 	}
 
-	var reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/userstores/" + userStoreId + "/file"
+	var reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/userstores/" + userStoreId + "/export"
 
 	var err error
 	req, err := http.NewRequest("GET", reqUrl, strings.NewReader(""))

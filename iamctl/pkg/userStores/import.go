@@ -96,11 +96,11 @@ func sendImportRequest(userStoreId string, importFilePath string, fileData strin
 	var requestMethod, reqUrl string
 	if userStoreId != "" {
 		log.Println("Updating user store: " + fileInfo.ResourceName)
-		reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/userstores/" + userStoreId + "/file"
+		reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/userstores/" + userStoreId + "/import"
 		requestMethod = "PUT"
 	} else {
 		log.Println("Creating new user store: " + fileInfo.ResourceName)
-		reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/userstores/file"
+		reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/userstores/import"
 		requestMethod = "POST"
 	}
 
