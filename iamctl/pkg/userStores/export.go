@@ -122,9 +122,11 @@ func exportUserStore(userStoreId string, outputDirPath string, format string) er
 		// Use the common mask for senstive data.
 		modifiedBody := []byte(strings.ReplaceAll(string(body), USERSTORE_SECRET_MASK, utils.SENSITIVE_FIELD_MASK))
 
-		// Handle Environment Specific Variables.
 		userStoreKeywordMapping := getUserStoreKeywordMapping(fileInfo.ResourceName)
-		modifiedFile := utils.HandleESVs(exportedFileName, modifiedBody, userStoreKeywordMapping)
+		modifiedFile, err := utils.ProcessExportedContent(exportedFileName, modifiedBody, userStoreKeywordMapping)
+		if err != nil {
+			return fmt.Errorf("error while processing the exported content: %s", err)
+		}
 
 		err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 		if err != nil {

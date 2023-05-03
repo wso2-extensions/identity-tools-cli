@@ -121,9 +121,11 @@ func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets
 			return fmt.Errorf("error while reading the response body when exporting IDP: %s. %s", fileName, err)
 		}
 
-		// Handle Environment Specific Variables.
 		idpKeywordMapping := getIdpKeywordMapping(fileInfo.ResourceName)
-		modifiedFile := utils.HandleESVs(exportedFileName, body, idpKeywordMapping)
+		modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, idpKeywordMapping)
+		if err != nil {
+			return fmt.Errorf("error while processing the exported content: %s", err)
+		}
 
 		err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 		if err != nil {
