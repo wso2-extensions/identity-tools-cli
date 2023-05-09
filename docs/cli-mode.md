@@ -11,6 +11,7 @@ Usages:
 Currently, the supported resource types are:
 * Applications
 * Identity Providers
+* Claims
 
 ## Run the tool in CLI mode
 To run the tool in CLI mode, follow the steps given below.

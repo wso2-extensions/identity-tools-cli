@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/applications"
+	claims "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/claims"
 	identityproviders "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/identityProviders"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -40,6 +41,7 @@ var importAllCmd = &cobra.Command{
 		}
 		identityproviders.ImportAll(inputDirPath)
 		applications.ImportAll(inputDirPath)
+		claims.ImportAll(inputDirPath)
 	},
 }
 

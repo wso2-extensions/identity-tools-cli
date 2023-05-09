@@ -21,6 +21,7 @@ package utils
 // Resource type configs
 const APPLICATIONS_CONFIG = "APPLICATIONS"
 const IDP_CONFIG = "IDENTITY_PROVIDERS"
+const CLAIM_CONFIG = "CLAIMS"
 
 // Tool configs
 const KEYWORD_MAPPINGS_CONFIG = "KEYWORD_MAPPINGS"
@@ -38,6 +39,7 @@ const TOKEN_CONFIG = "TOKEN"
 // Resource types
 const APPLICATIONS = "Applications"
 const IDENTITY_PROVIDERS = "IdentityProviders"
+const CLAIMS = "Claims"
 
 // Config file names
 const SERVER_CONFIG_FILE = "serverConfig.json"

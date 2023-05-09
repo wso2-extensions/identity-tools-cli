@@ -47,9 +47,10 @@ type ServerConfigs struct {
 }
 
 type ToolConfigs struct {
-	KeywordMappings    map[string]interface{} `json:"KEYWORD_MAPPINGS"`
-	ApplicationConfigs map[string]interface{} `json:"APPLICATIONS"`
-	IdpConfigs         map[string]interface{} `json:"IDENTITY_PROVIDERS"`
+	KeywordMappings     map[string]interface{} `json:"KEYWORD_MAPPINGS"`
+	ApplicationConfigs  map[string]interface{} `json:"APPLICATIONS"`
+	IdpConfigs          map[string]interface{} `json:"IDENTITY_PROVIDERS"`
+	ClaimDialectConfigs map[string]interface{} `json:"CLAIM_DIALECTS"`
 }
 
 type Application struct {
