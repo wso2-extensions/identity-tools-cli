@@ -40,11 +40,11 @@ func ExportAll(exportFilePath string, format string) {
 	exportFilePath = filepath.Join(exportFilePath, utils.IDENTITY_PROVIDERS)
 	os.MkdirAll(exportFilePath, 0700)
 
+	excludeSecerts := utils.AreSecretsExcluded(utils.TOOL_CONFIGS.IdpConfigs)
 	idps, err := getIdpList()
 	if err != nil {
 		log.Println("Error: when exporting identity providers.", err)
 	} else {
-		excludeSecerts := utils.AreSecretsExcluded(utils.TOOL_CONFIGS.IdpConfigs)
 		for _, idp := range idps {
 			if !utils.IsResourceExcluded(idp.Name, utils.TOOL_CONFIGS.IdpConfigs) {
 				log.Println("Exporting identity provider: ", idp.Name)
@@ -56,6 +56,15 @@ func ExportAll(exportFilePath string, format string) {
 					log.Println("Identity provider exported successfully: ", idp.Name)
 				}
 			}
+		}
+	}
+	if !utils.IsResourceExcluded(utils.RESIDENT_IDP_NAME, utils.TOOL_CONFIGS.IdpConfigs) {
+		log.Println("Exporting Resident identity provider")
+		err := exportIdp(utils.RESIDENT_IDP_NAME, exportFilePath, format, excludeSecerts)
+		if err != nil {
+			log.Printf("Error while exporting resident identity provider: %s", err)
+		} else {
+			log.Println("Resident identity provider exported successfully")
 		}
 	}
 }
@@ -73,7 +82,7 @@ func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets
 		fileType = utils.MEDIA_TYPE_YAML
 	}
 
-	var reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/identity-providers/file/" + idpId
+	var reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/identity-providers/" + idpId + "/export"
 
 	var err error
 	req, err := http.NewRequest("GET", reqUrl, strings.NewReader(""))
