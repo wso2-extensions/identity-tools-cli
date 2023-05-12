@@ -30,7 +30,7 @@ var dir, _ = os.Getwd()
 var Path = dir + "/iamctl.json"
 var PathSampleSPDetails = dir + "/init.json"
 
-const SCOPE string = "internal_application_mgt_update internal_application_mgt_create internal_application_mgt_view internal_idp_update internal_idp_create internal_idp_view internal_userstore_view internal_userstore_create internal_userstore_update"
+const SCOPE string = "internal_application_mgt_update internal_application_mgt_create internal_application_mgt_view internal_application_mgt_delete internal_idp_update internal_idp_create internal_idp_view internal_idp_delete internal_userstore_view internal_userstore_create internal_userstore_update internal_userstore_delete"
 
 const (
 	AppName       = "IAM-CTL"

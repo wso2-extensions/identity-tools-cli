@@ -38,7 +38,14 @@ func ExportAll(exportFilePath string, format string) {
 	// Export all applications to the Applications folder.
 	log.Println("Exporting applications...")
 	exportFilePath = filepath.Join(exportFilePath, utils.APPLICATIONS)
-	os.MkdirAll(exportFilePath, 0700)
+
+	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
+		os.MkdirAll(exportFilePath, 0700)
+	} else {
+		if utils.TOOL_CONFIGS.AllowDelete {
+			utils.RemoveDeletedLocalResources(exportFilePath, getDeployedAppNames())
+		}
+	}
 
 	apps := getAppList()
 	for _, app := range apps {

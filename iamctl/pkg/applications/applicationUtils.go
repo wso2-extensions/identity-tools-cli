@@ -26,8 +26,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
-	"strings"
 	"text/tabwriter"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
@@ -35,15 +33,6 @@ import (
 
 type AppConfig struct {
 	ApplicationName string `yaml:"applicationName"`
-}
-
-func getAppFileInfo(filePath string) (string, string, string) {
-
-	filename := filepath.Base(filePath)
-	fileExtension := filepath.Ext(filename)
-	appName := strings.TrimSuffix(filename, fileExtension)
-
-	return appName, filename, fileExtension
 }
 
 func getDeployedAppNames() []string {

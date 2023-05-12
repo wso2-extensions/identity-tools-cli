@@ -48,6 +48,7 @@ type ServerConfigs struct {
 
 type ToolConfigs struct {
 	KeywordMappings    map[string]interface{} `json:"KEYWORD_MAPPINGS"`
+	AllowDelete        bool                   `json:"ALLOW_DELETE"`
 	ApplicationConfigs map[string]interface{} `json:"APPLICATIONS"`
 	IdpConfigs         map[string]interface{} `json:"IDENTITY_PROVIDERS"`
 	UserStoreConfigs   map[string]interface{} `json:"USERSTORES"`

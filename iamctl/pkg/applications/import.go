@@ -50,6 +50,9 @@ func ImportAll(inputDirPath string) {
 		if err != nil {
 			log.Println("Error importing applications: ", err)
 		}
+		if utils.TOOL_CONFIGS.AllowDelete {
+			RemoveDeletedDeployedResources(files, getAppList())
+		}
 	}
 
 	for _, file := range files {
@@ -188,4 +191,19 @@ func sendImportRequest(isUpdate bool, importFilePath string, fileData string) er
 		return fmt.Errorf("error response for the import request: %s", error)
 	}
 	return fmt.Errorf("unexpected error when importing application: %s", resp.Status)
+}
+
+func RemoveDeletedDeployedResources(localFiles []os.FileInfo, deployedResources []utils.Application) {
+
+	// Remove deployed resources that do not exist locally.
+deployedResources:
+	for _, resource := range deployedResources {
+		for _, file := range localFiles {
+			if resource.Name == utils.GetFileInfo(file.Name()).ResourceName {
+				continue deployedResources
+			}
+		}
+		log.Println("Application not found locally. Deleting app: ", resource.Name)
+		utils.DeleteResource(resource.Id, "applications")
+	}
 }

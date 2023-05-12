@@ -50,6 +50,15 @@ func ImportAll(inputDirPath string) {
 		if err != nil {
 			log.Println("Error importing identity providers: ", err)
 		}
+		if utils.TOOL_CONFIGS.AllowDelete {
+			deployedIdpList, err := getIdpList()
+			if err != nil {
+				log.Println("Error retrieving deployed identity providers: ", err)
+			} else {
+				removeDeletedDeployedIdps(files, deployedIdpList)
+			}
+		}
+
 	}
 
 	for _, file := range files {
@@ -196,4 +205,22 @@ func getIdpId(idpFilePath string, idpName string) (string, error) {
 		}
 	}
 	return "", nil
+}
+
+func removeDeletedDeployedIdps(localFiles []os.FileInfo, deployedIdps []identityProvider) {
+
+	// Remove deployed identity providers that do not exist locally.
+deployedResourcess:
+	for _, idp := range deployedIdps {
+		for _, file := range localFiles {
+			if idp.Name == utils.GetFileInfo(file.Name()).ResourceName {
+				continue deployedResourcess
+			}
+		}
+		log.Println("Identity provider not found locally. Deleting idp: ", idp.Name)
+		err := utils.DeleteResource(idp.Id, "identity-providers")
+		if err != nil {
+			log.Println("Error deleting identity provider: ", err)
+		}
+	}
 }

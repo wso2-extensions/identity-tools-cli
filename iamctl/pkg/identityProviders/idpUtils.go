@@ -83,6 +83,20 @@ func getIdpList() ([]identityProvider, error) {
 	return nil, fmt.Errorf("error while retrieving identity provider list")
 }
 
+func getDeployedIdpNames() []string {
+
+	idps, err := getIdpList()
+	if err != nil {
+		return []string{}
+	}
+
+	var idpNames []string
+	for _, idp := range idps {
+		idpNames = append(idpNames, idp.Name)
+	}
+	return idpNames
+}
+
 func getIdpKeywordMapping(idpName string) map[string]interface{} {
 
 	if utils.TOOL_CONFIGS.IdpConfigs != nil {

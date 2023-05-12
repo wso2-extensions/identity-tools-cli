@@ -38,7 +38,14 @@ func ExportAll(exportFilePath string, format string) {
 	// Export all userstores to the UserStores folder.
 	log.Println("Exporting user stores...")
 	exportFilePath = filepath.Join(exportFilePath, utils.USERSTORES)
-	os.MkdirAll(exportFilePath, 0700)
+
+	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
+		os.MkdirAll(exportFilePath, 0700)
+	} else {
+		if utils.TOOL_CONFIGS.AllowDelete {
+			utils.RemoveDeletedLocalResources(exportFilePath, getDeployedUserstoreNames())
+		}
+	}
 
 	userstores, err := getUserStoreList()
 	if err != nil {

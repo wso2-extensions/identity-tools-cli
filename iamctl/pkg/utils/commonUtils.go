@@ -23,6 +23,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
+	"log"
 	"mime"
 	"mime/multipart"
 	"net/http"
@@ -186,4 +187,47 @@ func SendUpdateRequest(resourceId, importFilePath, fileData, resourceType string
 		return fmt.Errorf("error response for the import request: %s", error)
 	}
 	return fmt.Errorf("unexpected error when importing resource: %s", resp.Status)
+}
+
+func Contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if strings.EqualFold(s, item) {
+			return true
+		}
+	}
+	return false
+}
+
+func DeleteResource(resourceId string, resourceType string) error {
+
+	reqUrl := SERVER_CONFIGS.ServerUrl + "/t/" + SERVER_CONFIGS.TenantDomain + "/api/server/v1/" + resourceType + "/" + resourceId
+
+	request, err := http.NewRequest("DELETE", reqUrl, bytes.NewBuffer(nil))
+	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
+	defer request.Body.Close()
+
+	if err != nil {
+		return fmt.Errorf("error when creating the delete request: %s", err)
+	}
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+	resp, err := client.Do(request)
+	if err != nil {
+		return fmt.Errorf("error when sending the delete request: %s", err)
+	}
+
+	statusCode := resp.StatusCode
+	if statusCode == 204 {
+		log.Println("Resource deleted successfully.")
+		return nil
+	} else if error, ok := ErrorCodes[statusCode]; ok {
+		return fmt.Errorf("error response for the delete request: %s", error)
+	}
+	return fmt.Errorf("unexpected error when deleting resource: %s", resp.Status)
 }

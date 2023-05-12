@@ -38,7 +38,15 @@ func ExportAll(exportFilePath string, format string) {
 	// Export all identity providers to the IdentityProviders folder.
 	log.Println("Exporting identity providers...")
 	exportFilePath = filepath.Join(exportFilePath, utils.IDENTITY_PROVIDERS)
-	os.MkdirAll(exportFilePath, 0700)
+
+	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
+		os.MkdirAll(exportFilePath, 0700)
+	} else {
+		if utils.TOOL_CONFIGS.AllowDelete {
+			deployedIdpNames := append(getDeployedIdpNames(), utils.RESIDENT_IDP_NAME)
+			utils.RemoveDeletedLocalResources(exportFilePath, deployedIdpNames)
+		}
+	}
 
 	excludeSecerts := utils.AreSecretsExcluded(utils.TOOL_CONFIGS.IdpConfigs)
 	idps, err := getIdpList()

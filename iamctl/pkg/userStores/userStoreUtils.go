@@ -82,6 +82,20 @@ func getUserStoreList() ([]userStore, error) {
 	return nil, fmt.Errorf("unexpected error while retrieving userstore list")
 }
 
+func getDeployedUserstoreNames() []string {
+
+	userstores, err := getUserStoreList()
+	if err != nil {
+		return []string{}
+	}
+
+	var userstoreNames []string
+	for _, userstore := range userstores {
+		userstoreNames = append(userstoreNames, userstore.Name)
+	}
+	return userstoreNames
+}
+
 func getUserStoreKeywordMapping(userStoreName string) map[string]interface{} {
 
 	if utils.TOOL_CONFIGS.UserStoreConfigs != nil {
