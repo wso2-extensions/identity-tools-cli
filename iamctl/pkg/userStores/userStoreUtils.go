@@ -27,6 +27,7 @@ import (
 	"net/http"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
+	"gopkg.in/yaml.v2"
 )
 
 const USERSTORE_SECRET_MASK = "ENCRYPTED PROPERTY"
@@ -87,4 +88,30 @@ func getUserStoreKeywordMapping(userStoreName string) map[string]interface{} {
 		return utils.ResolveAdvancedKeywordMapping(userStoreName, utils.TOOL_CONFIGS.UserStoreConfigs)
 	}
 	return utils.TOOL_CONFIGS.KeywordMappings
+}
+
+func getUserStoreId(userStoreFilePath string) (string, error) {
+
+	fileContent, err := ioutil.ReadFile(userStoreFilePath)
+	if err != nil {
+		return "", fmt.Errorf("error when reading the file: %s. %s", userStoreFilePath, err)
+	}
+	var userStoreConfig UserStoreConfigurations
+	err = yaml.Unmarshal(fileContent, &userStoreConfig)
+	if err != nil {
+		return "", fmt.Errorf("invalid file content at: %s. %s", userStoreFilePath, err)
+	}
+
+	existingUserStoreList, err := getUserStoreList()
+	fmt.Println(existingUserStoreList)
+	if err != nil {
+		return "", fmt.Errorf("error when retrieving the deployed userstore list: %s", err)
+	}
+
+	for _, userstore := range existingUserStoreList {
+		if userstore.Id == userStoreConfig.ID {
+			return userstore.Id, nil
+		}
+	}
+	return "", nil
 }
