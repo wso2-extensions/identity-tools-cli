@@ -115,9 +115,11 @@ func exportApp(appId string, outputDirPath string, format string, excludeSecrets
 			return fmt.Errorf("error while reading the response body when exporting app: %s. %s", fileName, err)
 		}
 
-		// Handle Environment Specific Variables.
 		appKeywordMapping := getAppKeywordMapping(fileInfo.ResourceName)
-		modifiedFile := utils.HandleESVs(exportedFileName, body, appKeywordMapping)
+		modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, appKeywordMapping)
+		if err != nil {
+			return fmt.Errorf("error while processing exported data: %s", err)
+		}
 
 		err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 		if err != nil {

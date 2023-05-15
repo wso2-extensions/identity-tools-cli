@@ -56,7 +56,9 @@ If some property value is both environment-specific and resource-specific, you c
     
     <RESOURCE_TYPE_NAME> : {
         "RESOURCE_NAME" : {
-            "KEYWORD1" : "resource specific value"
+            "KEYWORD_MAPPINGS" : {
+                "KEYWORD1" : "resource specific value",
+            }    
         }
     }
 }
@@ -73,7 +75,9 @@ If there are five applications that need to be imported to a target environment,
     
     "APPLICATIONS" : {
         "App5" : {
-            "CALLBACK_URL" : "https://demo.prod.io/callback2"
+            "KEYWORD_MAPPINGS" : {
+                "CALLBACK_URL" : "https://demo.prod.io/callback2"
+            }
         }
     }
 }

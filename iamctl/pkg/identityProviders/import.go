@@ -29,6 +29,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -41,9 +42,14 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing identity providers...")
 	importFilePath := filepath.Join(inputDirPath, utils.IDENTITY_PROVIDERS)
 
-	files, err := ioutil.ReadDir(importFilePath)
-	if err != nil {
-		log.Println("Error importing identity providers: ", err)
+	var files []os.FileInfo
+	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
+		log.Println("No identity providers to import.")
+	} else {
+		files, err = ioutil.ReadDir(importFilePath)
+		if err != nil {
+			log.Println("Error importing identity providers: ", err)
+		}
 	}
 
 	for _, file := range files {
@@ -51,7 +57,14 @@ func ImportAll(inputDirPath string) {
 		idpName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 
 		if !utils.IsResourceExcluded(idpName, utils.TOOL_CONFIGS.IdpConfigs) {
-			idpId, err := getIdpId(idpFilePath, idpName)
+			var idpId string
+			var err error
+			if idpName == utils.RESIDENT_IDP_NAME {
+				idpId = utils.RESIDENT_IDP_NAME
+			} else {
+				idpId, err = getIdpId(idpFilePath, idpName)
+			}
+
 			if err != nil {
 				log.Printf("Invalid file configurations for identity provider: %s. %s", idpName, err)
 			} else {
@@ -87,11 +100,11 @@ func sendImportRequest(idpId string, importFilePath string, fileData string) err
 	var requestMethod, reqUrl string
 	if idpId != "" {
 		log.Println("Updating IdP: " + fileInfo.ResourceName)
-		reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/identity-providers/file/" + idpId
+		reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/identity-providers/" + idpId + "/import"
 		requestMethod = "PUT"
 	} else {
 		log.Println("Creating new IdP: " + fileInfo.ResourceName)
-		reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/identity-providers/file"
+		reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/identity-providers/import"
 		requestMethod = "POST"
 	}
 

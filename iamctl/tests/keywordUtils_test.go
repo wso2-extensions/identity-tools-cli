@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
-	"gopkg.in/yaml.v2"
 )
 
 func TestReplaceKeywords(t *testing.T) {
@@ -535,22 +534,29 @@ func TestGetArrayIndex(t *testing.T) {
 
 func TestAddKeywords(t *testing.T) {
 
-	exportedData := []byte(`
-        key1: A sample string in the dev environment with the keyword value
-        key2: A different string in the dev environment
-        key3: A string with a the placeholder {{syntax}} that should not be changed
-        nestedObject:
-          subKey1:
-            subSubKey1: A sample string without a keyword.
-            subSubKey2: A sample string with the keyword value.
-        properties:
-          - name: element1
-            subKey1: A sample string 1
-            subKey2: A sample string with the keyword value
-          - name: element2
-            subKey1: A sample string 1
-            subKey2: A sample string 2
-        `)
+	exportedFileData := map[string]interface{}{
+		"key1": "A sample string in the dev environment with the keyword value",
+		"key2": "A different string in the dev environment",
+		"key3": "A string with a the placeholder {{syntax}} that should not be changed",
+		"nestedObject": map[string]interface{}{
+			"subKey1": map[string]interface{}{
+				"subSubKey1": "A sample string without a keyword.",
+				"subSubKey2": "A sample string with the keyword value.",
+			},
+		},
+		"properties": []interface{}{
+			map[string]interface{}{
+				"name":    "element1",
+				"subKey1": "A sample string 1",
+				"subKey2": "A sample string with the keyword value",
+			},
+			map[string]interface{}{
+				"name":    "element2",
+				"subKey1": "A sample string 1",
+				"subKey2": "A sample string 2",
+			},
+		},
+	}
 
 	localFileData := []byte(`
         key1: A sample string in the {{ENV}} environment with the {{KEYWORD}}
@@ -569,34 +575,41 @@ func TestAddKeywords(t *testing.T) {
             subKey2: A sample string 2
         `)
 
-	expectedData := []byte(`
-        key1: A sample string in the {{ENV}} environment with the {{KEYWORD}}
-        key2: A different string in the dev environment
-        key3: A string with a the placeholder {{syntax}} that should not be changed
-        nestedObject:
-          subKey1:
-            subSubKey1: A sample string without a keyword.
-            subSubKey2: A sample string with the {{KEYWORD}}.
-          properties:
-            - name: element1
-              subKey1: A sample string 1
-              subKey2: A sample string with the {{KEYWORD}}
-            - name: element2
-              subKey1: A sample string 1
-              subKey2: A sample string 2
-        `)
+	expectedExportedFileData := map[string]interface{}{
+		"key1": "A sample string in the {{ENV}} environment with the {{KEYWORD}}",
+		"key2": "A different string in the dev environment",
+		"key3": "A string with a the placeholder {{syntax}} that should not be changed",
+		"nestedObject": map[string]interface{}{
+			"subKey1": map[string]interface{}{
+				"subSubKey1": "A sample string without a keyword.",
+				"subSubKey2": "A sample string with the {{KEYWORD}}.",
+			},
+		},
+		"properties": []interface{}{
+			map[string]interface{}{
+				"name":    "element1",
+				"subKey1": "A sample string 1",
+				"subKey2": "A sample string with the {{KEYWORD}}",
+			},
+			map[string]interface{}{
+				"name":    "element2",
+				"subKey1": "A sample string 1",
+				"subKey2": "A sample string 2",
+			},
+		},
+	}
 
 	keywordMapping := map[string]interface{}{
 		"ENV":     "dev",
 		"KEYWORD": "keyword value",
 	}
-	result, err := utils.AddKeywords(exportedData, localFileData, keywordMapping)
+	result, err := utils.AddKeywords(exportedFileData, localFileData, keywordMapping)
 	if err != nil {
 		log.Println("Error when adding keywords: ", err)
 	}
 
-	if normalizedYamlString(result) != normalizedYamlString(expectedData) {
-		t.Errorf("Unexpected result: expected %v, but got %v", string(expectedData), string(result))
+	if !reflect.DeepEqual(result, expectedExportedFileData) {
+		t.Errorf("Expected %+v, but got %+v", expectedExportedFileData, result)
 	}
 }
 
@@ -663,18 +676,34 @@ func TestModifyFieldsWithKeywords(t *testing.T) {
 	}
 }
 
-func normalizedYamlString(yamlContent []byte) string {
+func TestGetPathKeys(t *testing.T) {
 
-	type data struct {
-		key1         string        `yaml:"key1"`
-		key2         string        `yaml:"key2"`
-		key3         string        `yaml:"key3"`
-		nestedObject interface{}   `yaml:"nestedObject"`
-		properties   []interface{} `yaml:"properties"`
+	testCases := []struct {
+		path     string
+		expected []string
+	}{
+		{
+			path:     "key1",
+			expected: []string{"key1"},
+		},
+		{
+			path:     "nestedObject.subKey1.subSubKey2",
+			expected: []string{"nestedObject", "subKey1", "subSubKey2"},
+		},
+		{
+			path:     "properties.[name=element1.element2].subKey2",
+			expected: []string{"properties", "[name=element1.element2]", "subKey2"},
+		},
+		{
+			path:     "federatedAuthenticatorConfigs.[name=GoogleOIDCAuthenticator].properties.[name=ClientSecret].value",
+			expected: []string{"federatedAuthenticatorConfigs", "[name=GoogleOIDCAuthenticator]", "properties", "[name=ClientSecret]", "value"},
+		},
 	}
 
-	var yamlData data
-	yaml.Unmarshal(yamlContent, &yamlData)
-	normalizedData, _ := yaml.Marshal(yamlData)
-	return string(normalizedData)
+	for _, testCase := range testCases {
+		result := utils.GetPathKeys(testCase.path)
+		if !reflect.DeepEqual(result, testCase.expected) {
+			t.Errorf("Expected %+v, but got %+v", testCase.expected, result)
+		}
+	}
 }

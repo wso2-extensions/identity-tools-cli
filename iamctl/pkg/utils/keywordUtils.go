@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"log"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -43,36 +44,48 @@ func ReplaceKeywords(fileContent string, keywordMapping map[string]interface{}) 
 	return fileContent
 }
 
-func HandleESVs(exportedFileName string, exportedFileContent []byte, keywordMapping map[string]interface{}) []byte {
+func ProcessExportedContent(exportedFileName string, exportedFileContent []byte, keywordMapping map[string]interface{}) ([]byte, error) {
+
+	// To preserve type tags in the exported file, replace the type tags with a placeholder.
+	exportedFileContent = ReplaceTypeTags(exportedFileContent)
+
+	// Unmarshall and marshall exported content in all cases to preserve a consistent format in the output.
+	var exportedYaml interface{}
+	err := yaml.Unmarshal(exportedFileContent, &exportedYaml)
+	if err != nil {
+		err1 := fmt.Errorf("error when parsing exported data to YAML. %w", err)
+		return nil, err1
+	}
 
 	// Replace ESVs in the exported file according to the keyword placeholders added in the local file.
+	var modifiedExportedYaml interface{}
 	localFileData, err := ioutil.ReadFile(exportedFileName)
 	if err != nil {
 		log.Printf("Local file not found at %s. Creating new file.", exportedFileName)
-		return exportedFileContent
+		modifiedExportedYaml = exportedYaml
+	} else {
+		modifiedExportedYaml, err = AddKeywords(exportedYaml, localFileData, keywordMapping)
+		if err != nil {
+			log.Println("Error when adding keywords to the exported file. Overriding local file with exported content. ", err)
+		}
 	}
-	modifiedExportedContent, err := AddKeywords(exportedFileContent, localFileData, keywordMapping)
+
+	modifiedExportedContent, err := yaml.Marshal(modifiedExportedYaml)
 	if err != nil {
-		log.Println("Error when adding keywords to the exported file. Overriding local file with exported content. ", err)
-		return exportedFileContent
+		err1 := fmt.Errorf("error when creating exported data with keywords. %w", err)
+		return nil, err1
 	}
-	return modifiedExportedContent
+	modifiedExportedContent = AddTypeTags(modifiedExportedContent)
+	return modifiedExportedContent, nil
 }
 
-func AddKeywords(exportedData []byte, localFileData []byte, keywordMapping map[string]interface{}) ([]byte, error) {
+func AddKeywords(exportedYaml interface{}, localFileData []byte, keywordMapping map[string]interface{}) (interface{}, error) {
 
 	var localYaml interface{}
 	err := yaml.Unmarshal(localFileData, &localYaml)
 	if err != nil || localYaml == nil {
 		err1 := fmt.Errorf("empty or invalid local file data. %w", err)
-		return exportedData, err1
-	}
-
-	var exportedYaml interface{}
-	err = yaml.Unmarshal(exportedData, &exportedYaml)
-	if err != nil {
-		err1 := fmt.Errorf("error when parsing exported data to YAML. %w", err)
-		return exportedData, err1
+		return exportedYaml, err1
 	}
 
 	// Get keyword locations in local file.
@@ -81,13 +94,7 @@ func AddKeywords(exportedData []byte, localFileData []byte, keywordMapping map[s
 	// Compare the fields with keywords in the exported file and the local file and modify the exported file.
 	exportedYaml = ModifyFieldsWithKeywords(exportedYaml, localYaml, keywordLocations, keywordMapping)
 
-	exportedData, err = yaml.Marshal(exportedYaml)
-	if err != nil {
-		err1 := fmt.Errorf("error when creating exported data with keywords. %w", err)
-		return exportedData, err1
-	}
-
-	return exportedData, nil
+	return exportedYaml, nil
 }
 
 func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map[string]interface{}) []string {
@@ -95,6 +102,11 @@ func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map
 	var keys []string
 	switch v := fileData.(type) {
 	case map[interface{}]interface{}:
+		for k, val := range v {
+			newPath := append(path, fmt.Sprintf("%v", k))
+			keys = append(keys, GetKeywordLocations(val, newPath, keywordMapping)...)
+		}
+	case map[string]interface{}:
 		for k, val := range v {
 			newPath := append(path, fmt.Sprintf("%v", k))
 			keys = append(keys, GetKeywordLocations(val, newPath, keywordMapping)...)
@@ -128,9 +140,13 @@ func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map
 
 func resolvePathWithIdentifiers(arrayName string, element interface{}, identifiers map[string]string) (string, error) {
 
+	var elementMap interface{}
 	elementMap, ok := element.(map[interface{}]interface{})
 	if !ok {
-		log.Printf("Error: cannot convert %T to a map", element)
+		elementMap, ok = element.(map[string]interface{})
+		if !ok {
+			log.Printf("Error: cannot convert %T to a map", element)
+		}
 	}
 	identifier := identifiers[arrayName]
 	// If an identifier is not defined for the array, use the default identifier "name".
@@ -164,12 +180,17 @@ func ModifyFieldsWithKeywords(exportedFileData interface{}, localFileData interf
 		exportedValue := GetValue(exportedFileData, location)
 
 		if exportedValue != localReplacedValue {
-			log.Printf("Warning: Keywords at %s field in the local file will be replaced by exported content.", location)
-			log.Println("Info: Local Value with Keyword Replaced: ", localReplacedValue)
-			log.Println("Info: Exported Value: ", exportedValue)
+			if exportedValue == strings.ReplaceAll(SENSITIVE_FIELD_MASK, "'", "") {
+				ReplaceValue(exportedFileData, location, localValue)
+				log.Printf("Info: Keyword added at %s field\n", location)
+			} else {
+				log.Printf("Warning: Keywords at %s field in the local file will be replaced by exported content.", location)
+				log.Println("Info: Local Value with Keyword Replaced: ", localReplacedValue)
+				log.Println("Info: Exported Value: ", exportedValue)
+			}
 		} else {
-			log.Printf("Info: Keyword added at %s field\n", location)
 			ReplaceValue(exportedFileData, location, localValue)
+			log.Printf("Info: Keyword added at %s field\n", location)
 		}
 	}
 	return exportedFileData
@@ -177,7 +198,7 @@ func ModifyFieldsWithKeywords(exportedFileData interface{}, localFileData interf
 
 func GetValue(data interface{}, key string) string {
 
-	parts := getPathKeys(key)
+	parts := GetPathKeys(key)
 	for _, part := range parts {
 		switch v := data.(type) {
 		case map[interface{}]interface{}:
@@ -215,7 +236,7 @@ func GetValue(data interface{}, key string) string {
 
 func ReplaceValue(data interface{}, pathString string, replacement string) interface{} {
 
-	path := getPathKeys(pathString)
+	path := GetPathKeys(pathString)
 	if len(path) == 1 {
 		switch data.(type) {
 		case map[interface{}]interface{}:
@@ -271,7 +292,7 @@ func GetArrayIndex(arrayMap []interface{}, elementIdentifier string) (int, error
 	return -1, errors.New("element not found")
 }
 
-func getPathKeys(pathString string) []string {
+func GetPathKeys(pathString string) []string {
 
 	pathArray := strings.Split(pathString, ".")
 	finalKeys := []string{}
@@ -282,16 +303,31 @@ func getPathKeys(pathString string) []string {
 		} else {
 			key := v
 			var j int
-			for j = i + 1; j < (len(pathArray) - 1); j++ {
-				i += 1
+			for j = i; j < (len(pathArray) - 1); j++ {
+
 				if strings.HasSuffix(pathArray[j], "]") {
-					key = key + "." + pathArray[j]
 					break
 				}
-				key = key + "." + pathArray[j]
+				key = key + "." + pathArray[j+1]
+				i += 1
 			}
 			finalKeys = append(finalKeys, key)
 		}
 	}
 	return finalKeys
+}
+
+func ReplaceTypeTags(data []byte) []byte {
+
+	re := regexp.MustCompile(`!!org\.wso2\.`)
+	data = re.ReplaceAll(data, []byte("1typeTag: "))
+
+	re = regexp.MustCompile(`inboundConfigurationProtocol: 1typeTag: `)
+	return re.ReplaceAll(data, []byte("inboundConfigurationProtocol:\n      1typeTag: "))
+}
+
+func AddTypeTags(data []byte) []byte {
+
+	re := regexp.MustCompile(`1typeTag: `)
+	return re.ReplaceAll(data, []byte("!!org.wso2."))
 }
