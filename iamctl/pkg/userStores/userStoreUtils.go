@@ -117,7 +117,6 @@ func getUserStoreId(userStoreFilePath string) (string, error) {
 	}
 
 	existingUserStoreList, err := getUserStoreList()
-	fmt.Println(existingUserStoreList)
 	if err != nil {
 		return "", fmt.Errorf("error when retrieving the deployed userstore list: %s", err)
 	}

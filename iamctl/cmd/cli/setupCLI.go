@@ -85,4 +85,5 @@ func createConfigFolder(baseDirPath string) {
 		log.Println("Error in creating the tool config file", err)
 	}
 	defer file.Close()
+	log.Println("Config folder created successfully at : " + baseDirPath)
 }

@@ -72,7 +72,6 @@ func ImportAll(inputDirPath string) {
 
 func importUserStore(userStoreId string, importFilePath string) error {
 
-	fmt.Println(userStoreId)
 	fileBytes, err := ioutil.ReadFile(importFilePath)
 	if err != nil {
 		return fmt.Errorf("error when reading the file for user store: %s", err)
@@ -108,7 +107,7 @@ deployedResourcess:
 			}
 		}
 		log.Println("User store not found locally. Deleting userstore: ", userstore.Name)
-		err := utils.DeleteResource(userstore.Id, "userstores")
+		err := utils.SendDeleteRequest(userstore.Id, "userstores")
 		if err != nil {
 			log.Println("Error deleting user store: ", err)
 		}
