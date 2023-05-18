@@ -69,7 +69,6 @@ func SendExportRequest(resourceId, fileType, resourceType string, excludeSecrets
 	} else {
 		reqUrl = SERVER_CONFIGS.ServerUrl + "/t/" + SERVER_CONFIGS.TenantDomain + "/api/server/v1/" + getResourcePath(resourceType) + "/" + resourceId + "/export"
 	}
-	fmt.Println(reqUrl)
 	req, err := http.NewRequest("GET", reqUrl, strings.NewReader(""))
 	if err != nil {
 		return resp, fmt.Errorf("error while creating the export request: %s", err)

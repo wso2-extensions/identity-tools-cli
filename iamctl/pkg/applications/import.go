@@ -116,7 +116,7 @@ func importApp(importFilePath string, isUpdate bool) error {
 	return nil
 }
 
-func RemoveDeletedDeployedResources(localFiles []os.FileInfo, deployedResources []utils.Application) {
+func RemoveDeletedDeployedResources(localFiles []os.FileInfo, deployedResources []Application) {
 
 	// Remove deployed resources that do not exist locally.
 deployedResources:
