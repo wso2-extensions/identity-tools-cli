@@ -33,6 +33,15 @@ import (
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
+type Application struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type AppList struct {
+	Applications []Application `json:"applications"`
+}
+
 type AppConfig struct {
 	ApplicationName string `yaml:"applicationName"`
 }
@@ -56,10 +65,10 @@ func getDeployedAppNames() []string {
 	return appNames
 }
 
-func getAppList() (spIdList []utils.Application) {
+func getAppList() (spIdList []Application) {
 
 	var APPURL = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/applications"
-	var list utils.AppList
+	var list AppList
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 

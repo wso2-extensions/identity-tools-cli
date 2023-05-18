@@ -53,21 +53,6 @@ type ToolConfigs struct {
 	UserStoreConfigs   map[string]interface{} `json:"USERSTORES"`
 }
 
-type Application struct {
-	Id          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Self        string `json:"self"`
-}
-
-type AppList struct {
-	TotalResults int           `json:"totalResults"`
-	StartIndex   int           `json:"startIndex"`
-	Count        int           `json:"count"`
-	Applications []Application `json:"applications"`
-	Links        []string      `json:"links"`
-}
-
 var SERVER_CONFIGS ServerConfigs
 var TOOL_CONFIGS ToolConfigs
 
