@@ -19,12 +19,9 @@
 package identityproviders
 
 import (
-	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -45,22 +42,11 @@ type idpConfig struct {
 
 func getIdpList() ([]identityProvider, error) {
 
-	var reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/identity-providers"
 	var list idpList
-
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-
-	req, _ := http.NewRequest("GET", reqUrl, bytes.NewBuffer(nil))
-	req.Header.Set("Authorization", "Bearer "+utils.SERVER_CONFIGS.Token)
-	req.Header.Set("accept", "*/*")
-	defer req.Body.Close()
-
-	httpClient := &http.Client{}
-	resp, err := httpClient.Do(req)
+	resp, err := utils.SendGetListRequest(utils.IDENTITY_PROVIDERS)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve available IDP list. %w", err)
 	}
-
 	defer resp.Body.Close()
 
 	statusCode := resp.StatusCode

@@ -19,12 +19,9 @@
 package userstores
 
 import (
-	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 	"gopkg.in/yaml.v2"
@@ -44,22 +41,11 @@ type UserStoreConfigurations struct {
 
 func getUserStoreList() ([]userStore, error) {
 
-	var reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/userstores"
 	var list []userStore
-
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-
-	req, _ := http.NewRequest("GET", reqUrl, bytes.NewBuffer(nil))
-	req.Header.Set("Authorization", "Bearer "+utils.SERVER_CONFIGS.Token)
-	req.Header.Set("accept", "*/*")
-	defer req.Body.Close()
-
-	httpClient := &http.Client{}
-	resp, err := httpClient.Do(req)
+	resp, err := utils.SendGetListRequest(utils.USERSTORES)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve available userstore list. %w", err)
+		return nil, fmt.Errorf("error while retrieving userstore list. %w", err)
 	}
-
 	defer resp.Body.Close()
 
 	statusCode := resp.StatusCode
