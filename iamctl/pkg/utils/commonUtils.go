@@ -28,6 +28,7 @@ import (
 	"net/http"
 	"net/textproto"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -57,6 +58,56 @@ func getResourcePath(resourceType string) string {
 		return "userstores"
 	}
 	return ""
+}
+
+func SendExportRequest(resourceId, fileType, resourceType string, excludeSecrets bool) (resp *http.Response, err error) {
+
+	var reqUrl string
+	if resourceType == APPLICATIONS {
+		reqUrl = SERVER_CONFIGS.ServerUrl + "/t/" + SERVER_CONFIGS.TenantDomain + "/api/server/v1/" + getResourcePath(resourceType) + "/" + resourceId + "/exportFile"
+	} else {
+		reqUrl = SERVER_CONFIGS.ServerUrl + "/t/" + SERVER_CONFIGS.TenantDomain + "/api/server/v1/" + getResourcePath(resourceType) + "/" + resourceId + "/export"
+	}
+	fmt.Println(reqUrl)
+	req, err := http.NewRequest("GET", reqUrl, strings.NewReader(""))
+	if err != nil {
+		return resp, fmt.Errorf("error while creating the export request: %s", err)
+	}
+	req.Header.Set("Content-Type", MEDIA_TYPE_FORM)
+	req.Header.Set("accept", fileType)
+	req.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
+
+	query := req.URL.Query()
+	if resourceType == APPLICATIONS {
+		query.Add("exportSecrets", strconv.FormatBool(!excludeSecrets))
+		req.URL.RawQuery = query.Encode()
+	} else if resourceType == IDENTITY_PROVIDERS {
+		query.Add("excludeSecrets", strconv.FormatBool(excludeSecrets))
+		req.URL.RawQuery = query.Encode()
+	}
+
+	defer req.Body.Close()
+
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+
+	resp, err = httpClient.Do(req)
+	if err != nil {
+		return resp, fmt.Errorf("error while exporting resource: %s", err)
+	}
+
+	statusCode := resp.StatusCode
+	if statusCode == 200 {
+		return resp, nil
+	} else if error, ok := ErrorCodes[statusCode]; ok {
+		return resp, fmt.Errorf("error while exporting resource: %s", error)
+	}
+	return resp, fmt.Errorf("unexpected error while exporting the resource with status code: %s", strconv.FormatInt(int64(statusCode), 10))
 }
 
 func SendImportRequest(importFilePath, fileData, resourceType string) error {
@@ -125,7 +176,12 @@ func SendImportRequest(importFilePath, fileData, resourceType string) error {
 
 func SendUpdateRequest(resourceId, importFilePath, fileData, resourceType string) error {
 
-	reqUrl := SERVER_CONFIGS.ServerUrl + "/t/" + SERVER_CONFIGS.TenantDomain + "/api/server/v1/" + getResourcePath(resourceType) + "/" + resourceId + "/import"
+	var reqUrl string
+	if resourceType == APPLICATIONS {
+		reqUrl = SERVER_CONFIGS.ServerUrl + "/t/" + SERVER_CONFIGS.TenantDomain + "/api/server/v1/" + getResourcePath(resourceType) + "/import"
+	} else {
+		reqUrl = SERVER_CONFIGS.ServerUrl + "/t/" + SERVER_CONFIGS.TenantDomain + "/api/server/v1/" + getResourcePath(resourceType) + "/" + resourceId + "/import"
+	}
 
 	var buf bytes.Buffer
 	var err error

@@ -19,15 +19,12 @@
 package userstores
 
 import (
-	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"mime"
-	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
@@ -75,66 +72,39 @@ func exportUserStore(userStoreId string, outputDirPath string, format string) er
 		fileType = utils.MEDIA_TYPE_YAML
 	}
 
-	var reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/userstores/" + userStoreId + "/export"
-
-	var err error
-	req, err := http.NewRequest("GET", reqUrl, strings.NewReader(""))
+	resp, err := utils.SendExportRequest(userStoreId, fileType, utils.USERSTORES, true)
 	if err != nil {
-		return fmt.Errorf("error while creating the request to export user store: %s", err)
-	}
-	req.Header.Set("Content-Type", utils.MEDIA_TYPE_FORM)
-	req.Header.Set("accept", fileType)
-	req.Header.Set("Authorization", "Bearer "+utils.SERVER_CONFIGS.Token)
-
-	defer req.Body.Close()
-
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("error while exporting the user store: %s", err)
+		return fmt.Errorf("error while exporting the identity provider: %s", err)
 	}
 	defer resp.Body.Close()
 
-	statusCode := resp.StatusCode
-	if statusCode == 200 {
-		var attachmentDetail = resp.Header.Get("Content-Disposition")
-		_, params, err := mime.ParseMediaType(attachmentDetail)
-		if err != nil {
-			return fmt.Errorf("error while parsing the content disposition header: %s", err)
-		}
-
-		fileName := params["filename"]
-		exportedFileName := filepath.Join(outputDirPath, fileName)
-		fileInfo := utils.GetFileInfo(exportedFileName)
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return fmt.Errorf("error while reading the response body when exporting userstore: %s. %s", fileName, err)
-		}
-
-		// Use the common mask for senstive data.
-		modifiedBody := []byte(strings.ReplaceAll(string(body), USERSTORE_SECRET_MASK, utils.SENSITIVE_FIELD_MASK))
-
-		userStoreKeywordMapping := getUserStoreKeywordMapping(fileInfo.ResourceName)
-		modifiedFile, err := utils.ProcessExportedContent(exportedFileName, modifiedBody, userStoreKeywordMapping)
-		if err != nil {
-			return fmt.Errorf("error while processing the exported content: %s", err)
-		}
-
-		err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
-		if err != nil {
-			return fmt.Errorf("error when writing the exported content to file: %w", err)
-		}
-		return nil
-	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		return fmt.Errorf("error while exporting the user store: %s", error)
+	var attachmentDetail = resp.Header.Get("Content-Disposition")
+	_, params, err := mime.ParseMediaType(attachmentDetail)
+	if err != nil {
+		return fmt.Errorf("error while parsing the content disposition header: %s", err)
 	}
-	return fmt.Errorf("unexpected error while exporting the user store with status code: %s", strconv.FormatInt(int64(statusCode), 10))
+
+	fileName := params["filename"]
+	exportedFileName := filepath.Join(outputDirPath, fileName)
+	fileInfo := utils.GetFileInfo(exportedFileName)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error while reading the response body when exporting userstore: %s. %s", fileName, err)
+	}
+
+	// Use the common mask for senstive data.
+	modifiedBody := []byte(strings.ReplaceAll(string(body), USERSTORE_SECRET_MASK, utils.SENSITIVE_FIELD_MASK))
+
+	userStoreKeywordMapping := getUserStoreKeywordMapping(fileInfo.ResourceName)
+	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, modifiedBody, userStoreKeywordMapping)
+	if err != nil {
+		return fmt.Errorf("error while processing the exported content: %s", err)
+	}
+
+	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
+	if err != nil {
+		return fmt.Errorf("error when writing the exported content to file: %w", err)
+	}
+	return nil
 }

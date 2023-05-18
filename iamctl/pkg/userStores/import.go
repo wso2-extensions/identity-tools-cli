@@ -64,7 +64,6 @@ func ImportAll(inputDirPath string) {
 
 func importUserStore(userStoreId string, importFilePath string) error {
 
-	fmt.Println(userStoreId)
 	fileBytes, err := ioutil.ReadFile(importFilePath)
 	if err != nil {
 		return fmt.Errorf("error when reading the file for user store: %s", err)
