@@ -44,7 +44,7 @@ func ImportAll(inputDirPath string) {
 			log.Println("Error importing applications: ", err)
 		}
 		if utils.TOOL_CONFIGS.AllowDelete {
-			RemoveDeletedDeployedResources(files, getAppList())
+			removeDeletedDeployedApps(files)
 		}
 	}
 
@@ -116,17 +116,26 @@ func importApp(importFilePath string, isUpdate bool) error {
 	return nil
 }
 
-func RemoveDeletedDeployedResources(localFiles []os.FileInfo, deployedResources []Application) {
+func removeDeletedDeployedApps(localFiles []os.FileInfo) {
 
-	// Remove deployed resources that do not exist locally.
+	// Remove deployed applications that do not exist locally.
+	deployedApps := getAppList()
 deployedResources:
-	for _, resource := range deployedResources {
+	for _, app := range deployedApps {
 		for _, file := range localFiles {
-			if resource.Name == utils.GetFileInfo(file.Name()).ResourceName {
+			if app.Name == utils.GetFileInfo(file.Name()).ResourceName {
 				continue deployedResources
 			}
 		}
-		log.Println("Application not found locally. Deleting app: ", resource.Name)
-		utils.SendDeleteRequest(resource.Id, "applications")
+		if utils.IsResourceExcluded(app.Name, utils.TOOL_CONFIGS.ApplicationConfigs) || app.Name == "Console" || app.Name == "My Account" {
+			log.Printf("Application: %s is excluded from deletion.\n", app.Name)
+			continue
+		}
+		log.Println("Application not found locally. Deleting app: ", app.Name)
+		err := utils.SendDeleteRequest(app.Id, utils.APPLICATIONS)
+		if err != nil {
+			log.Println("Error deleting application: ", app.Name, err)
+		}
+
 	}
 }

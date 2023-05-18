@@ -44,12 +44,7 @@ func ImportAll(inputDirPath string) {
 			log.Println("Error importing identity providers: ", err)
 		}
 		if utils.TOOL_CONFIGS.AllowDelete {
-			deployedIdpList, err := getIdpList()
-			if err != nil {
-				log.Println("Error retrieving deployed identity providers: ", err)
-			} else {
-				removeDeletedDeployedIdps(files, deployedIdpList)
-			}
+			removeDeletedDeployedIdps(files)
 		}
 
 	}
@@ -129,9 +124,14 @@ func getIdpId(idpFilePath string, idpName string) (string, error) {
 	return "", nil
 }
 
-func removeDeletedDeployedIdps(localFiles []os.FileInfo, deployedIdps []identityProvider) {
+func removeDeletedDeployedIdps(localFiles []os.FileInfo) {
 
 	// Remove deployed identity providers that do not exist locally.
+	deployedIdps, err := getIdpList()
+	if err != nil {
+		log.Println("Error retrieving deployed identity providers: ", err)
+		return
+	}
 deployedResourcess:
 	for _, idp := range deployedIdps {
 		for _, file := range localFiles {
@@ -139,10 +139,14 @@ deployedResourcess:
 				continue deployedResourcess
 			}
 		}
-		log.Println("Identity provider not found locally. Deleting idp: ", idp.Name)
-		err := utils.SendDeleteRequest(idp.Id, "identity-providers")
+		if utils.IsResourceExcluded(idp.Name, utils.TOOL_CONFIGS.ApplicationConfigs) || idp.Name == utils.RESIDENT_IDP_NAME {
+			log.Println("Identity provider is excluded from deletion: ", idp.Name)
+			continue
+		}
+		log.Printf("Identity provider: %s not found locally. Deleting idp.\n", idp.Name)
+		err := utils.SendDeleteRequest(idp.Id, utils.IDENTITY_PROVIDERS)
 		if err != nil {
-			log.Println("Error deleting identity provider: ", err)
+			log.Println("Error deleting idp: ", idp.Name, err)
 		}
 	}
 }
