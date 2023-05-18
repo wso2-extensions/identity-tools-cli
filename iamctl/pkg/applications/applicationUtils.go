@@ -44,6 +44,14 @@ type AppConfig struct {
 	ApplicationName string `yaml:"applicationName"`
 }
 
+type AppList struct {
+	Applications []Application `json:"applications"`
+}
+
+type AppConfig struct {
+	ApplicationName string `yaml:"applicationName"`
+}
+
 func getDeployedAppNames() []string {
 
 	apps := getAppList()
