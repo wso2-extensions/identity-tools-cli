@@ -19,14 +19,6 @@
 package utils
 
 import (
-	"bytes"
-	"crypto/tls"
-	"fmt"
-	"io"
-	"mime"
-	"mime/multipart"
-	"net/http"
-	"net/textproto"
 	"path/filepath"
 	"strings"
 )
@@ -46,144 +38,12 @@ func GetFileInfo(filePath string) (fileInfo FileInfo) {
 	return fileInfo
 }
 
-func getResourcePath(resourceType string) string {
+func Contains(slice []string, item string) bool {
 
-	switch resourceType {
-	case APPLICATIONS:
-		return "applications"
-	case IDENTITY_PROVIDERS:
-		return "identity-providers"
-	case USERSTORES:
-		return "userstores"
+	for _, s := range slice {
+		if strings.EqualFold(s, item) {
+			return true
+		}
 	}
-	return ""
-}
-
-func SendImportRequest(importFilePath, fileData, resourceType string) error {
-
-	reqUrl := SERVER_CONFIGS.ServerUrl + "/t/" + SERVER_CONFIGS.TenantDomain + "/api/server/v1/" + getResourcePath(resourceType) + "/import"
-
-	var buf bytes.Buffer
-	var err error
-	_, err = io.WriteString(&buf, fileData)
-	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
-	}
-
-	mime.AddExtensionType(".yml", "application/yaml")
-	mime.AddExtensionType(".xml", "application/xml")
-	mime.AddExtensionType(".json", "application/json")
-
-	fileInfo := GetFileInfo(importFilePath)
-	mimeType := mime.TypeByExtension(fileInfo.FileExtension)
-
-	body := new(bytes.Buffer)
-	writer := multipart.NewWriter(body)
-	defer writer.Close()
-
-	part, err := writer.CreatePart(textproto.MIMEHeader{
-		"Content-Disposition": []string{fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file", fileInfo.FileName)},
-		"Content-Type":        []string{mimeType},
-	})
-	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
-	}
-
-	_, err = io.Copy(part, &buf)
-	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
-	}
-
-	request, err := http.NewRequest("POST", reqUrl, body)
-	request.Header.Add("Content-Type", writer.FormDataContentType())
-	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
-	defer request.Body.Close()
-
-	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
-	}
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-	resp, err := client.Do(request)
-	if err != nil {
-		return fmt.Errorf("error when sending the import request: %s", err)
-	}
-
-	statusCode := resp.StatusCode
-	if statusCode == 201 {
-		return nil
-	} else if error, ok := ErrorCodes[statusCode]; ok {
-		return fmt.Errorf("error response for the import request: %s", error)
-	}
-	return fmt.Errorf("unexpected error when importing resource: %s", resp.Status)
-}
-
-func SendUpdateRequest(resourceId, importFilePath, fileData, resourceType string) error {
-
-	reqUrl := SERVER_CONFIGS.ServerUrl + "/t/" + SERVER_CONFIGS.TenantDomain + "/api/server/v1/" + getResourcePath(resourceType) + "/" + resourceId + "/import"
-
-	var buf bytes.Buffer
-	var err error
-	_, err = io.WriteString(&buf, fileData)
-	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
-	}
-
-	mime.AddExtensionType(".yml", "application/yaml")
-	mime.AddExtensionType(".xml", "application/xml")
-	mime.AddExtensionType(".json", "application/json")
-
-	fileInfo := GetFileInfo(importFilePath)
-	mimeType := mime.TypeByExtension(fileInfo.FileExtension)
-
-	body := new(bytes.Buffer)
-	writer := multipart.NewWriter(body)
-	defer writer.Close()
-
-	part, err := writer.CreatePart(textproto.MIMEHeader{
-		"Content-Disposition": []string{fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file", fileInfo.FileName)},
-		"Content-Type":        []string{mimeType},
-	})
-	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
-	}
-
-	_, err = io.Copy(part, &buf)
-	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
-	}
-
-	request, err := http.NewRequest("PUT", reqUrl, body)
-	request.Header.Add("Content-Type", writer.FormDataContentType())
-	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
-	defer request.Body.Close()
-
-	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
-	}
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-	resp, err := client.Do(request)
-	if err != nil {
-		return fmt.Errorf("error when sending the import request: %s", err)
-	}
-
-	statusCode := resp.StatusCode
-
-	if statusCode == 200 {
-		return nil
-	} else if error, ok := ErrorCodes[statusCode]; ok {
-		return fmt.Errorf("error response for the import request: %s", error)
-	}
-	return fmt.Errorf("unexpected error when importing resource: %s", resp.Status)
+	return false
 }

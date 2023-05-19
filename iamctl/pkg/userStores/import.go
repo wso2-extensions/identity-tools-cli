@@ -42,6 +42,9 @@ func ImportAll(inputDirPath string) {
 		if err != nil {
 			log.Println("Error importing user stores: ", err)
 		}
+		if utils.TOOL_CONFIGS.AllowDelete {
+			removeDeletedDeployedUserstores(files)
+		}
 	}
 
 	for _, file := range files {
@@ -64,7 +67,6 @@ func ImportAll(inputDirPath string) {
 
 func importUserStore(userStoreId string, importFilePath string) error {
 
-	fmt.Println(userStoreId)
 	fileBytes, err := ioutil.ReadFile(importFilePath)
 	if err != nil {
 		return fmt.Errorf("error when reading the file for user store: %s", err)
@@ -87,4 +89,31 @@ func importUserStore(userStoreId string, importFilePath string) error {
 	}
 	log.Println("User store imported successfully.")
 	return nil
+}
+
+func removeDeletedDeployedUserstores(localFiles []os.FileInfo) {
+
+	// Remove deployed user stores that do not exist locally.
+	deployedUserstores, err := getUserStoreList()
+	if err != nil {
+		log.Println("Error retrieving deployed userstores: ", err)
+		return
+	}
+deployedResourcess:
+	for _, userstore := range deployedUserstores {
+		for _, file := range localFiles {
+			if userstore.Name == utils.GetFileInfo(file.Name()).ResourceName {
+				continue deployedResourcess
+			}
+		}
+		if utils.IsResourceExcluded(userstore.Name, utils.TOOL_CONFIGS.ApplicationConfigs) {
+			log.Printf("Userstore: %s is excluded from deletion.\n", userstore.Name)
+			continue
+		}
+		log.Println("User store not found locally. Deleting userstore: ", userstore.Name)
+		err := utils.SendDeleteRequest(userstore.Id, utils.USERSTORES)
+		if err != nil {
+			log.Println("Error deleting user store: ", err)
+		}
+	}
 }

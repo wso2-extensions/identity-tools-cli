@@ -19,16 +19,12 @@
 package identityproviders
 
 import (
-	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"mime"
-	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -38,7 +34,15 @@ func ExportAll(exportFilePath string, format string) {
 	// Export all identity providers to the IdentityProviders folder.
 	log.Println("Exporting identity providers...")
 	exportFilePath = filepath.Join(exportFilePath, utils.IDENTITY_PROVIDERS)
-	os.MkdirAll(exportFilePath, 0700)
+
+	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
+		os.MkdirAll(exportFilePath, 0700)
+	} else {
+		if utils.TOOL_CONFIGS.AllowDelete {
+			deployedIdpNames := append(getDeployedIdpNames(), utils.RESIDENT_IDP_NAME)
+			utils.RemoveDeletedLocalResources(exportFilePath, deployedIdpNames)
+		}
+	}
 
 	excludeSecerts := utils.AreSecretsExcluded(utils.TOOL_CONFIGS.IdpConfigs)
 	idps, err := getIdpList()
@@ -82,67 +86,36 @@ func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets
 		fileType = utils.MEDIA_TYPE_YAML
 	}
 
-	var reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/identity-providers/" + idpId + "/export"
+	resp, err := utils.SendExportRequest(idpId, fileType, utils.IDENTITY_PROVIDERS, excludeSecrets)
+	defer resp.Body.Close()
 
-	var err error
-	req, err := http.NewRequest("GET", reqUrl, strings.NewReader(""))
-	if err != nil {
-		return fmt.Errorf("error while creating the request to export identity provider: %s", err)
-	}
-	req.Header.Set("Content-Type", utils.MEDIA_TYPE_FORM)
-	req.Header.Set("accept", fileType)
-	req.Header.Set("Authorization", "Bearer "+utils.SERVER_CONFIGS.Token)
-
-	query := req.URL.Query()
-	query.Add("excludeSecrets", strconv.FormatBool(excludeSecrets))
-	req.URL.RawQuery = query.Encode()
-
-	defer req.Body.Close()
-
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-
-	resp, err := httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("error while exporting the identity provider: %s", err)
 	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	if statusCode == 200 {
-		var attachmentDetail = resp.Header.Get("Content-Disposition")
-		_, params, err := mime.ParseMediaType(attachmentDetail)
-		if err != nil {
-			return fmt.Errorf("error while parsing the content disposition header: %s", err)
-		}
-
-		fileName := params["filename"]
-		exportedFileName := filepath.Join(outputDirPath, fileName)
-		fileInfo := utils.GetFileInfo(exportedFileName)
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return fmt.Errorf("error while reading the response body when exporting IDP: %s. %s", fileName, err)
-		}
-
-		idpKeywordMapping := getIdpKeywordMapping(fileInfo.ResourceName)
-		modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, idpKeywordMapping)
-		if err != nil {
-			return fmt.Errorf("error while processing the exported content: %s", err)
-		}
-
-		err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
-		if err != nil {
-			return fmt.Errorf("error when writing the exported content to file: %w", err)
-		}
-		return nil
-	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		return fmt.Errorf("error while exporting the identity provider: %s", error)
+	var attachmentDetail = resp.Header.Get("Content-Disposition")
+	_, params, err := mime.ParseMediaType(attachmentDetail)
+	if err != nil {
+		return fmt.Errorf("error while parsing the content disposition header: %s", err)
 	}
-	return fmt.Errorf("unexpected error while exporting the identity provider with status code: %s", strconv.FormatInt(int64(statusCode), 10))
+
+	fileName := params["filename"]
+	exportedFileName := filepath.Join(outputDirPath, fileName)
+	fileInfo := utils.GetFileInfo(exportedFileName)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error while reading the response body when exporting IDP: %s. %s", fileName, err)
+	}
+
+	idpKeywordMapping := getIdpKeywordMapping(fileInfo.ResourceName)
+	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, idpKeywordMapping)
+	if err != nil {
+		return fmt.Errorf("error while processing the exported content: %s", err)
+	}
+
+	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
+	if err != nil {
+		return fmt.Errorf("error when writing the exported content to file: %w", err)
+	}
+	return nil
 }

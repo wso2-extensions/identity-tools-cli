@@ -19,16 +19,9 @@
 package identityproviders
 
 import (
-	"bytes"
-	"crypto/tls"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
-	"mime"
-	"mime/multipart"
-	"net/http"
-	"net/textproto"
 	"os"
 	"path/filepath"
 	"strings"
@@ -50,6 +43,10 @@ func ImportAll(inputDirPath string) {
 		if err != nil {
 			log.Println("Error importing identity providers: ", err)
 		}
+		if utils.TOOL_CONFIGS.AllowDelete {
+			removeDeletedDeployedIdps(files)
+		}
+
 	}
 
 	for _, file := range files {
@@ -89,89 +86,18 @@ func importIdp(idpId string, importFilePath string) error {
 	idpKeywordMapping := getIdpKeywordMapping(fileInfo.ResourceName)
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), idpKeywordMapping)
 
-	sendImportRequest(idpId, importFilePath, modifiedFileData)
-	return nil
-}
-
-func sendImportRequest(idpId string, importFilePath string, fileData string) error {
-
-	fileInfo := utils.GetFileInfo(importFilePath)
-
-	var requestMethod, reqUrl string
-	if idpId != "" {
-		log.Println("Updating IdP: " + fileInfo.ResourceName)
-		reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/identity-providers/" + idpId + "/import"
-		requestMethod = "PUT"
+	if idpId == "" {
+		log.Println("Creating new identity provider: " + fileInfo.ResourceName)
+		err = utils.SendImportRequest(importFilePath, modifiedFileData, utils.IDENTITY_PROVIDERS)
 	} else {
-		log.Println("Creating new IdP: " + fileInfo.ResourceName)
-		reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/identity-providers/import"
-		requestMethod = "POST"
+		log.Println("Updating identity provider: " + fileInfo.ResourceName)
+		err = utils.SendUpdateRequest(idpId, importFilePath, modifiedFileData, utils.IDENTITY_PROVIDERS)
 	}
-
-	var buf bytes.Buffer
-	var err error
-	_, err = io.WriteString(&buf, fileData)
 	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
+		return fmt.Errorf("error when importing identity provider: %s", err)
 	}
-
-	mime.AddExtensionType(".yml", "application/yaml")
-	mime.AddExtensionType(".xml", "application/xml")
-	mime.AddExtensionType(".json", "application/json")
-
-	mimeType := mime.TypeByExtension(fileInfo.FileExtension)
-
-	body := new(bytes.Buffer)
-	writer := multipart.NewWriter(body)
-	defer writer.Close()
-
-	part, err := writer.CreatePart(textproto.MIMEHeader{
-		"Content-Disposition": []string{fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file", fileInfo.FileName)},
-		"Content-Type":        []string{mimeType},
-	})
-	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
-	}
-
-	_, err = io.Copy(part, &buf)
-	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
-	}
-
-	request, err := http.NewRequest(requestMethod, reqUrl, body)
-	request.Header.Add("Content-Type", writer.FormDataContentType())
-	request.Header.Set("Authorization", "Bearer "+utils.SERVER_CONFIGS.Token)
-	defer request.Body.Close()
-
-	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
-	}
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-	resp, err := client.Do(request)
-	if err != nil {
-		return fmt.Errorf("error when sending the import request: %s", err)
-	}
-
-	statusCode := resp.StatusCode
-	if statusCode == 201 {
-		log.Println("Identity provider created successfully.")
-		return nil
-	} else if statusCode == 200 {
-		log.Println("Identity provider updated successfully.")
-		return nil
-	} else if statusCode == 409 {
-		log.Println("An identity provider with the same name already exists. Please rename the file accordingly.")
-		return importIdp(idpId, importFilePath)
-	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		return fmt.Errorf("error response for the import request: %s", error)
-	}
-	return fmt.Errorf("unexpected error when importing identity provider: %s", resp.Status)
+	log.Println("Identity provider imported successfully.")
+	return nil
 }
 
 func getIdpId(idpFilePath string, idpName string) (string, error) {
@@ -196,4 +122,31 @@ func getIdpId(idpFilePath string, idpName string) (string, error) {
 		}
 	}
 	return "", nil
+}
+
+func removeDeletedDeployedIdps(localFiles []os.FileInfo) {
+
+	// Remove deployed identity providers that do not exist locally.
+	deployedIdps, err := getIdpList()
+	if err != nil {
+		log.Println("Error retrieving deployed identity providers: ", err)
+		return
+	}
+deployedResourcess:
+	for _, idp := range deployedIdps {
+		for _, file := range localFiles {
+			if idp.Name == utils.GetFileInfo(file.Name()).ResourceName {
+				continue deployedResourcess
+			}
+		}
+		if utils.IsResourceExcluded(idp.Name, utils.TOOL_CONFIGS.ApplicationConfigs) || idp.Name == utils.RESIDENT_IDP_NAME {
+			log.Println("Identity provider is excluded from deletion: ", idp.Name)
+			continue
+		}
+		log.Printf("Identity provider: %s not found locally. Deleting idp.\n", idp.Name)
+		err := utils.SendDeleteRequest(idp.Id, utils.IDENTITY_PROVIDERS)
+		if err != nil {
+			log.Println("Error deleting idp: ", idp.Name, err)
+		}
+	}
 }
