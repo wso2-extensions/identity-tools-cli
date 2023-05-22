@@ -46,6 +46,13 @@ func ImportAll(inputDirPath string) {
 		log.Println("Error importing Claim Dialects: ", err)
 	}
 
+	for i, file := range files {
+		if file.Name() == "http_wso2_org_claims.yml" {
+			files[0], files[i] = files[i], files[0]
+			break
+		}
+	}
+
 	for _, file := range files {
 		claimFilePath := filepath.Join(importFilePath, file.Name())
 		dialectName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))

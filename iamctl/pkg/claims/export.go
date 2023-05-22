@@ -108,10 +108,6 @@ func exportClaimDialect(dialectId string, outputDirPath string, format string) e
 		}
 
 		fileName := params["filename"]
-		fileName = strings.ReplaceAll(fileName, "http://", "")
-		fileName = strings.ReplaceAll(fileName, ":", ".")
-		fileName = strings.ReplaceAll(fileName, "/", ".")
-
 		exportedFileName := filepath.Join(outputDirPath, fileName)
 		fileInfo := utils.GetFileInfo(exportedFileName)
 
