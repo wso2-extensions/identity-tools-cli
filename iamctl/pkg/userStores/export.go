@@ -16,7 +16,7 @@
 * under the License.
  */
 
-package identityproviders
+package userstores
 
 import (
 	"fmt"
@@ -25,55 +25,48 @@ import (
 	"mime"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 func ExportAll(exportFilePath string, format string) {
 
-	// Export all identity providers to the IdentityProviders folder.
-	log.Println("Exporting identity providers...")
-	exportFilePath = filepath.Join(exportFilePath, utils.IDENTITY_PROVIDERS)
+	// Export all userstores to the UserStores folder.
+	log.Println("Exporting user stores...")
+	exportFilePath = filepath.Join(exportFilePath, utils.USERSTORES)
 
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		os.MkdirAll(exportFilePath, 0700)
 	} else {
 		if utils.TOOL_CONFIGS.AllowDelete {
-			deployedIdpNames := append(getDeployedIdpNames(), utils.RESIDENT_IDP_NAME)
-			utils.RemoveDeletedLocalResources(exportFilePath, deployedIdpNames)
+			utils.RemoveDeletedLocalResources(exportFilePath, getDeployedUserstoreNames())
 		}
 	}
 
-	excludeSecerts := utils.AreSecretsExcluded(utils.TOOL_CONFIGS.IdpConfigs)
-	idps, err := getIdpList()
+	userstores, err := getUserStoreList()
 	if err != nil {
-		log.Println("Error: when exporting identity providers.", err)
+		log.Println("Error: when exporting userstores.", err)
 	} else {
-		for _, idp := range idps {
-			if !utils.IsResourceExcluded(idp.Name, utils.TOOL_CONFIGS.IdpConfigs) {
-				log.Println("Exporting identity provider: ", idp.Name)
+		if !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.ApplicationConfigs) {
+			log.Println("Warn: Secrets exclusion cannot be disabled for userstores. All secrets will be masked.")
+		}
+		for _, userstore := range userstores {
+			if !utils.IsResourceExcluded(userstore.Name, utils.TOOL_CONFIGS.UserStoreConfigs) {
+				log.Println("Exporting user store: ", userstore.Name)
 
-				err := exportIdp(idp.Id, exportFilePath, format, excludeSecerts)
+				err := exportUserStore(userstore.Id, exportFilePath, format)
 				if err != nil {
-					log.Printf("Error while exporting identity providers: %s. %s", idp.Name, err)
+					log.Printf("Error while exporting user store: %s. %s", userstore.Name, err)
 				} else {
-					log.Println("Identity provider exported successfully: ", idp.Name)
+					log.Println("User store exported successfully: ", userstore.Name)
 				}
 			}
 		}
 	}
-	if !utils.IsResourceExcluded(utils.RESIDENT_IDP_NAME, utils.TOOL_CONFIGS.IdpConfigs) {
-		log.Println("Exporting Resident identity provider")
-		err := exportIdp(utils.RESIDENT_IDP_NAME, exportFilePath, format, excludeSecerts)
-		if err != nil {
-			log.Printf("Error while exporting resident identity provider: %s", err)
-		} else {
-			log.Println("Resident identity provider exported successfully")
-		}
-	}
 }
 
-func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets bool) error {
+func exportUserStore(userStoreId string, outputDirPath string, format string) error {
 
 	var fileType string
 	// TODO: Extend support for json and xml formats.
@@ -86,12 +79,11 @@ func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets
 		fileType = utils.MEDIA_TYPE_YAML
 	}
 
-	resp, err := utils.SendExportRequest(idpId, fileType, utils.IDENTITY_PROVIDERS, excludeSecrets)
-	defer resp.Body.Close()
-
+	resp, err := utils.SendExportRequest(userStoreId, fileType, utils.USERSTORES, true)
 	if err != nil {
 		return fmt.Errorf("error while exporting the identity provider: %s", err)
 	}
+
 	var attachmentDetail = resp.Header.Get("Content-Disposition")
 	_, params, err := mime.ParseMediaType(attachmentDetail)
 	if err != nil {
@@ -104,11 +96,14 @@ func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("error while reading the response body when exporting IDP: %s. %s", fileName, err)
+		return fmt.Errorf("error while reading the response body when exporting userstore: %s. %s", fileName, err)
 	}
 
-	idpKeywordMapping := getIdpKeywordMapping(fileInfo.ResourceName)
-	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, idpKeywordMapping)
+	// Use the common mask for senstive data.
+	modifiedBody := []byte(strings.ReplaceAll(string(body), USERSTORE_SECRET_MASK, utils.SENSITIVE_FIELD_MASK))
+
+	userStoreKeywordMapping := getUserStoreKeywordMapping(fileInfo.ResourceName)
+	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, modifiedBody, userStoreKeywordMapping)
 	if err != nil {
 		return fmt.Errorf("error while processing the exported content: %s", err)
 	}

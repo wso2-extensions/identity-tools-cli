@@ -19,31 +19,26 @@
 package applications
 
 import (
-	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
-	"path/filepath"
-	"strings"
 	"text/tabwriter"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
-type AppConfig struct {
-	ApplicationName string `yaml:"applicationName"`
+type Application struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
 }
 
-func getAppFileInfo(filePath string) (string, string, string) {
+type AppList struct {
+	Applications []Application `json:"applications"`
+}
 
-	filename := filepath.Base(filePath)
-	fileExtension := filepath.Ext(filename)
-	appName := strings.TrimSuffix(filename, fileExtension)
-
-	return appName, filename, fileExtension
+type AppConfig struct {
+	ApplicationName string `yaml:"applicationName"`
 }
 
 func getDeployedAppNames() []string {
@@ -56,24 +51,13 @@ func getDeployedAppNames() []string {
 	return appNames
 }
 
-func getAppList() (spIdList []utils.Application) {
+func getAppList() (spIdList []Application) {
 
-	var APPURL = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/applications"
-	var list utils.AppList
-
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-
-	req, _ := http.NewRequest("GET", APPURL, bytes.NewBuffer(nil))
-	req.Header.Set("Authorization", "Bearer "+utils.SERVER_CONFIGS.Token)
-	req.Header.Set("accept", "*/*")
-	defer req.Body.Close()
-
-	httpClient := &http.Client{}
-	resp, err := httpClient.Do(req)
+	var list AppList
+	resp, err := utils.SendGetListRequest(utils.APPLICATIONS)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("Error while retrieving application list", err)
 	}
-
 	defer resp.Body.Close()
 
 	statusCode := resp.StatusCode

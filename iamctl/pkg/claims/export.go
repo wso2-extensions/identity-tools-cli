@@ -19,16 +19,12 @@
 package claims
 
 import (
-	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"mime"
-	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -38,13 +34,23 @@ func ExportAll(exportFilePath string, format string) {
 	// Export all claim dialects with related claims.
 	log.Println("Exporting Claim Dialects...")
 	exportFilePath = filepath.Join(exportFilePath, utils.CLAIMS)
-	os.MkdirAll(exportFilePath, 0700)
 
-	dialects, err := getClaimDialectsList()
+	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
+		os.MkdirAll(exportFilePath, 0700)
+	} else {
+		if utils.TOOL_CONFIGS.AllowDelete {
+			utils.RemoveDeletedLocalResources(exportFilePath, getDeployedClaimDialectNames())
+		}
+	}
+
+	claimdialects, err := getClaimDialectsList()
 	if err != nil {
 		log.Println("Error: when getting Claim Dialect IDs.", err)
 	} else {
-		for _, dialect := range dialects {
+		// if !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.ApplicationConfigs) {
+		// 	log.Println("Warn: Secrets exclusion cannot be disabled for claim dialects. All secrets will be masked.")
+		// }
+		for _, dialect := range claimdialects {
 			if !utils.IsResourceExcluded(dialect.DialectURI, utils.TOOL_CONFIGS.ClaimDialectConfigs) {
 				log.Println("Exporting Claim Dialect: ", dialect.DialectURI)
 
@@ -72,61 +78,38 @@ func exportClaimDialect(dialectId string, outputDirPath string, format string) e
 		fileType = utils.MEDIA_TYPE_YAML
 	}
 
-	var reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/claim-dialects/" + dialectId + "/export"
-
-	var err error
-	req, err := http.NewRequest("GET", reqUrl, strings.NewReader(""))
+	resp, err := utils.SendExportRequest(dialectId, fileType, utils.CLAIMS, true)
 	if err != nil {
-		return fmt.Errorf("error while creating the request to export Claim Dialect: %s", err)
-	}
-	req.Header.Set("Content-Type", utils.MEDIA_TYPE_FORM)
-	req.Header.Set("accept", fileType)
-	req.Header.Set("Authorization", "Bearer "+utils.SERVER_CONFIGS.Token)
-
-	defer req.Body.Close()
-
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
+		return fmt.Errorf("error while exporting the claim dialect: %s", err)
 	}
 
-	resp, err := httpClient.Do(req)
+	var attachmentDetail = resp.Header.Get("Content-Disposition")
+	_, params, err := mime.ParseMediaType(attachmentDetail)
 	if err != nil {
-		return fmt.Errorf("error while exporting Claim Dialect: %s", err)
+		return fmt.Errorf("error while parsing the content disposition header: %s", err)
 	}
-	defer resp.Body.Close()
 
-	statusCode := resp.StatusCode
-	if statusCode == 200 {
-		var attachmentDetail = resp.Header.Get("Content-Disposition")
-		_, params, err := mime.ParseMediaType(attachmentDetail)
-		if err != nil {
-			return fmt.Errorf("error while parsing the content disposition header: %s", err)
-		}
+	fileName := params["filename"]
+	exportedFileName := filepath.Join(outputDirPath, fileName)
+	fileInfo := utils.GetFileInfo(exportedFileName)
 
-		fileName := params["filename"]
-		exportedFileName := filepath.Join(outputDirPath, fileName)
-		fileInfo := utils.GetFileInfo(exportedFileName)
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return fmt.Errorf("error while reading the response body when exporting Claim Dialect: %s. %s", fileName, err)
-		}
-
-		// Handle Environment Specific Variables.
-		claimKeywordMapping := getClaimKeywordMapping(fileInfo.ResourceName)
-		modifiedFile := utils.HandleESVs(exportedFileName, body, claimKeywordMapping)
-
-		err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
-		if err != nil {
-			return fmt.Errorf("error when writing the exported content to file: %w", err)
-		}
-		return nil
-	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		return fmt.Errorf("error while exporting the Claim Dialect: %s", error)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error while reading the response body when exporting claim dialect: %s. %s", fileName, err)
 	}
-	return fmt.Errorf("unexpected error while exporting the Claim with status code: %s", strconv.FormatInt(int64(statusCode), 10))
+
+	// Use the common mask for senstive data.
+	// modifiedBody := []byte(strings.ReplaceAll(string(body), USERSTORE_SECRET_MASK, utils.SENSITIVE_FIELD_MASK))
+
+	claimDialectKeywordMapping := getClaimKeywordMapping(fileInfo.ResourceName)
+	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, claimDialectKeywordMapping)
+	if err != nil {
+		return fmt.Errorf("error while processing the exported content: %s", err)
+	}
+
+	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
+	if err != nil {
+		return fmt.Errorf("error when writing the exported content to file: %w", err)
+	}
+	return nil
 }

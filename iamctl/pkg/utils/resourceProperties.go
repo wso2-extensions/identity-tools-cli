@@ -19,7 +19,10 @@
 package utils
 
 import (
+	"io/ioutil"
 	"log"
+	"os"
+	"path/filepath"
 )
 
 func IsResourceExcluded(resourceName string, resourceConfigs map[string]interface{}) bool {
@@ -79,4 +82,26 @@ func AreSecretsExcluded(resourceConfigs map[string]interface{}) bool {
 		return secretsExcluded
 	}
 	return true
+}
+
+func RemoveDeletedLocalResources(filePath string, deployedResourceNames []string) {
+
+	// Remove local files of resources that do not exist in the remote during export.
+	files, err := ioutil.ReadDir(filePath)
+	if err != nil {
+		log.Println("Error loading local files: ", err)
+		return
+	}
+
+	for _, file := range files {
+		fileName := file.Name()
+		if !Contains(deployedResourceNames, GetFileInfo(fileName).ResourceName) {
+			err := os.Remove(filepath.Join(filePath, fileName))
+			if err != nil {
+				log.Println("Error when removing the file: ", fileName, err)
+			} else {
+				log.Println("Removed the file:", fileName)
+			}
+		}
+	}
 }

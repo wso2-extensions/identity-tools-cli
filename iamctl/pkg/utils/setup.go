@@ -48,24 +48,11 @@ type ServerConfigs struct {
 
 type ToolConfigs struct {
 	KeywordMappings     map[string]interface{} `json:"KEYWORD_MAPPINGS"`
+	AllowDelete         bool                   `json:"ALLOW_DELETE"`
 	ApplicationConfigs  map[string]interface{} `json:"APPLICATIONS"`
 	IdpConfigs          map[string]interface{} `json:"IDENTITY_PROVIDERS"`
 	ClaimDialectConfigs map[string]interface{} `json:"CLAIM_DIALECTS"`
-}
-
-type Application struct {
-	Id          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Self        string `json:"self"`
-}
-
-type AppList struct {
-	TotalResults int           `json:"totalResults"`
-	StartIndex   int           `json:"startIndex"`
-	Count        int           `json:"count"`
-	Applications []Application `json:"applications"`
-	Links        []string      `json:"links"`
+	UserStoreConfigs    map[string]interface{} `json:"USERSTORES"`
 }
 
 var SERVER_CONFIGS ServerConfigs

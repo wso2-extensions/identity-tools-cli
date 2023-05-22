@@ -12,6 +12,7 @@ Currently, the supported resource types are:
 * Applications
 * Identity Providers
 * Claims
+* User Stores
 
 ## Run the tool in CLI mode
 To run the tool in CLI mode, follow the steps given below.
@@ -210,9 +211,11 @@ Example:
 }
 ```
 #### Exclude secrets from exported resources
-By default, secrets are removed from the exported resources. For applications, the secret fields are not included in the exported file, and for identity providers the value of secrets will be masked by a string: ```'********'```.
+By default, secrets are removed from the exported resources. For applications, the secret fields are not included in the exported file, and for identity providers and user stores the value of secrets will be masked by a string: ```'********'```.
 The ```EXCLUDE_SECRETS``` config can be used to override this behaviour and include the secrets in the exported resources. 
 
+> **Note:** This config cannot be used to include secrets for userstores. The secrets of userstores will always be masked by the string: ```'********'```
+> 
 The ```EXCLUDE_SECRETS``` property can be added to the tool configs under the relevant resource type as shown below.
 ```
 {

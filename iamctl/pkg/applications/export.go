@@ -19,16 +19,12 @@
 package applications
 
 import (
-	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"mime"
-	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -38,7 +34,14 @@ func ExportAll(exportFilePath string, format string) {
 	// Export all applications to the Applications folder.
 	log.Println("Exporting applications...")
 	exportFilePath = filepath.Join(exportFilePath, utils.APPLICATIONS)
-	os.MkdirAll(exportFilePath, 0700)
+
+	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
+		os.MkdirAll(exportFilePath, 0700)
+	} else {
+		if utils.TOOL_CONFIGS.AllowDelete {
+			utils.RemoveDeletedLocalResources(exportFilePath, getDeployedAppNames())
+		}
+	}
 
 	apps := getAppList()
 	for _, app := range apps {
@@ -68,64 +71,34 @@ func exportApp(appId string, outputDirPath string, format string, excludeSecrets
 		fileType = utils.MEDIA_TYPE_YAML
 	}
 
-	var reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/applications/" + appId + "/exportFile"
-	var err error
-	req, err := http.NewRequest("GET", reqUrl, strings.NewReader(""))
-	if err != nil {
-		return fmt.Errorf("error while creating the request to export application: %s", err)
-	}
-	req.Header.Set("Content-Type", utils.MEDIA_TYPE_FORM)
-	req.Header.Set("accept", fileType)
-	req.Header.Set("Authorization", "Bearer "+utils.SERVER_CONFIGS.Token)
-
-	query := req.URL.Query()
-	query.Add("exportSecrets", strconv.FormatBool(!excludeSecrets))
-	req.URL.RawQuery = query.Encode()
-
-	defer req.Body.Close()
-
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-
-	resp, err := httpClient.Do(req)
+	resp, err := utils.SendExportRequest(appId, fileType, utils.APPLICATIONS, excludeSecrets)
 	if err != nil {
 		return fmt.Errorf("error while exporting the application: %s", err)
 	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	if statusCode == 200 {
-		var attachmentDetail = resp.Header.Get("Content-Disposition")
-		_, params, err := mime.ParseMediaType(attachmentDetail)
-		if err != nil {
-			return fmt.Errorf("error while parsing the content disposition header: %s", err)
-		}
-
-		fileName := params["filename"]
-		exportedFileName := filepath.Join(outputDirPath, fileName)
-		fileInfo := utils.GetFileInfo(exportedFileName)
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return fmt.Errorf("error while reading the response body when exporting app: %s. %s", fileName, err)
-		}
-
-		// Handle Environment Specific Variables.
-		appKeywordMapping := getAppKeywordMapping(fileInfo.ResourceName)
-		modifiedFile := utils.HandleESVs(exportedFileName, body, appKeywordMapping)
-
-		err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
-		if err != nil {
-			return fmt.Errorf("error when writing the exported content to file: %w", err)
-		}
-		return nil
-	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		return fmt.Errorf("error while exporting the application: %s", error)
+	var attachmentDetail = resp.Header.Get("Content-Disposition")
+	_, params, err := mime.ParseMediaType(attachmentDetail)
+	if err != nil {
+		return fmt.Errorf("error while parsing the content disposition header: %s", err)
 	}
-	return fmt.Errorf("unexpected error while exporting the application: %s", "")
+
+	fileName := params["filename"]
+	exportedFileName := filepath.Join(outputDirPath, fileName)
+	fileInfo := utils.GetFileInfo(exportedFileName)
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error while reading the response body when exporting app: %s. %s", fileName, err)
+	}
+
+	appKeywordMapping := getAppKeywordMapping(fileInfo.ResourceName)
+	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, appKeywordMapping)
+	if err != nil {
+		return fmt.Errorf("error while processing exported data: %s", err)
+	}
+
+	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
+	if err != nil {
+		return fmt.Errorf("error when writing the exported content to file: %w", err)
+	}
+	return nil
 }

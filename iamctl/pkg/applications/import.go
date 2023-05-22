@@ -19,16 +19,10 @@
 package applications
 
 import (
-	"bytes"
-	"crypto/tls"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
-	"mime"
-	"mime/multipart"
-	"net/http"
-	"net/textproto"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -41,9 +35,17 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing applications...")
 	importFilePath := filepath.Join(inputDirPath, utils.APPLICATIONS)
 
-	files, err := ioutil.ReadDir(importFilePath)
-	if err != nil {
-		log.Println("Error importing applications: ", err)
+	var files []os.FileInfo
+	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
+		log.Println("No applications to import.")
+	} else {
+		files, err = ioutil.ReadDir(importFilePath)
+		if err != nil {
+			log.Println("Error importing applications: ", err)
+		}
+		if utils.TOOL_CONFIGS.AllowDelete {
+			removeDeletedDeployedApps(files)
+		}
 	}
 
 	for _, file := range files {
@@ -100,86 +102,40 @@ func importApp(importFilePath string, isUpdate bool) error {
 	appKeywordMapping := getAppKeywordMapping(fileInfo.ResourceName)
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), appKeywordMapping)
 
-	sendImportRequest(isUpdate, importFilePath, modifiedFileData)
+	if isUpdate {
+		log.Println("Updating application: " + fileInfo.ResourceName)
+		err = utils.SendUpdateRequest("", importFilePath, modifiedFileData, utils.APPLICATIONS)
+	} else {
+		log.Println("Creating new application: " + fileInfo.ResourceName)
+		err = utils.SendImportRequest(importFilePath, modifiedFileData, utils.APPLICATIONS)
+	}
+	if err != nil {
+		return fmt.Errorf("error when importing application: %s", err)
+	}
+	log.Println("Application imported successfully.")
 	return nil
 }
 
-func sendImportRequest(isUpdate bool, importFilePath string, fileData string) error {
+func removeDeletedDeployedApps(localFiles []os.FileInfo) {
 
-	reqUrl := utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/applications/import"
-	fileInfo := utils.GetFileInfo(importFilePath)
+	// Remove deployed applications that do not exist locally.
+	deployedApps := getAppList()
+deployedResources:
+	for _, app := range deployedApps {
+		for _, file := range localFiles {
+			if app.Name == utils.GetFileInfo(file.Name()).ResourceName {
+				continue deployedResources
+			}
+		}
+		if utils.IsResourceExcluded(app.Name, utils.TOOL_CONFIGS.ApplicationConfigs) || app.Name == "Console" || app.Name == "My Account" {
+			log.Printf("Application: %s is excluded from deletion.\n", app.Name)
+			continue
+		}
+		log.Println("Application not found locally. Deleting app: ", app.Name)
+		err := utils.SendDeleteRequest(app.Id, utils.APPLICATIONS)
+		if err != nil {
+			log.Println("Error deleting application: ", app.Name, err)
+		}
 
-	var requestMethod string
-	if isUpdate {
-		log.Println("Updating app: " + fileInfo.ResourceName)
-		requestMethod = "PUT"
-	} else {
-		log.Println("Creating app: " + fileInfo.ResourceName)
-		requestMethod = "POST"
 	}
-
-	var buf bytes.Buffer
-	var err error
-	_, err = io.WriteString(&buf, fileData)
-	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
-	}
-
-	mime.AddExtensionType(".yml", "application/yaml")
-	mime.AddExtensionType(".xml", "application/xml")
-	mime.AddExtensionType(".json", "application/json")
-
-	mimeType := mime.TypeByExtension(fileInfo.FileExtension)
-
-	body := new(bytes.Buffer)
-	writer := multipart.NewWriter(body)
-	defer writer.Close()
-
-	part, err := writer.CreatePart(textproto.MIMEHeader{
-		"Content-Disposition": []string{fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file", fileInfo.FileName)},
-		"Content-Type":        []string{mimeType},
-	})
-	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
-	}
-
-	_, err = io.Copy(part, &buf)
-	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
-	}
-
-	request, err := http.NewRequest(requestMethod, reqUrl, body)
-	request.Header.Add("Content-Type", writer.FormDataContentType())
-	request.Header.Set("Authorization", "Bearer "+utils.SERVER_CONFIGS.Token)
-	defer request.Body.Close()
-
-	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
-	}
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-	resp, err := client.Do(request)
-	if err != nil {
-		return fmt.Errorf("error when sending the import request: %s", err)
-	}
-
-	statusCode := resp.StatusCode
-	if statusCode == 201 {
-		log.Println("Application created successfully.")
-		return nil
-	} else if statusCode == 200 {
-		log.Println("Application updated successfully.")
-		return nil
-	} else if statusCode == 409 {
-		log.Println("An application with the same name already exists. Please rename the file accordingly.")
-		return importApp(importFilePath, true)
-	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		return fmt.Errorf("error response for the import request: %s", error)
-	}
-	return fmt.Errorf("unexpected error when importing application: %s", resp.Status)
 }

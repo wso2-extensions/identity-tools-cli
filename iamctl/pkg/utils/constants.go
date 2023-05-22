@@ -22,12 +22,14 @@ package utils
 const APPLICATIONS_CONFIG = "APPLICATIONS"
 const IDP_CONFIG = "IDENTITY_PROVIDERS"
 const CLAIM_CONFIG = "CLAIMS"
+const USERSTORES_CONFIG = "USERSTORES"
 
 // Tool configs
 const KEYWORD_MAPPINGS_CONFIG = "KEYWORD_MAPPINGS"
 const EXCLUDE_CONFIG = "EXCLUDE"
 const INCLUDE_ONLY_CONFIG = "INCLUDE_ONLY"
 const EXCLUDE_SECRETS_CONFIG = "EXCLUDE_SECRETS"
+const ALLOW_DELETE_CONFIG = "ALLOW_DELETE"
 
 // Server configs
 const SERVER_URL_CONFIG = "SERVER_URL"
@@ -40,6 +42,7 @@ const TOKEN_CONFIG = "TOKEN"
 const APPLICATIONS = "Applications"
 const IDENTITY_PROVIDERS = "IdentityProviders"
 const CLAIMS = "Claims"
+const USERSTORES = "UserStores"
 
 // Config file names
 const SERVER_CONFIG_FILE = "serverConfig.json"
@@ -52,15 +55,17 @@ const MEDIA_TYPE_YAML = "application/yaml"
 const MEDIA_TYPE_FORM = "application/x-www-form-urlencoded"
 
 const DEFAULT_TENANT_DOMAIN = "carbon.super"
+const SENSITIVE_FIELD_MASK = "'********'"
+const RESIDENT_IDP_NAME = "LOCAL"
 
 // Error codes
 var ErrorCodes = map[int]string{
 
 	400: "Bad request. Provided parameters are not in correct format.",
-	401: "Unauthorized access.\nPlease check your Username and password.",
+	401: "Unauthorized access.\nPlease check your server configurations.",
 	403: "Forbidden request.",
-	404: "Service Provider not found for the given ID.",
-	409: "An application with the same name already exists.",
+	404: "Resource not found for the given ID.",
+	409: "A resource with the same name already exists.",
 	500: "Internal server error.",
 }
 
@@ -83,4 +88,5 @@ var arrayIdentifiers = map[string]string{
 	"claimMappings":                       "localClaim.claimUri",
 	"idpClaims":                           "claimId",
 	"provisioningProperties":              "name",
+	"claimAttributeMappings":              "claimURI",
 }

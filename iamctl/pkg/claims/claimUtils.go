@@ -19,14 +19,12 @@
 package claims
 
 import (
-	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
+	"gopkg.in/yaml.v2"
 )
 
 type claimDialect struct {
@@ -34,46 +32,39 @@ type claimDialect struct {
 	DialectURI string `json:"dialectURI"`
 }
 
-type claimDialectList []claimDialect
+type ClaimDialectConfigurations struct {
+	URI string `yaml:"uri"`
+	ID  string `yaml:"id"`
+}
 
 func getClaimDialectsList() ([]claimDialect, error) {
 
-	var reqUrl = utils.SERVER_CONFIGS.ServerUrl + "/t/" + utils.SERVER_CONFIGS.TenantDomain + "/api/server/v1/claim-dialects"
-	var list claimDialectList
-
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-
-	req, _ := http.NewRequest("GET", reqUrl, bytes.NewBuffer(nil))
-	req.Header.Set("Authorization", "Bearer "+utils.SERVER_CONFIGS.Token)
-	req.Header.Set("accept", "*/*")
-	defer req.Body.Close()
-
-	httpClient := &http.Client{}
-	resp, err := httpClient.Do(req)
+	var list []claimDialect
+	resp, err := utils.SendGetListRequest(utils.CLAIMS)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve available Claim Dialects list. %w", err)
+		return nil, fmt.Errorf("error while retrieving claim dialect list. %w", err)
 	}
-
 	defer resp.Body.Close()
 
 	statusCode := resp.StatusCode
 	if statusCode == 200 {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return nil, fmt.Errorf("error when reading the retrived Claim Dialects list. %w", err)
+			return nil, fmt.Errorf("error when reading the retrived claim dialect list. %w", err)
 		}
 
 		err = json.Unmarshal(body, &list)
 		if err != nil {
-			return nil, fmt.Errorf("error when unmarshalling the retrived Claim Dialects list. %w", err)
+			return nil, fmt.Errorf("error when unmarshalling the retrived claim dialect list. %w", err)
 		}
 		resp.Body.Close()
 
 		return list, nil
 	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		return nil, fmt.Errorf("error while retrieving Claim Dialects list. Status code: %d, Error: %s", statusCode, error)
+		return nil, fmt.Errorf("error while retrieving claim dialect list. Status code: %d, Error: %s", statusCode, error)
 	}
-	return nil, fmt.Errorf("error while retrieving Claim Dialects list. Status code: %d, Error: %s", statusCode, utils.ErrorCodes[statusCode])
+	return nil, fmt.Errorf("unexpected error while retrieving claim dialect list")
+
 }
 
 func getClaimKeywordMapping(claimDialectName string) map[string]interface{} {
@@ -82,4 +73,43 @@ func getClaimKeywordMapping(claimDialectName string) map[string]interface{} {
 		return utils.ResolveAdvancedKeywordMapping(claimDialectName, utils.TOOL_CONFIGS.ClaimDialectConfigs)
 	}
 	return utils.TOOL_CONFIGS.KeywordMappings
+}
+
+func getDeployedClaimDialectNames() []string {
+
+	claimdialects, err := getClaimDialectsList()
+	if err != nil {
+		return []string{}
+	}
+
+	var claimdialectNames []string
+	for _, claimdialect := range claimdialects {
+		claimdialectNames = append(claimdialectNames, claimdialect.DialectURI)
+	}
+	return claimdialectNames
+}
+
+func getClaimDialectId(claimDialectFilePath string) (string, error) {
+
+	fileContent, err := ioutil.ReadFile(claimDialectFilePath)
+	if err != nil {
+		return "", fmt.Errorf("error when reading the file: %s. %s", claimDialectFilePath, err)
+	}
+	var claimDialectConfig ClaimDialectConfigurations
+	err = yaml.Unmarshal(fileContent, &claimDialectConfig)
+	if err != nil {
+		return "", fmt.Errorf("invalid file content at: %s. %s", claimDialectFilePath, err)
+	}
+
+	existingClaimDialectList, err := getClaimDialectsList()
+	if err != nil {
+		return "", fmt.Errorf("error when retrieving the deployed claim dialect list: %s", err)
+	}
+
+	for _, dialect := range existingClaimDialectList {
+		if dialect.Id == claimDialectConfig.ID {
+			return dialect.Id, nil
+		}
+	}
+	return "", nil
 }

@@ -37,3 +37,13 @@ func GetFileInfo(filePath string) (fileInfo FileInfo) {
 
 	return fileInfo
 }
+
+func Contains(slice []string, item string) bool {
+
+	for _, s := range slice {
+		if strings.EqualFold(s, item) {
+			return true
+		}
+	}
+	return false
+}
