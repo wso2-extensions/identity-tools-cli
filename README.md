@@ -3,7 +3,7 @@
 IAM-CTL is a tool that can manage WSO2 Identity Server configurations from the command line. It is written in [GO](https://go.dev/) and uses the management REST APIs of WSO2 Identity Server to manage configurations.
 
 ### Prerequisites
-You need to [setup](https://is.docs.wso2.com/en/6.0.0/get-started/sample-use-cases/set-up/) WSO2 Identity Server 6.1.0.
+You need to [setup](https://is.docs.wso2.com/en/latest/get-started/sample-use-cases/set-up/) WSO2 Identity Server 6.2.0.
 
 ### Run the tool
 
