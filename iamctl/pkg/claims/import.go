@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
+	"gopkg.in/yaml.v2"
 )
 
 func ImportAll(inputDirPath string) {
@@ -83,6 +84,14 @@ func importClaimDialect(dialectId string, importFilePath string) error {
 	fileInfo := utils.GetFileInfo(importFilePath)
 	claimKeywordMapping := getClaimKeywordMapping(fileInfo.ResourceName)
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), claimKeywordMapping)
+
+	// Unmarshal the file data to get the dialect URI as the resource name.
+	var claimDialectConfigurations ClaimDialectConfigurations
+	error := yaml.Unmarshal([]byte(modifiedFileData), &claimDialectConfigurations)
+	if error != nil {
+		return fmt.Errorf("error when unmarshalling the file for claim dialect: %s", err)
+	}
+	fileInfo.ResourceName = claimDialectConfigurations.URI
 
 	if dialectId == "" {
 		log.Println("Creating new claim dialect: " + fileInfo.ResourceName)

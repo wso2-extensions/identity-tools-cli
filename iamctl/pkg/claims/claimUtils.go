@@ -33,7 +33,7 @@ type claimDialect struct {
 }
 
 type ClaimDialectConfigurations struct {
-	URI string `yaml:"uri"`
+	URI string `yaml:"dialectURI"`
 	ID  string `yaml:"id"`
 }
 

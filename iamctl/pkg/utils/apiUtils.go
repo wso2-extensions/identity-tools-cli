@@ -294,7 +294,7 @@ func buildRequestUrl(requestType, resourceType, resourceId string) (reqUrl strin
 	case IMPORT:
 		reqUrl = getResourceBaseUrl(resourceType) + IMPORT
 	case UPDATE:
-		if resourceType == APPLICATIONS {
+		if resourceType == APPLICATIONS || resourceType == CLAIMS {
 			reqUrl = getResourceBaseUrl(resourceType) + IMPORT
 		} else {
 			reqUrl = getResourceBaseUrl(resourceType) + resourceId + "/" + IMPORT

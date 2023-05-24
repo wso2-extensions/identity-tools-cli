@@ -89,4 +89,6 @@ var arrayIdentifiers = map[string]string{
 	"idpClaims":                           "claimId",
 	"provisioningProperties":              "name",
 	"claimAttributeMappings":              "claimURI",
+	"claims":                              "id",
+	"attributeMapping":                    "mappedAttribute",
 }

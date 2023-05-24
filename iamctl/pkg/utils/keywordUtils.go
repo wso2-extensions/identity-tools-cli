@@ -51,7 +51,6 @@ func ProcessExportedContent(exportedFileName string, exportedFileContent []byte,
 
 	// Unmarshall and marshall exported content in all cases to preserve a consistent format in the output.
 	var exportedYaml interface{}
-	log.Println("Parsing exported data to YAML: " + string(exportedFileContent) + "...")
 	err := yaml.Unmarshal(exportedFileContent, &exportedYaml)
 	if err != nil {
 		err1 := fmt.Errorf("error when parsing exported data to YAML. %w", err)
