@@ -296,6 +296,8 @@ func buildRequestUrl(requestType, resourceType, resourceId string) (reqUrl strin
 	case UPDATE:
 		if resourceType == APPLICATIONS || resourceType == CLAIMS {
 			reqUrl = getResourceBaseUrl(resourceType) + IMPORT
+		} else if resourceType == CLAIMS && TOOL_CONFIGS.AllowDelete {
+			reqUrl = getResourceBaseUrl(resourceType) + IMPORT + "?delete=true"
 		} else {
 			reqUrl = getResourceBaseUrl(resourceType) + resourceId + "/" + IMPORT
 		}
