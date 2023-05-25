@@ -102,7 +102,7 @@ func exportClaimDialect(dialectId string, outputDirPath string, format string) e
 	// modifiedBody := []byte(strings.ReplaceAll(string(body), USERSTORE_SECRET_MASK, utils.SENSITIVE_FIELD_MASK))
 
 	claimDialectKeywordMapping := getClaimKeywordMapping(fileInfo.ResourceName)
-	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, claimDialectKeywordMapping)
+	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, claimDialectKeywordMapping, utils.CLAIMS)
 	if err != nil {
 		return fmt.Errorf("error while processing the exported content: %s", err)
 	}

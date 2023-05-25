@@ -91,7 +91,7 @@ func exportApp(appId string, outputDirPath string, format string, excludeSecrets
 	}
 
 	appKeywordMapping := getAppKeywordMapping(fileInfo.ResourceName)
-	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, appKeywordMapping)
+	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, appKeywordMapping, utils.APPLICATIONS)
 	if err != nil {
 		return fmt.Errorf("error while processing exported data: %s", err)
 	}
