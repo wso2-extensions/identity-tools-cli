@@ -44,7 +44,7 @@ func ImportAll(inputDirPath string) {
 			log.Println("Error importing claim dialects: ", err)
 		}
 		if utils.TOOL_CONFIGS.AllowDelete {
-			removeDeletedDeployedClaimdialect(files)
+			removeDeletedDeployedClaimdialect(files, importFilePath)
 		}
 	}
 
@@ -107,7 +107,7 @@ func importClaimDialect(dialectId string, importFilePath string) error {
 	return nil
 }
 
-func removeDeletedDeployedClaimdialect(localFiles []os.FileInfo) {
+func removeDeletedDeployedClaimdialect(localFiles []os.FileInfo, importFilePath string) {
 
 	// Remove deployed claim dialects that do not exist locally.
 	deployedClaimDialects, err := getClaimDialectsList()
@@ -118,7 +118,21 @@ func removeDeletedDeployedClaimdialect(localFiles []os.FileInfo) {
 deployedResourcess:
 	for _, claimdialect := range deployedClaimDialects {
 		for _, file := range localFiles {
-			if claimdialect.DialectURI == utils.GetFileInfo(file.Name()).ResourceName {
+
+			var claimDialectConfigurations ClaimDialectConfigurations
+
+			claimFilePath := filepath.Join(importFilePath, file.Name())
+			content, err := readFileContent(claimFilePath)
+			if err != nil {
+				log.Println("error when reading file content: ", err)
+			}
+
+			err = yaml.Unmarshal(content, &claimDialectConfigurations)
+			if err != nil {
+				log.Println("error when unmarshalling the file for claim dialect: ", err)
+			}
+			localResourceName := claimDialectConfigurations.URI
+			if claimdialect.DialectURI == localResourceName {
 				continue deployedResourcess
 			}
 		}
@@ -132,4 +146,20 @@ deployedResourcess:
 			log.Println("Error deleting claim dialect: ", err)
 		}
 	}
+}
+
+func readFileContent(filename string) ([]byte, error) {
+
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	content, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+
+	return content, nil
 }
