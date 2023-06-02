@@ -144,7 +144,7 @@ func getAccessToken(config ServerConfigs) string {
 	if config.ServerUrl == "" {
 		log.Fatalln("Server URL is not defined in the config file.")
 	}
-	authUrl := config.ServerUrl + "/oauth2/token"
+	authUrl := config.ServerUrl + "/t/" + config.TenantDomain + "/oauth2/token"
 
 	body := url.Values{}
 	body.Set("grant_type", "client_credentials")
