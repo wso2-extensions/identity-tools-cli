@@ -205,6 +205,8 @@ func SendUpdateRequest(resourceId, importFilePath, fileData, resourceType string
 
 	if statusCode == 200 {
 		return nil
+	} else if statusCode == 400 && resourceType == CLAIMS {
+		return handleClaimImportErrorResponse(resp)
 	} else if error, ok := ErrorCodes[statusCode]; ok {
 		return fmt.Errorf("error response for the import request: %s", error)
 	}
