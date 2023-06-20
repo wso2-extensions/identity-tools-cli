@@ -87,8 +87,8 @@ func getAppList() (spIdList []Application) {
 
 func getAppKeywordMapping(appName string) map[string]interface{} {
 
-	if utils.TOOL_CONFIGS.ApplicationConfigs != nil {
-		return utils.ResolveAdvancedKeywordMapping(appName, utils.TOOL_CONFIGS.ApplicationConfigs)
+	if utils.KEYWORD_CONFIGS.ApplicationConfigs != nil {
+		return utils.ResolveAdvancedKeywordMapping(appName, utils.KEYWORD_CONFIGS.ApplicationConfigs)
 	}
-	return utils.TOOL_CONFIGS.KeywordMappings
+	return utils.KEYWORD_CONFIGS.KeywordMappings
 }

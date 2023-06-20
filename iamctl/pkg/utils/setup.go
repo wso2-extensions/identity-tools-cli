@@ -47,34 +47,44 @@ type ServerConfigs struct {
 }
 
 type ToolConfigs struct {
-	KeywordMappings    map[string]interface{} `json:"KEYWORD_MAPPINGS"`
 	AllowDelete        bool                   `json:"ALLOW_DELETE"`
 	ApplicationConfigs map[string]interface{} `json:"APPLICATIONS"`
 	IdpConfigs         map[string]interface{} `json:"IDENTITY_PROVIDERS"`
 	UserStoreConfigs   map[string]interface{} `json:"USERSTORES"`
 }
 
+type KeywordConfigs struct {
+	KeywordMappings     map[string]interface{} `json:"KEYWORD_MAPPINGS"`
+	ApplicationConfigs  map[string]interface{} `json:"APPLICATIONS"`
+	IdpConfigs          map[string]interface{} `json:"IDENTITY_PROVIDERS"`
+	ClaimDialectConfigs map[string]interface{} `json:"CLAIM_DIALECTS"`
+	UserStoreConfigs    map[string]interface{} `json:"USERSTORES"`
+}
+
 var SERVER_CONFIGS ServerConfigs
 var TOOL_CONFIGS ToolConfigs
+var KEYWORD_CONFIGS KeywordConfigs
 
 func LoadConfigs(envConfigPath string) (baseDir string) {
 
-	baseDir, toolConfigFile := loadServerConfigs(envConfigPath)
+	baseDir, toolConfigFile, keywordConfigPath := loadServerConfigs(envConfigPath)
 	TOOL_CONFIGS = loadToolConfigsFromFile(toolConfigFile)
+	KEYWORD_CONFIGS = loadKeywordConfigsFromFile(keywordConfigPath)
 	return baseDir
 }
 
-func loadServerConfigs(envConfigPath string) (baseDir string, toolConfigPath string) {
+func loadServerConfigs(envConfigPath string) (baseDir string, toolConfigPath string, keywordConfigPath string) {
 
 	if envConfigPath == "" {
 		log.Println("Loading configs from environment variables.")
-		toolConfigPath = loadConfigsFromEnvVar()
+		toolConfigPath, keywordConfigPath = loadConfigsFromEnvVar()
 		baseDir = filepath.Dir(filepath.Dir(filepath.Dir(toolConfigPath)))
 	} else {
 		log.Println("Loading configs from config files.")
 		baseDir = filepath.Dir(filepath.Dir(envConfigPath))
 		serverConfigFile := filepath.Join(envConfigPath, SERVER_CONFIG_FILE)
 		toolConfigPath = filepath.Join(envConfigPath, TOOL_CONFIG_FILE)
+		keywordConfigPath = filepath.Join(envConfigPath, KEYWORD_CONFIG_FILE)
 
 		SERVER_CONFIGS = loadServerConfigsFromFile(serverConfigFile)
 	}
@@ -83,10 +93,10 @@ func loadServerConfigs(envConfigPath string) (baseDir string, toolConfigPath str
 	// Get access token.
 	SERVER_CONFIGS.Token = getAccessToken(SERVER_CONFIGS)
 	log.Println("Access Token recieved succesfully.")
-	return baseDir, toolConfigPath
+	return baseDir, toolConfigPath, keywordConfigPath
 }
 
-func loadConfigsFromEnvVar() string {
+func loadConfigsFromEnvVar() (toolConfigPath string, keywordConfigPath string) {
 
 	// Load server configs from environment variables.
 	SERVER_CONFIGS.ServerUrl = os.Getenv(SERVER_URL_CONFIG)
@@ -95,9 +105,11 @@ func loadConfigsFromEnvVar() string {
 	SERVER_CONFIGS.TenantDomain = os.Getenv(TENANT_DOMAIN_CONFIG)
 
 	// Load tool config file path from environment variables.
-	toolConfigPath := os.Getenv("TOOL_CONFIG_PATH")
-	return toolConfigPath
+	toolConfigPath = os.Getenv("TOOL_CONFIG_PATH")
+	keywordConfigPath = os.Getenv("KEYWORD_CONFIG_PATH")
+	return toolConfigPath, keywordConfigPath
 }
+
 func loadServerConfigsFromFile(configFilePath string) (serverConfigs ServerConfigs) {
 
 	configFile, err := os.Open(configFilePath)
@@ -133,6 +145,26 @@ func loadToolConfigsFromFile(configFilePath string) (toolConfigs ToolConfigs) {
 
 	log.Println("Tool configs loaded successfully from the config file.")
 	return toolConfigs
+}
+
+func loadKeywordConfigsFromFile(configFilePath string) (keywordConfigs KeywordConfigs) {
+
+	configFile, err := ioutil.ReadFile(configFilePath)
+	if err != nil {
+		log.Fatalln("Error when reading the keyword config file.", err.Error())
+	}
+
+	if len(configFile) == 0 {
+		return keywordConfigs
+	}
+
+	err = json.Unmarshal(configFile, &keywordConfigs)
+	if err != nil {
+		log.Fatalln("Keyword configs are not in the correct format. Please check the config file.", err)
+	}
+
+	log.Println("Keyword configs loaded successfully from the config file.")
+	return keywordConfigs
 }
 
 func getAccessToken(config ServerConfigs) string {

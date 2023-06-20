@@ -57,7 +57,7 @@ The tool should be initialized with the server details of the environment it is 
     ```
     iamctl setupCLI
     ```
-3. A new folder named ```configs``` will be created with an ```env``` folder inside it. The `env` folder contains two configuration files: ```serverConfig.json``` and ```toolConfig.json```.
+3. A new folder named ```configs``` will be created with an ```env``` folder inside it. The `env` folder contains three configuration files: ```serverConfig.json```, ```toolConfig.json```, and ```keywordConfig.json```
 > **Note:** If you have multiple environments, get a copy of the ```env``` folder and rename it according to the environments you have. For example, if you have two environments: dev and prod, have two separate config folders as ```dev``` and ```prod```. 
 4. Open the ```serverConfig.json``` file and provide the WSO2 IS details and client ID/secret of the app you created earlier.
 

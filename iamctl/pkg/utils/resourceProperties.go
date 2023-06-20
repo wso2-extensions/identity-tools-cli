@@ -54,7 +54,7 @@ func IsResourceExcluded(resourceName string, resourceConfigs map[string]interfac
 
 func ResolveAdvancedKeywordMapping(resourceName string, resourceConfigs map[string]interface{}) map[string]interface{} {
 
-	defaultKeywordMapping := TOOL_CONFIGS.KeywordMappings
+	defaultKeywordMapping := KEYWORD_CONFIGS.KeywordMappings
 
 	// Check if resource specific configs exist for the given resource and if not return the default keyword mappings.
 	if resourceSpecificConfigs, ok := resourceConfigs[resourceName]; ok {

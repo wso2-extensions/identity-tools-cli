@@ -24,11 +24,13 @@ const IDP_CONFIG = "IDENTITY_PROVIDERS"
 const USERSTORES_CONFIG = "USERSTORES"
 
 // Tool configs
-const KEYWORD_MAPPINGS_CONFIG = "KEYWORD_MAPPINGS"
 const EXCLUDE_CONFIG = "EXCLUDE"
 const INCLUDE_ONLY_CONFIG = "INCLUDE_ONLY"
 const EXCLUDE_SECRETS_CONFIG = "EXCLUDE_SECRETS"
 const ALLOW_DELETE_CONFIG = "ALLOW_DELETE"
+
+// Keyword configs
+const KEYWORD_MAPPINGS_CONFIG = "KEYWORD_MAPPINGS"
 
 // Server configs
 const SERVER_URL_CONFIG = "SERVER_URL"
@@ -45,6 +47,7 @@ const USERSTORES = "UserStores"
 // Config file names
 const SERVER_CONFIG_FILE = "serverConfig.json"
 const TOOL_CONFIG_FILE = "toolConfig.json"
+const KEYWORD_CONFIG_FILE = "keywordConfig.json"
 
 // Media types
 const MEDIA_TYPE_JSON = "application/json"

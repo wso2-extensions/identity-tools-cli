@@ -35,7 +35,8 @@ The folder structure of the ```configs``` directory is as follows:
 configs
 └── env
     │── serverConfig.json
-    └── toolConfig.json
+    │── toolConfig.json
+    └── keywordConfig.json
 ``` 
    It is recommended to place the ```configs``` folder inside the local directory that is created to maintain the resource configuration files. 
    
@@ -45,13 +46,16 @@ Example local directory structure if multiple environments (dev, stage, prod) ex
    │── configs
    │    │── dev
    │    │    │── serverConfig.json
-   │    │    └── toolConfig.json
+   │    │    │── toolConfig.json
+   │    │    └── keywordConfig.json
    │    │── stage
    │    │    │── serverConfig.json
-   │    │    └── toolConfig.json
+   │    │    │── toolConfig.json
+   │    │    └── keywordConfig.json
    │    └──── prod
    │         │── serverConfig.json
-   │         └── toolConfig.jsondev
+   │         │── toolConfig.json
+   │         └── keywordConfig.json
    │── Applications
    │    │── app1.yml
    │    │── app2.yml
@@ -107,8 +111,9 @@ If the ```--config``` flag is not used when running the exportAll/importAll comm
 * CLIENT_SECRET
 * TENANT_DOMAIN
 * TOOL_CONFIG_PATH
+* KEYWORD_CONFIG_PATH
 
-> **Note:** The ```TOOL_CONFIG_PATH``` environment variable should be used to specify the path to the tool configs file. 
+> **Note:** The ```TOOL_CONFIG_PATH``` and ```KEYWORD_CONFIG_PATH``` environment variables should be used to specify the path to the tool configs file and keyword config file respectively. 
 
 Example:
 ```
@@ -126,6 +131,9 @@ export TENANT_DOMAIN="carbon.super"
 ```
 export TOOL_CONFIG_PATH="<path to the configs folder>/dev/toolConfig.json"
 ```
+```
+export KEYWORD_CONFIG_PATH="<path to the configs folder>/dev/keywordConfig.json"
+```
 > **Note:** Before running the CLI commands, be sure to export the environment variables with the correct server details that the action should be performed against.
 > 
 > It is recommended to use the ```serverConfig.json``` file to provide the server configurations as it is more secure and easier to maintain when dealing with multiple environments.
@@ -136,11 +144,7 @@ The ```toolConfig.json``` file contains the configurations needed for overriding
 Example configuration file:
 ```
 {
-   "KEYWORD_MAPPINGS" : {
-      "CALLBACK_URL" : "https://demo.dev.io/callback",
-      "ENV" : "dev"
-   },
-   
+   "ALLOW_DELETE" : true,
    "APPLICATIONS" : {
        "EXCLUDE" : ["App1", "App2"]
    },
@@ -152,26 +156,6 @@ Example configuration file:
 
 ```
 The following properties can be configured through the tool configs to manage your resources.
-
-#### Keyword replacement for environment-specific variables
-The ```KEYWORD_MAPPINGS``` property can be used to replace environment specific variables in the exported resource configuration files with the actual values needed in the target environment. The keyword mapping should be added as a JSON object to the ```KEYWORD_MAPPINGS``` property in the tool configs in the following format.
-```
-{
-   "KEYWORD_MAPPINGS" : {
-      "<KEYWORD>" : "<VALUE>"
-   }
-}
-```
-Example:
-```
-{
-   "KEYWORD_MAPPINGS" : {
-      "CALLBACK_URL" : "https://demo.dev.io/callback"
-   }
-}
-```
-Find more information on the keyword replacement feature [here](../keyword-replacement.md).
-
 #### Exclude resources
 The ```EXCLUDE``` property can be used to exclude specific resources based on their name during import or export. The resources that need to be excluded can be added as an array of strings to the ```EXCLUDE``` property in tool configs under the relevant resource type.
 
@@ -231,7 +215,26 @@ Example:
     }   
 }
 ```
+### Keyword Mapping configurations
+The ```keywordConfig.json``` file contains the configurations needed for keyword replacement for environment-specific variables.
 
+The ```KEYWORD_MAPPINGS``` property can be used to replace environment specific variables in the exported resource configuration files with the actual values needed in the target environment. The keyword mapping should be added as a JSON object to the ```KEYWORD_MAPPINGS``` property in the tool configs in the following format.
+```
+{
+   "KEYWORD_MAPPINGS" : {
+      "<KEYWORD>" : "<VALUE>"
+   }
+}
+```
+Example:
+```
+{
+   "KEYWORD_MAPPINGS" : {
+      "CALLBACK_URL" : "https://demo.dev.io/callback"
+   }
+}
+```
+Find more information on the keyword replacement feature [here](../keyword-replacement.md).
 
 ## Commands
 ### ExportAll command
@@ -247,7 +250,7 @@ Flags:
   -h, --help               help for exportAll
   -o, --outputDir string   Path to the output directory
 ```
-The ```--config``` flag can be used to provide the path to the env specific config folder that contains the ```serverConfig.json``` and ```toolConfig.json``` files with the details of the environment that needs the resources to be exported from. If the flag is not provided, the tool looks for the server configurations in the environment variables.
+The ```--config``` flag can be used to provide the path to the env specific config folder that contains the ```serverConfig.json```,  ```toolConfig.json```, and ```keywordConfig.json``` files with the details of the environment that needs the resources to be exported from. If the flag is not provided, the tool looks for the server configurations in the environment variables.
 
 The ```--outputDir``` flag can be used to provide the path to the local directory where the exported resource configuration files should be stored. If the flag is not provided, the exported resource configuration files are created at the current working directory.
 
@@ -281,6 +284,6 @@ Flags:
   -h, --help              help for importAll
   -i, --inputDir string   Path to the input directory
 ```
-The ```--config``` flag can be used to provide the path to the env specific config folder that contains the ```serverConfig.json``` and ```toolConfig.json``` files with the details of the environment to which the resources should be imported. If the flag is not provided, the tool looks for the server configurations in the environment variables.
+The ```--config``` flag can be used to provide the path to the env specific config folder that contains the ```serverConfig.json```, ```toolConfig.json```, and ```keywordConfig.json``` files with the details of the environment to which the resources should be imported. If the flag is not provided, the tool looks for the server configurations in the environment variables.
 
 The ```--inputDir``` flag can be used to provide the path to the local directory where the resource configuration files are stored. If the flag is not provided, the tool looks for the resource configuration files at the current working directory.

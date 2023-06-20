@@ -16,8 +16,8 @@ In the above example, a keyword placeholder can be added as follows:
 applicationName: Demo App
 callbackUrl: https://{{CALLBACK_DOMAIN}}/commonauth
 ```
-2. Add the keyword mapping to the tool configs file in each environment.
-Example `toolConfig.json` file in the ```config/dev``` directory:
+2. Add the keyword mapping to the keyword configs file in each environment.
+Example `keywordConfig.json` file in the ```config/dev``` directory:
 ```
 {
     "KEYWORD_MAPPINGS" : {
@@ -25,7 +25,7 @@ Example `toolConfig.json` file in the ```config/dev``` directory:
     }
 }
 ```
-Example `toolConfig.json` file in the ```config/prod``` directory:
+Example `keywordConfig.json` file in the ```config/prod``` directory:
 ```
 {
     "KEYWORD_MAPPINGS" : {
@@ -37,11 +37,11 @@ When importing the resource from the local directory to the prod environment, th
 
 ### Recommended workflow
 1. Use the CLI tool to export once from the lowest environment and create the local resource configuration directory.
-2. Add the keyword placeholders to the exported files and add the relevant keyword mapping to the tool configs of each environment.
+2. Add the keyword placeholders to the exported files and add the relevant keyword mapping to the keyword configs of each environment.
 3. Use the CLI tool to import the resources from the local directory to higher environments with the replaced keyword values.
 
 > **Note:** If it is required to export again from any environment and update the local resource configurations, there is a chance that the manually added keyword placeholders will get replaced if the exported keyword value is different. 
-> In such cases, a warning is issued with details of the removed keyword. It is recommended to add the keyword placeholders again and update the keyword mappings in the tool configs.
+> In such cases, a warning is issued with details of the removed keyword. It is recommended to add the keyword placeholders again and update the keyword mappings in the keyword configs.
 
 ## Advanced keyword mapping configurations
 

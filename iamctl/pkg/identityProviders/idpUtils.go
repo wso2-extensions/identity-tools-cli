@@ -85,8 +85,8 @@ func getDeployedIdpNames() []string {
 
 func getIdpKeywordMapping(idpName string) map[string]interface{} {
 
-	if utils.TOOL_CONFIGS.IdpConfigs != nil {
-		return utils.ResolveAdvancedKeywordMapping(idpName, utils.TOOL_CONFIGS.IdpConfigs)
+	if utils.KEYWORD_CONFIGS.IdpConfigs != nil {
+		return utils.ResolveAdvancedKeywordMapping(idpName, utils.KEYWORD_CONFIGS.IdpConfigs)
 	}
-	return utils.TOOL_CONFIGS.KeywordMappings
+	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
