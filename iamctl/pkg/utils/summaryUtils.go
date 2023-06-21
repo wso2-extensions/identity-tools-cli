@@ -60,7 +60,7 @@ func PrintExportSummary() {
 		fmt.Printf("%s:\n", summary.ResourceType)
 		fmt.Println("----------------------------------------")
 		fmt.Printf("Successful Exports: %d\n", summary.SuccessfulExport)
-		fmt.Printf("Failed Exports: %d\n", summary.Failed)
+		fmt.Printf("Failed: %d\n", summary.Failed)
 	}
 	fmt.Println("----------------------------------------")
 }
