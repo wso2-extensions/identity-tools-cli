@@ -57,8 +57,10 @@ func ExportAll(exportFilePath string, format string) {
 
 				err := exportUserStore(userstore.Id, exportFilePath, format)
 				if err != nil {
+					utils.UpdateSummary(false, utils.USERSTORES, utils.EXPORT)
 					log.Printf("Error while exporting user store: %s. %s", userstore.Name, err)
 				} else {
+					utils.UpdateSummary(true, utils.USERSTORES, utils.EXPORT)
 					log.Println("User store exported successfully: ", userstore.Name)
 				}
 			}

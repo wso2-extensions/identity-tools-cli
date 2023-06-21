@@ -23,9 +23,11 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
+	"gopkg.in/yaml.v2"
 )
 
 type Application struct {
@@ -39,6 +41,14 @@ type AppList struct {
 
 type AppConfig struct {
 	ApplicationName string `yaml:"applicationName"`
+}
+
+type AuthConfig struct {
+	InboundAuthenticationConfig struct {
+		InboundAuthenticationRequestConfigs []struct {
+			InboundAuthType string `yaml:"inboundAuthType"`
+		} `yaml:"inboundAuthenticationRequestConfigs"`
+	} `yaml:"inboundAuthenticationConfig"`
 }
 
 func getDeployedAppNames() []string {
@@ -91,4 +101,21 @@ func getAppKeywordMapping(appName string) map[string]interface{} {
 		return utils.ResolveAdvancedKeywordMapping(appName, utils.KEYWORD_CONFIGS.ApplicationConfigs)
 	}
 	return utils.KEYWORD_CONFIGS.KeywordMappings
+}
+
+func isAuthenticationApp(fileData string) (bool, error) {
+
+	var config AuthConfig
+	err := yaml.Unmarshal([]byte(fileData), &config)
+	if err != nil {
+		return false, err
+	}
+
+	for _, requestConfig := range config.InboundAuthenticationConfig.InboundAuthenticationRequestConfigs {
+		if strings.ToLower(requestConfig.InboundAuthType) == "oauth2" {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }

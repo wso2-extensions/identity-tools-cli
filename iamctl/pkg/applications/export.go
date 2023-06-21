@@ -50,8 +50,10 @@ func ExportAll(exportFilePath string, format string) {
 			log.Println("Exporting application: ", app.Name)
 			err := exportApp(app.Id, exportFilePath, format, excludeSecrets)
 			if err != nil {
+				utils.UpdateSummary(false, utils.APPLICATIONS, utils.EXPORT)
 				log.Printf("Error while exporting application: %s. %s", app.Name, err)
 			} else {
+				utils.UpdateSummary(true, utils.APPLICATIONS, utils.EXPORT)
 				log.Println("Application exported successfully: ", app.Name)
 			}
 		}

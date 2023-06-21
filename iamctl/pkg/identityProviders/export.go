@@ -55,8 +55,10 @@ func ExportAll(exportFilePath string, format string) {
 
 				err := exportIdp(idp.Id, exportFilePath, format, excludeSecerts)
 				if err != nil {
+					utils.UpdateSummary(false, utils.IDENTITY_PROVIDERS, utils.EXPORT)
 					log.Printf("Error while exporting identity providers: %s. %s", idp.Name, err)
 				} else {
+					utils.UpdateSummary(true, utils.IDENTITY_PROVIDERS, utils.EXPORT)
 					log.Println("Identity provider exported successfully: ", idp.Name)
 				}
 			}

@@ -103,15 +103,41 @@ func importApp(importFilePath string, isUpdate bool) error {
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), appKeywordMapping)
 
 	if isUpdate {
-		log.Println("Updating application: " + fileInfo.ResourceName)
-		err = utils.SendUpdateRequest("", importFilePath, modifiedFileData, utils.APPLICATIONS)
-	} else {
-		log.Println("Creating new application: " + fileInfo.ResourceName)
-		err = utils.SendImportRequest(importFilePath, modifiedFileData, utils.APPLICATIONS)
+		return updateApplication(importFilePath, modifiedFileData, fileInfo)
 	}
+
+	return importApplication(importFilePath, modifiedFileData, fileInfo)
+}
+
+func updateApplication(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+
+	log.Println("Updating application: " + fileInfo.ResourceName)
+	err := utils.SendUpdateRequest("", importFilePath, modifiedFileData, utils.APPLICATIONS)
 	if err != nil {
+		utils.UpdateSummary(false, utils.APPLICATIONS, utils.UPDATE)
+		return fmt.Errorf("error when updating application: %s", err)
+	}
+	utils.UpdateSummary(true, utils.APPLICATIONS, utils.UPDATE)
+	log.Println("Application updated successfully.")
+	return nil
+}
+
+func importApplication(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+
+	log.Println("Creating new application: " + fileInfo.ResourceName)
+	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.APPLICATIONS)
+	if err != nil {
+		utils.UpdateSummary(false, utils.APPLICATIONS, utils.IMPORT)
 		return fmt.Errorf("error when importing application: %s", err)
 	}
+
+	if authenticated, err := isAuthenticationApp(modifiedFileData); err != nil {
+		fmt.Println("error occurred:", err)
+	} else if authenticated {
+		utils.AddNewSecretApplication(fileInfo.ResourceName)
+	}
+
+	utils.UpdateSummary(true, utils.APPLICATIONS, utils.IMPORT)
 	log.Println("Application imported successfully.")
 	return nil
 }

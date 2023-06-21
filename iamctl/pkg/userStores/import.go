@@ -78,16 +78,35 @@ func importUserStore(userStoreId string, importFilePath string) error {
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), userStoreKeywordMapping)
 
 	if userStoreId == "" {
-		log.Println("Creating new user store: " + fileInfo.ResourceName)
-		err = utils.SendImportRequest(importFilePath, modifiedFileData, utils.USERSTORES)
-	} else {
-		log.Println("Updating user store: " + fileInfo.ResourceName)
-		err = utils.SendUpdateRequest(userStoreId, importFilePath, modifiedFileData, utils.USERSTORES)
+		return importUserStoreOperation(importFilePath, modifiedFileData, fileInfo)
 	}
+
+	return updateUserStoreOperation(userStoreId, importFilePath, modifiedFileData, fileInfo)
+}
+
+func importUserStoreOperation(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+
+	log.Println("Creating new user store: " + fileInfo.ResourceName)
+	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.USERSTORES)
 	if err != nil {
+		utils.UpdateSummary(false, utils.USERSTORES, utils.IMPORT)
 		return fmt.Errorf("error when importing user store: %s", err)
 	}
+	utils.UpdateSummary(true, utils.USERSTORES, utils.IMPORT)
 	log.Println("User store imported successfully.")
+	return nil
+}
+
+func updateUserStoreOperation(userStoreId string, importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+
+	log.Println("Updating user store: " + fileInfo.ResourceName)
+	err := utils.SendUpdateRequest(userStoreId, importFilePath, modifiedFileData, utils.USERSTORES)
+	if err != nil {
+		utils.UpdateSummary(false, utils.USERSTORES, utils.UPDATE)
+		return fmt.Errorf("error when updating user store: %s", err)
+	}
+	utils.UpdateSummary(true, utils.USERSTORES, utils.UPDATE)
+	log.Println("User store updated successfully.")
 	return nil
 }
 
