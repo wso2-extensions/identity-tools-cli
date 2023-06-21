@@ -31,11 +31,10 @@ type Summary struct {
 type ResourceSummary struct {
 	ResourceType          string
 	SuccessfulExport      int
-	FailedExport          int
 	SuccessfulImport      int
-	FailedImport          int
 	SuccessfulUpdate      int
-	FailedUpdate          int
+	Failed                int
+	Deleted               int
 	NewSecretApplications []string
 }
 
@@ -61,7 +60,7 @@ func PrintExportSummary() {
 		fmt.Printf("%s:\n", summary.ResourceType)
 		fmt.Println("----------------------------------------")
 		fmt.Printf("Successful Exports: %d\n", summary.SuccessfulExport)
-		fmt.Printf("Failed Exports: %d\n", summary.FailedExport)
+		fmt.Printf("Failed Exports: %d\n", summary.Failed)
 	}
 	fmt.Println("----------------------------------------")
 }
@@ -73,12 +72,12 @@ func PrintImportSummary() {
 		fmt.Printf("%s:\n", summary.ResourceType)
 		fmt.Println("----------------------------------------")
 		fmt.Printf("Successful Imports: %d\n", summary.SuccessfulImport)
-		fmt.Printf("Failed Imports: %d\n", summary.FailedImport)
 		if summary.ResourceType == APPLICATIONS {
 			printNewSecretApplications(summary)
 		}
 		fmt.Printf("Successful Updates: %d\n", summary.SuccessfulUpdate)
-		fmt.Printf("Failed Updates: %d\n", summary.FailedUpdate)
+		fmt.Printf("Failed: %d\n", summary.Failed)
+		fmt.Printf("Deleted: %d\n", summary.Deleted)
 	}
 	fmt.Println("----------------------------------------")
 }
@@ -114,38 +113,30 @@ func UpdateSummary(success bool, resourceType string, operation string) {
 
 	SummaryData.TotalRequests++
 
-	if _, ok := ResourceSummaries[resourceType]; !ok {
-		ResourceSummaries[resourceType] = ResourceSummary{
+	summary, ok := ResourceSummaries[resourceType]
+	if !ok {
+		summary = ResourceSummary{
 			ResourceType: resourceType,
 		}
 	}
 
-	switch operation {
-	case EXPORT:
-		exportSummary := ResourceSummaries[resourceType]
-		if success {
-			exportSummary.SuccessfulExport++
-		} else {
-			exportSummary.FailedExport++
-		}
-		ResourceSummaries[resourceType] = exportSummary
+	if success {
+		switch operation {
+		case EXPORT:
+			summary.SuccessfulExport++
 
-	case IMPORT:
-		importSummary := ResourceSummaries[resourceType]
-		if success {
-			importSummary.SuccessfulImport++
-		} else {
-			importSummary.FailedImport++
-		}
-		ResourceSummaries[resourceType] = importSummary
+		case IMPORT:
+			summary.SuccessfulImport++
 
-	case UPDATE:
-		updateSummary := ResourceSummaries[resourceType]
-		if success {
-			updateSummary.SuccessfulUpdate++
-		} else {
-			updateSummary.FailedUpdate++
+		case UPDATE:
+			summary.SuccessfulUpdate++
+
+		case DELETE:
+			summary.Deleted++
 		}
-		ResourceSummaries[resourceType] = updateSummary
+	} else {
+		summary.Failed++
 	}
+
+	ResourceSummaries[resourceType] = summary
 }

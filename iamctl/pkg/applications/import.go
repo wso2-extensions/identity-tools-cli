@@ -160,8 +160,9 @@ deployedResources:
 		log.Println("Application not found locally. Deleting app: ", app.Name)
 		err := utils.SendDeleteRequest(app.Id, utils.APPLICATIONS)
 		if err != nil {
+			utils.UpdateSummary(false, utils.APPLICATIONS, utils.DELETE)
 			log.Println("Error deleting application: ", app.Name, err)
 		}
-
+		utils.UpdateSummary(true, utils.APPLICATIONS, utils.DELETE)
 	}
 }

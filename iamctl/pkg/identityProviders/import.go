@@ -165,7 +165,9 @@ deployedResourcess:
 		log.Printf("Identity provider: %s not found locally. Deleting idp.\n", idp.Name)
 		err := utils.SendDeleteRequest(idp.Id, utils.IDENTITY_PROVIDERS)
 		if err != nil {
+			utils.UpdateSummary(false, utils.IDENTITY_PROVIDERS, utils.DELETE)
 			log.Println("Error deleting idp: ", idp.Name, err)
 		}
+		utils.UpdateSummary(true, utils.IDENTITY_PROVIDERS, utils.DELETE)
 	}
 }

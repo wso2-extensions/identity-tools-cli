@@ -132,7 +132,9 @@ deployedResourcess:
 		log.Println("User store not found locally. Deleting userstore: ", userstore.Name)
 		err := utils.SendDeleteRequest(userstore.Id, utils.USERSTORES)
 		if err != nil {
+			utils.UpdateSummary(false, utils.USERSTORES, utils.DELETE)
 			log.Println("Error deleting user store: ", err)
 		}
+		utils.UpdateSummary(true, utils.USERSTORES, utils.DELETE)
 	}
 }
