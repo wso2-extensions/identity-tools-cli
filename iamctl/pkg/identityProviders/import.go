@@ -98,10 +98,10 @@ func importIdentityProvider(importFilePath string, modifiedFileData string, file
 	log.Println("Creating new identity provider: " + fileInfo.ResourceName)
 	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.IDENTITY_PROVIDERS)
 	if err != nil {
-		utils.UpdateSummary(false, utils.IDENTITY_PROVIDERS, utils.IMPORT)
+		utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, fileInfo.ResourceName, err.Error())
 		return fmt.Errorf("error when importing identity provider: %s", err)
 	}
-	utils.UpdateSummary(true, utils.IDENTITY_PROVIDERS, utils.IMPORT)
+	utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.IMPORT)
 	log.Println("Identity provider imported successfully.")
 	return nil
 }
@@ -111,10 +111,10 @@ func updateIdentityProvider(idpId string, importFilePath string, modifiedFileDat
 	log.Println("Updating identity provider: " + fileInfo.ResourceName)
 	err := utils.SendUpdateRequest(idpId, importFilePath, modifiedFileData, utils.IDENTITY_PROVIDERS)
 	if err != nil {
-		utils.UpdateSummary(false, utils.IDENTITY_PROVIDERS, utils.UPDATE)
+		utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, fileInfo.ResourceName, err.Error())
 		return fmt.Errorf("error when updating identity provider: %s", err)
 	}
-	utils.UpdateSummary(true, utils.IDENTITY_PROVIDERS, utils.UPDATE)
+	utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.UPDATE)
 	log.Println("Identity provider updated successfully.")
 	return nil
 }
@@ -165,9 +165,9 @@ deployedResourcess:
 		log.Printf("Identity provider: %s not found locally. Deleting idp.\n", idp.Name)
 		err := utils.SendDeleteRequest(idp.Id, utils.IDENTITY_PROVIDERS)
 		if err != nil {
-			utils.UpdateSummary(false, utils.IDENTITY_PROVIDERS, utils.DELETE)
+			utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, idp.Name, err.Error())
 			log.Println("Error deleting idp: ", idp.Name, err)
 		}
-		utils.UpdateSummary(true, utils.IDENTITY_PROVIDERS, utils.DELETE)
+		utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.DELETE)
 	}
 }

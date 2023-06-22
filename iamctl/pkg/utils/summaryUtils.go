@@ -36,6 +36,7 @@ type ResourceSummary struct {
 	Failed                int
 	Deleted               int
 	NewSecretApplications []string
+	FailedResources       map[string]string
 }
 
 var (
@@ -45,9 +46,9 @@ var (
 
 func PrintSummary() {
 
-	fmt.Println("----------------------------------------")
+	fmt.Println("========================================")
 	fmt.Println("Total Summary:")
-	fmt.Println("----------------------------------------")
+	fmt.Println("========================================")
 	fmt.Printf("Total Requests: %d\n", SummaryData.TotalRequests)
 	fmt.Printf("Successful Operations: %d\n", SummaryData.SuccessfulOperations)
 	fmt.Printf("Failed Operations: %d\n", SummaryData.FailedOperations)
@@ -60,7 +61,10 @@ func PrintExportSummary() {
 		fmt.Printf("%s:\n", summary.ResourceType)
 		fmt.Println("----------------------------------------")
 		fmt.Printf("Successful Exports: %d\n", summary.SuccessfulExport)
-		fmt.Printf("Failed: %d\n", summary.Failed)
+
+		if summary.Failed > 0 {
+			PrintFailedResources(summary)
+		}
 	}
 	fmt.Println("----------------------------------------")
 }
@@ -72,20 +76,33 @@ func PrintImportSummary() {
 		fmt.Printf("%s:\n", summary.ResourceType)
 		fmt.Println("----------------------------------------")
 		fmt.Printf("Successful Imports: %d\n", summary.SuccessfulImport)
+		fmt.Printf("Successful Updates: %d\n", summary.SuccessfulUpdate)
+		fmt.Printf("Deleted: %d\n", summary.Deleted)
+		if summary.Failed > 0 {
+			PrintFailedResources(summary)
+		}
 		if summary.ResourceType == APPLICATIONS {
 			printNewSecretApplications(summary)
 		}
-		fmt.Printf("Successful Updates: %d\n", summary.SuccessfulUpdate)
-		fmt.Printf("Failed: %d\n", summary.Failed)
-		fmt.Printf("Deleted: %d\n", summary.Deleted)
 	}
 	fmt.Println("----------------------------------------")
+}
+
+func PrintFailedResources(summary ResourceSummary) {
+
+	fmt.Println("....................")
+	fmt.Printf("Failures:  %d\n", summary.Failed)
+	fmt.Println("....................")
+	for resourceName, reason := range summary.FailedResources {
+		fmt.Printf("%s: %s\n", resourceName, reason)
+	}
 }
 
 func printNewSecretApplications(summary ResourceSummary) {
 
 	if len(summary.NewSecretApplications) > 0 {
-		fmt.Print("New Client Secrets generated for: ")
+		fmt.Println("....................")
+		fmt.Printf("New Client Secrets generated for: ")
 		for i, appName := range summary.NewSecretApplications {
 			if i != len(summary.NewSecretApplications)-1 {
 				fmt.Printf("%s, ", appName)
@@ -109,9 +126,10 @@ func AddNewSecretApplication(appName string) {
 	ResourceSummaries[APPLICATIONS] = summary
 }
 
-func UpdateSummary(success bool, resourceType string, operation string) {
+func UpdateSuccessSummary(resourceType string, operation string) {
 
 	SummaryData.TotalRequests++
+	SummaryData.SuccessfulOperations++
 
 	summary, ok := ResourceSummaries[resourceType]
 	if !ok {
@@ -120,23 +138,41 @@ func UpdateSummary(success bool, resourceType string, operation string) {
 		}
 	}
 
-	if success {
-		switch operation {
-		case EXPORT:
-			summary.SuccessfulExport++
+	switch operation {
+	case EXPORT:
+		summary.SuccessfulExport++
 
-		case IMPORT:
-			summary.SuccessfulImport++
+	case IMPORT:
+		summary.SuccessfulImport++
 
-		case UPDATE:
-			summary.SuccessfulUpdate++
+	case UPDATE:
+		summary.SuccessfulUpdate++
 
-		case DELETE:
-			summary.Deleted++
-		}
-	} else {
-		summary.Failed++
+	case DELETE:
+		summary.Deleted++
 	}
+
+	ResourceSummaries[resourceType] = summary
+}
+
+func UpdateFailureSummary(resourceType string, resourceName string, reason string) {
+
+	SummaryData.TotalRequests++
+	SummaryData.FailedOperations++
+
+	summary, ok := ResourceSummaries[resourceType]
+	if !ok {
+		summary = ResourceSummary{
+			ResourceType: resourceType,
+		}
+	}
+
+	if summary.FailedResources == nil {
+		summary.FailedResources = make(map[string]string)
+	}
+
+	summary.Failed++
+	summary.FailedResources[resourceName] = reason
 
 	ResourceSummaries[resourceType] = summary
 }

@@ -89,10 +89,10 @@ func importUserStoreOperation(importFilePath string, modifiedFileData string, fi
 	log.Println("Creating new user store: " + fileInfo.ResourceName)
 	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.USERSTORES)
 	if err != nil {
-		utils.UpdateSummary(false, utils.USERSTORES, utils.IMPORT)
+		utils.UpdateFailureSummary(utils.USERSTORES, fileInfo.ResourceName, err.Error())
 		return fmt.Errorf("error when importing user store: %s", err)
 	}
-	utils.UpdateSummary(true, utils.USERSTORES, utils.IMPORT)
+	utils.UpdateSuccessSummary(utils.USERSTORES, utils.IMPORT)
 	log.Println("User store imported successfully.")
 	return nil
 }
@@ -102,10 +102,10 @@ func updateUserStoreOperation(userStoreId string, importFilePath string, modifie
 	log.Println("Updating user store: " + fileInfo.ResourceName)
 	err := utils.SendUpdateRequest(userStoreId, importFilePath, modifiedFileData, utils.USERSTORES)
 	if err != nil {
-		utils.UpdateSummary(false, utils.USERSTORES, utils.UPDATE)
+		utils.UpdateFailureSummary(utils.USERSTORES, fileInfo.ResourceName, err.Error())
 		return fmt.Errorf("error when updating user store: %s", err)
 	}
-	utils.UpdateSummary(true, utils.USERSTORES, utils.UPDATE)
+	utils.UpdateSuccessSummary(utils.USERSTORES, utils.UPDATE)
 	log.Println("User store updated successfully.")
 	return nil
 }
@@ -132,9 +132,9 @@ deployedResourcess:
 		log.Println("User store not found locally. Deleting userstore: ", userstore.Name)
 		err := utils.SendDeleteRequest(userstore.Id, utils.USERSTORES)
 		if err != nil {
-			utils.UpdateSummary(false, utils.USERSTORES, utils.DELETE)
+			utils.UpdateFailureSummary(utils.USERSTORES, userstore.Name, err.Error())
 			log.Println("Error deleting user store: ", err)
 		}
-		utils.UpdateSummary(true, utils.USERSTORES, utils.DELETE)
+		utils.UpdateSuccessSummary(utils.USERSTORES, utils.DELETE)
 	}
 }
