@@ -158,6 +158,9 @@ func loadKeywordConfigsFromFile(configFilePath string) (keywordConfigs KeywordCo
 		return keywordConfigs
 	}
 
+	// Replace placeholder keys with environment variable values
+	configFile = ReplacePlaceholders(configFile)
+
 	err = json.Unmarshal(configFile, &keywordConfigs)
 	if err != nil {
 		log.Fatalln("Keyword configs are not in the correct format. Please check the config file.", err)
