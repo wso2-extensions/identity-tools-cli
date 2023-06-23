@@ -36,7 +36,7 @@ type ResourceSummary struct {
 	Failed                int
 	Deleted               int
 	NewSecretApplications []string
-	FailedResources       map[string]string
+	FailedResources       []string
 }
 
 var (
@@ -93,9 +93,15 @@ func PrintFailedResources(summary ResourceSummary) {
 	fmt.Println("....................")
 	fmt.Printf("Failures:  %d\n", summary.Failed)
 	fmt.Println("....................")
-	for resourceName, reason := range summary.FailedResources {
-		fmt.Printf("%s: %s\n", resourceName, reason)
+	for i, resourceName := range summary.FailedResources {
+		if i != len(summary.FailedResources)-1 {
+			fmt.Printf("%s, ", resourceName)
+		} else {
+			fmt.Print(resourceName)
+		}
 	}
+
+	fmt.Println()
 }
 
 func printNewSecretApplications(summary ResourceSummary) {
@@ -167,12 +173,8 @@ func UpdateFailureSummary(resourceType string, resourceName string, reason strin
 		}
 	}
 
-	if summary.FailedResources == nil {
-		summary.FailedResources = make(map[string]string)
-	}
-
 	summary.Failed++
-	summary.FailedResources[resourceName] = reason
+	summary.FailedResources = append(summary.FailedResources, resourceName)
 
 	ResourceSummaries[resourceType] = summary
 }
