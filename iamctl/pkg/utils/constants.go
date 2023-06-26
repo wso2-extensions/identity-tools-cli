@@ -72,19 +72,21 @@ var ErrorCodes = map[int]string{
 // Identifiers of array types for each resource type
 var applicationArrayIdentifiers = map[string]string{
 
-	"applicationRoleMappingConfig":        "idPName",
+	"inboundAuthenticationRequestConfigs": "inboundAuthKey",
+	"spProperties":                        "name",
 	"authenticationSteps":                 "stepOrder",
-	"roleMappings":                        "localRole.localRoleName",
-	"idpClaims":                           "claimId",
+	"localAuthenticatorConfigs":           "name",
+	"federatedIdentityProviders":          "identityProviderName",
+	"federatedAuthenticatorConfigs":       "name",
 	"properties":                          "name",
 	"provisioningConnectorConfigs":        "name",
 	"provisioningIdentityProviders":       "identityProviderName",
 	"requestPathAuthenticatorConfigs":     "name",
+	"roleMappings":                        "localRole.localRoleName",
 	"claimMappings":                       "localClaim.claimUri",
-	"inboundAuthenticationRequestConfigs": "inboundAuthKey",
-	"federatedIdentityProviders":          "identityProviderName",
-	"federatedAuthenticatorConfigs":       "name",
-	"localAuthenticatorConfigs":           "name",
+	"idpClaims":                           "claimId",
+	"provisioningProperties":              "name",
+	"applicationRoleMappingConfig":        "idPName",
 }
 
 var idpArrayIdentifiers = map[string]string{
@@ -92,13 +94,12 @@ var idpArrayIdentifiers = map[string]string{
 	"claimMappings":                 "localClaim.claimUri",
 	"idpClaims":                     "claimId",
 	"properties":                    "name",
-	"subProperties":                 "name",
-	"idPGroupConfig":                "idpGroupName",
 	"idpProperties":                 "name",
 	"permissions":                   "value",
 	"roleMappings":                  "localRole.localRoleName",
 	"provisioningConnectorConfigs":  "name",
 	"federatedAuthenticatorConfigs": "name",
+	"provisioningProperties":        "name",
 }
 
 var userStoreArrayIdentifiers = map[string]string{

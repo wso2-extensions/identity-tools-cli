@@ -234,7 +234,7 @@ func TestGetKeywordLocations(t *testing.T) {
 		"claimMappings.[localClaim.claimUri=http://wso2.org/claims/identity/accountLocked].remoteClaim.claimUri",
 	}
 
-	result := utils.GetKeywordLocations(fileData, []string{}, keywordMapping, "APPLICATIONS")
+	result := utils.GetKeywordLocations(fileData, []string{}, keywordMapping, utils.APPLICATIONS)
 
 	sort.Strings(result)
 	sort.Strings(expectedResult)
@@ -603,7 +603,7 @@ func TestAddKeywords(t *testing.T) {
 		"ENV":     "dev",
 		"KEYWORD": "keyword value",
 	}
-	result, err := utils.AddKeywords(exportedFileData, localFileData, keywordMapping, "APPLICATIONS")
+	result, err := utils.AddKeywords(exportedFileData, localFileData, keywordMapping, utils.APPLICATIONS)
 	if err != nil {
 		log.Println("Error when adding keywords: ", err)
 	}

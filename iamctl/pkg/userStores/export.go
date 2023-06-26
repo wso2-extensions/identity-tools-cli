@@ -99,6 +99,7 @@ func exportUserStore(userStoreId string, outputDirPath string, format string) er
 		return fmt.Errorf("error while reading the response body when exporting userstore: %s. %s", fileName, err)
 	}
 
+	// Use the common mask for senstive data.
 	modifiedBody := []byte(strings.ReplaceAll(string(body), USERSTORE_SECRET_MASK, utils.SENSITIVE_FIELD_MASK))
 
 	userStoreKeywordMapping := getUserStoreKeywordMapping(fileInfo.ResourceName)
