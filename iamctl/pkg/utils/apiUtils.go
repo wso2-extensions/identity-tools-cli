@@ -28,6 +28,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
+	"net/url"
 	"strconv"
 	"strings"
 )
@@ -149,6 +150,7 @@ func SendImportRequest(importFilePath, fileData, resourceType string) error {
 func SendUpdateRequest(resourceId, importFilePath, fileData, resourceType string) error {
 
 	reqUrl := buildRequestUrl(UPDATE, resourceType, resourceId)
+	formattedReqUrl := addQueryParams(reqUrl, resourceType)
 
 	var buf bytes.Buffer
 	var err error
@@ -181,7 +183,7 @@ func SendUpdateRequest(resourceId, importFilePath, fileData, resourceType string
 		return fmt.Errorf("error when creating the import request: %s", err)
 	}
 
-	request, err := http.NewRequest("PUT", reqUrl, body)
+	request, err := http.NewRequest("PUT", formattedReqUrl, body)
 	request.Header.Add("Content-Type", writer.FormDataContentType())
 	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
 	defer request.Body.Close()
@@ -205,6 +207,8 @@ func SendUpdateRequest(resourceId, importFilePath, fileData, resourceType string
 
 	if statusCode == 200 {
 		return nil
+	} else if statusCode == 400 && resourceType == CLAIMS {
+		return handleClaimImportErrorResponse(resp)
 	} else if error, ok := ErrorCodes[statusCode]; ok {
 		return fmt.Errorf("error response for the import request: %s", error)
 	}
@@ -271,6 +275,8 @@ func getResourcePath(resourceType string) string {
 		return "identity-providers"
 	case USERSTORES:
 		return "userstores"
+	case CLAIMS:
+		return "claim-dialects"
 	}
 	return ""
 }
@@ -292,7 +298,7 @@ func buildRequestUrl(requestType, resourceType, resourceId string) (reqUrl strin
 	case IMPORT:
 		reqUrl = getResourceBaseUrl(resourceType) + IMPORT
 	case UPDATE:
-		if resourceType == APPLICATIONS {
+		if resourceType == APPLICATIONS || resourceType == CLAIMS {
 			reqUrl = getResourceBaseUrl(resourceType) + IMPORT
 		} else {
 			reqUrl = getResourceBaseUrl(resourceType) + resourceId + "/" + IMPORT
@@ -303,4 +309,25 @@ func buildRequestUrl(requestType, resourceType, resourceId string) (reqUrl strin
 		reqUrl = getResourceBaseUrl(resourceType) + resourceId
 	}
 	return reqUrl
+}
+
+func addQueryParams(reqURL, resourceType string) string {
+
+	url, err := url.Parse(reqURL)
+	if err != nil {
+		log.Printf("Failed to parse URL: %s. Unable to add query parameters.", err)
+		return reqURL
+	}
+
+	queryParams := url.Query()
+
+	switch resourceType {
+	case CLAIMS:
+		if resourceType == CLAIMS && TOOL_CONFIGS.AllowDelete {
+			queryParams.Set("preserveClaims", "true")
+		}
+	}
+
+	url.RawQuery = queryParams.Encode()
+	return url.String()
 }

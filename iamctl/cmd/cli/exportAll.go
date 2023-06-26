@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/applications"
+	claims "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/claims"
 	identityproviders "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/identityProviders"
 	userstores "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/userStores"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
@@ -43,6 +44,7 @@ var exportAllCmd = &cobra.Command{
 
 		identityproviders.ExportAll(outputDirPath, format)
 		applications.ExportAll(outputDirPath, format)
+		claims.ExportAll(outputDirPath, format)
 		userstores.ExportAll(outputDirPath, format)
 	},
 }

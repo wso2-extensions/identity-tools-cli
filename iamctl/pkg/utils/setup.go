@@ -47,11 +47,12 @@ type ServerConfigs struct {
 }
 
 type ToolConfigs struct {
-	KeywordMappings    map[string]interface{} `json:"KEYWORD_MAPPINGS"`
-	AllowDelete        bool                   `json:"ALLOW_DELETE"`
-	ApplicationConfigs map[string]interface{} `json:"APPLICATIONS"`
-	IdpConfigs         map[string]interface{} `json:"IDENTITY_PROVIDERS"`
-	UserStoreConfigs   map[string]interface{} `json:"USERSTORES"`
+	KeywordMappings     map[string]interface{} `json:"KEYWORD_MAPPINGS"`
+	AllowDelete         bool                   `json:"ALLOW_DELETE"`
+	ApplicationConfigs  map[string]interface{} `json:"APPLICATIONS"`
+	IdpConfigs          map[string]interface{} `json:"IDENTITY_PROVIDERS"`
+	ClaimDialectConfigs map[string]interface{} `json:"CLAIM_DIALECTS"`
+	UserStoreConfigs    map[string]interface{} `json:"USERSTORES"`
 }
 
 var SERVER_CONFIGS ServerConfigs
@@ -143,7 +144,7 @@ func getAccessToken(config ServerConfigs) string {
 	if config.ServerUrl == "" {
 		log.Fatalln("Server URL is not defined in the config file.")
 	}
-	authUrl := config.ServerUrl + "/oauth2/token"
+	authUrl := config.ServerUrl + "/t/" + config.TenantDomain + "/oauth2/token"
 
 	body := url.Values{}
 	body.Set("grant_type", "client_credentials")

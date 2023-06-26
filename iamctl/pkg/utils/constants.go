@@ -21,6 +21,7 @@ package utils
 // Resource type configs
 const APPLICATIONS_CONFIG = "APPLICATIONS"
 const IDP_CONFIG = "IDENTITY_PROVIDERS"
+const CLAIM_CONFIG = "CLAIMS"
 const USERSTORES_CONFIG = "USERSTORES"
 
 // Tool configs
@@ -40,6 +41,7 @@ const TOKEN_CONFIG = "TOKEN"
 // Resource types
 const APPLICATIONS = "Applications"
 const IDENTITY_PROVIDERS = "IdentityProviders"
+const CLAIMS = "Claims"
 const USERSTORES = "UserStores"
 
 // Config file names
@@ -67,8 +69,8 @@ var ErrorCodes = map[int]string{
 	500: "Internal server error.",
 }
 
-// Identifiers of array types
-var arrayIdentifiers = map[string]string{
+// Identifiers of array types for each resource type
+var applicationArrayIdentifiers = map[string]string{
 
 	"inboundAuthenticationRequestConfigs": "inboundAuthKey",
 	"spProperties":                        "name",
@@ -77,8 +79,6 @@ var arrayIdentifiers = map[string]string{
 	"federatedIdentityProviders":          "identityProviderName",
 	"federatedAuthenticatorConfigs":       "name",
 	"properties":                          "name",
-	"subProperties":                       "name",
-	"idpProperties":                       "name",
 	"provisioningConnectorConfigs":        "name",
 	"provisioningIdentityProviders":       "identityProviderName",
 	"requestPathAuthenticatorConfigs":     "name",
@@ -86,5 +86,31 @@ var arrayIdentifiers = map[string]string{
 	"claimMappings":                       "localClaim.claimUri",
 	"idpClaims":                           "claimId",
 	"provisioningProperties":              "name",
-	"claimAttributeMappings":              "claimURI",
+	"applicationRoleMappingConfig":        "idPName",
+}
+
+var idpArrayIdentifiers = map[string]string{
+
+	"claimMappings":                 "localClaim.claimUri",
+	"idpClaims":                     "claimId",
+	"properties":                    "name",
+	"idpProperties":                 "name",
+	"permissions":                   "value",
+	"roleMappings":                  "localRole.localRoleName",
+	"provisioningConnectorConfigs":  "name",
+	"federatedAuthenticatorConfigs": "name",
+	"provisioningProperties":        "name",
+}
+
+var userStoreArrayIdentifiers = map[string]string{
+
+	"claimAttributeMappings": "claimURI",
+	"properties":             "name",
+}
+
+var claimArrayIdentifiers = map[string]string{
+
+	"properties":       "key",
+	"attributeMapping": "mappedAttribute",
+	"claims":           "id",
 }
