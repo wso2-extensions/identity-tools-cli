@@ -103,7 +103,7 @@ func exportUserStore(userStoreId string, outputDirPath string, format string) er
 	modifiedBody := []byte(strings.ReplaceAll(string(body), USERSTORE_SECRET_MASK, utils.SENSITIVE_FIELD_MASK))
 
 	userStoreKeywordMapping := getUserStoreKeywordMapping(fileInfo.ResourceName)
-	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, modifiedBody, userStoreKeywordMapping)
+	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, modifiedBody, userStoreKeywordMapping, utils.USERSTORES)
 	if err != nil {
 		return fmt.Errorf("error while processing the exported content: %s", err)
 	}

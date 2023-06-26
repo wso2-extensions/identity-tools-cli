@@ -45,6 +45,7 @@ This mode consists of the `exportAll` and `importAll` commands that can be used 
 Currently, the supported resource types are: 
 * Applications
 * Identity Providers
+* Claims
 * User Stores
 
 ### Running the tool in the CLI mode
