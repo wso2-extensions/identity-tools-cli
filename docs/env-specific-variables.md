@@ -1,7 +1,7 @@
 # Handling environment-specific variables
 When maintaining multiple environments, it is common to have environment specific variables in the resource configuration files. The CLI tool supports dynamic keyword replacement for such environment-specific variables during import or export.
 
-###Adding keyword placeholders and keyword mappings
+### Adding keyword placeholders and keyword mappings
 1. Find the environment specific values in the resource configuration files and add a keyword placeholder.
 Use the syntax ```{{KEYWORD}}``` to add the keyword placeholder in the resource configuration files.
 

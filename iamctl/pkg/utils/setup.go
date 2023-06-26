@@ -50,8 +50,8 @@ type ToolConfigs struct {
 	AllowDelete         bool                   `json:"ALLOW_DELETE"`
 	ApplicationConfigs  map[string]interface{} `json:"APPLICATIONS"`
 	IdpConfigs          map[string]interface{} `json:"IDENTITY_PROVIDERS"`
-	UserStoreConfigs    map[string]interface{} `json:"USERSTORES"`
 	ClaimDialectConfigs map[string]interface{} `json:"CLAIM_DIALECTS"`
+	UserStoreConfigs    map[string]interface{} `json:"USERSTORES"`
 }
 
 type KeywordConfigs struct {
