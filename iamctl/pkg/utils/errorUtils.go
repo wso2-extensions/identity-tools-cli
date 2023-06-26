@@ -45,7 +45,7 @@ func handleClaimImportErrorResponse(resp *http.Response) error {
 
 	responseBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to read response body: %s", err.Error())
+		return fmt.Errorf("failed to read error response body: %s", err.Error())
 	}
 
 	errorResponse := ErrorResponse{}
@@ -55,7 +55,6 @@ func handleClaimImportErrorResponse(resp *http.Response) error {
 	}
 
 	errorMessages := collectFailedOperations(errorResponse.FailedOperations)
-
 	return fmt.Errorf("error response for the import request: %s\n%s", errorResponse.Message, strings.Join(errorMessages, "\n"))
 }
 
@@ -65,10 +64,12 @@ func collectFailedOperations(failedOperations []FailedOperation) []string {
 
 	for _, failedOp := range failedOperations {
 		message := strings.TrimSpace(failedOp.Message)
-		message = strings.TrimSuffix(message, ".")
-		errorMessage := fmt.Sprintf("%s for %s", message, failedOp.ClaimURI)
-		errorMessages = append(errorMessages, errorMessage)
+		if failedOp.ClaimURI != "" {
+			errorMessage := fmt.Sprintf("%s: %s", failedOp.ClaimURI, message)
+			errorMessages = append(errorMessages, errorMessage)
+		} else {
+			errorMessages = append(errorMessages, message)
+		}
 	}
-
 	return errorMessages
 }

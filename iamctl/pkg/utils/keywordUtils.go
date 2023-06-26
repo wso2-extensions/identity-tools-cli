@@ -120,7 +120,8 @@ func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map
 				}
 				break
 			} else {
-				arrayElementPath, err := resolvePathWithIdentifiers(path[len(path)-1], val, arrayIdentifiers, resourceType)
+				arrayIdentifiers := GetArrayIdentifiers(resourceType)
+				arrayElementPath, err := resolvePathWithIdentifiers(path[len(path)-1], val, arrayIdentifiers)
 				if err != nil {
 					log.Printf("Error: cannot resolve path for the field %s. %s.\n", strings.Join(path, "."), err)
 					break
@@ -138,7 +139,22 @@ func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map
 	return keys
 }
 
-func resolvePathWithIdentifiers(arrayName string, element interface{}, identifiers map[string]string, resourceType string) (string, error) {
+func GetArrayIdentifiers(resourceType string) map[string]string {
+
+	switch resourceType {
+	case APPLICATIONS:
+		return applicationArrayIdentifiers
+	case IDENTITY_PROVIDERS:
+		return idpArrayIdentifiers
+	case USERSTORES:
+		return userStoreArrayIdentifiers
+	case CLAIMS:
+		return claimArrayIdentifiers
+	}
+	return make(map[string]string)
+}
+
+func resolvePathWithIdentifiers(arrayName string, element interface{}, identifiers map[string]string) (string, error) {
 
 	var elementMap interface{}
 	elementMap, ok := element.(map[interface{}]interface{})
@@ -149,9 +165,6 @@ func resolvePathWithIdentifiers(arrayName string, element interface{}, identifie
 		}
 	}
 	identifier := identifiers[arrayName]
-	if resourceType == "Claims" && arrayName == "properties" {
-		identifier = "key"
-	}
 
 	// If an identifier is not defined for the array, use the default identifier "name".
 	if identifier == "" {

@@ -69,26 +69,47 @@ var ErrorCodes = map[int]string{
 	500: "Internal server error.",
 }
 
-// Identifiers of array types
-var arrayIdentifiers = map[string]string{
+// Identifiers of array types for each resource type
+var applicationArrayIdentifiers = map[string]string{
 
-	"inboundAuthenticationRequestConfigs": "inboundAuthKey",
-	"spProperties":                        "name",
+	"applicationRoleMappingConfig":        "idPName",
 	"authenticationSteps":                 "stepOrder",
-	"localAuthenticatorConfigs":           "name",
-	"federatedIdentityProviders":          "identityProviderName",
-	"federatedAuthenticatorConfigs":       "name",
+	"roleMappings":                        "localRole.localRoleName",
+	"idpClaims":                           "claimId",
 	"properties":                          "name",
-	"subProperties":                       "name",
-	"idpProperties":                       "name",
 	"provisioningConnectorConfigs":        "name",
 	"provisioningIdentityProviders":       "identityProviderName",
 	"requestPathAuthenticatorConfigs":     "name",
-	"roleMappings":                        "localRole.localRoleName",
 	"claimMappings":                       "localClaim.claimUri",
-	"idpClaims":                           "claimId",
-	"provisioningProperties":              "name",
-	"claimAttributeMappings":              "claimURI",
-	"claims":                              "id",
-	"attributeMapping":                    "mappedAttribute",
+	"inboundAuthenticationRequestConfigs": "inboundAuthKey",
+	"federatedIdentityProviders":          "identityProviderName",
+	"federatedAuthenticatorConfigs":       "name",
+	"localAuthenticatorConfigs":           "name",
+}
+
+var idpArrayIdentifiers = map[string]string{
+
+	"claimMappings":                 "localClaim.claimUri",
+	"idpClaims":                     "claimId",
+	"properties":                    "name",
+	"subProperties":                 "name",
+	"idPGroupConfig":                "idpGroupName",
+	"idpProperties":                 "name",
+	"permissions":                   "value",
+	"roleMappings":                  "localRole.localRoleName",
+	"provisioningConnectorConfigs":  "name",
+	"federatedAuthenticatorConfigs": "name",
+}
+
+var userStoreArrayIdentifiers = map[string]string{
+
+	"claimAttributeMappings": "claimURI",
+	"properties":             "name",
+}
+
+var claimArrayIdentifiers = map[string]string{
+
+	"properties":       "key",
+	"attributeMapping": "mappedAttribute",
+	"claims":           "id",
 }

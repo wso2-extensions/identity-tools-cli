@@ -32,7 +32,7 @@ import (
 func ExportAll(exportFilePath string, format string) {
 
 	// Export all claim dialects with related claims.
-	log.Println("Exporting Claim Dialects...")
+	log.Println("Exporting Claims...")
 	exportFilePath = filepath.Join(exportFilePath, utils.CLAIMS)
 
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
@@ -43,14 +43,11 @@ func ExportAll(exportFilePath string, format string) {
 		}
 	}
 
-	claimdialects, err := getClaimDialectsList()
+	claimDialects, err := getClaimDialectsList()
 	if err != nil {
-		log.Println("Error: when getting Claim Dialect IDs.", err)
+		log.Println("Error while retrieving Claim Dialect list.", err)
 	} else {
-		// if !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.ApplicationConfigs) {
-		// 	log.Println("Warn: Secrets exclusion cannot be disabled for claim dialects. All secrets will be masked.")
-		// }
-		for _, dialect := range claimdialects {
+		for _, dialect := range claimDialects {
 			if !utils.IsResourceExcluded(dialect.DialectURI, utils.TOOL_CONFIGS.ClaimDialectConfigs) {
 				log.Println("Exporting Claim Dialect: ", dialect.DialectURI)
 
@@ -97,9 +94,6 @@ func exportClaimDialect(dialectId string, outputDirPath string, format string) e
 	if err != nil {
 		return fmt.Errorf("error while reading the response body when exporting claim dialect: %s. %s", fileName, err)
 	}
-
-	// Use the common mask for senstive data.
-	// modifiedBody := []byte(strings.ReplaceAll(string(body), USERSTORE_SECRET_MASK, utils.SENSITIVE_FIELD_MASK))
 
 	claimDialectKeywordMapping := getClaimKeywordMapping(fileInfo.ResourceName)
 	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, claimDialectKeywordMapping, utils.CLAIMS)

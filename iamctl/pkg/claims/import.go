@@ -32,7 +32,7 @@ import (
 
 func ImportAll(inputDirPath string) {
 
-	log.Println("Importing Claim Dialects...")
+	log.Println("Importing Claims...")
 	importFilePath := filepath.Join(inputDirPath, utils.CLAIMS)
 
 	var files []os.FileInfo
@@ -48,6 +48,7 @@ func ImportAll(inputDirPath string) {
 		}
 	}
 
+	// Move the local claims file to the front of the array to import it first
 	for i, file := range files {
 		if file.Name() == "http_wso2_org_claims.yml" {
 			files[0], files[i] = files[i], files[0]
@@ -66,7 +67,7 @@ func ImportAll(inputDirPath string) {
 			} else {
 				err := importClaimDialect(dialectId, claimFilePath)
 				if err != nil {
-					log.Println("error importing claim dialect: ", err)
+					log.Println("error importing claim dialect:", err)
 				}
 			}
 		}
@@ -101,7 +102,7 @@ func importClaimDialect(dialectId string, importFilePath string) error {
 		err = utils.SendUpdateRequest(dialectId, importFilePath, modifiedFileData, utils.CLAIMS)
 	}
 	if err != nil {
-		return fmt.Errorf("error when importing claim dialect: %s", err)
+		return fmt.Errorf("%s", err)
 	}
 	log.Println("Claim dialects imported successfully.")
 	return nil
@@ -116,12 +117,12 @@ func removeDeletedDeployedClaimdialect(localFiles []os.FileInfo, importFilePath 
 		return
 	}
 deployedResourcess:
-	for _, claimdialect := range deployedClaimDialects {
+	for _, claimDialect := range deployedClaimDialects {
 		for _, file := range localFiles {
 
 			var claimDialectConfigurations ClaimDialectConfigurations
-
 			claimFilePath := filepath.Join(importFilePath, file.Name())
+
 			content, err := readFileContent(claimFilePath)
 			if err != nil {
 				log.Println("error when reading file content: ", err)
@@ -131,17 +132,18 @@ deployedResourcess:
 			if err != nil {
 				log.Println("error when unmarshalling the file for claim dialect: ", err)
 			}
+
 			localResourceName := claimDialectConfigurations.URI
-			if claimdialect.DialectURI == localResourceName {
+			if claimDialect.DialectURI == localResourceName {
 				continue deployedResourcess
 			}
 		}
-		if utils.IsResourceExcluded(claimdialect.DialectURI, utils.TOOL_CONFIGS.ClaimDialectConfigs) {
-			log.Printf("Claim dialect: %s is excluded from deletion.\n", claimdialect.DialectURI)
+		if utils.IsResourceExcluded(claimDialect.DialectURI, utils.TOOL_CONFIGS.ClaimDialectConfigs) {
+			log.Printf("Claim dialect: %s is excluded from deletion.\n", claimDialect.DialectURI)
 			continue
 		}
-		log.Println("Claim dialect not found locally. Deleting claim dialect: ", claimdialect.DialectURI)
-		err := utils.SendDeleteRequest(claimdialect.Id, utils.CLAIMS)
+		log.Println("Claim dialect not found locally. Deleting claim dialect: ", claimDialect.DialectURI)
+		err := utils.SendDeleteRequest(claimDialect.Id, utils.CLAIMS)
 		if err != nil {
 			log.Println("Error deleting claim dialect: ", err)
 		}
@@ -160,6 +162,5 @@ func readFileContent(filename string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return content, nil
 }

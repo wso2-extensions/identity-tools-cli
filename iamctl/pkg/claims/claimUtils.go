@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"regexp"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 	"gopkg.in/yaml.v2"
@@ -64,7 +65,6 @@ func getClaimDialectsList() ([]claimDialect, error) {
 		return nil, fmt.Errorf("error while retrieving claim dialect list. Status code: %d, Error: %s", statusCode, error)
 	}
 	return nil, fmt.Errorf("unexpected error while retrieving claim dialect list")
-
 }
 
 func getClaimKeywordMapping(claimDialectName string) map[string]interface{} {
@@ -77,16 +77,26 @@ func getClaimKeywordMapping(claimDialectName string) map[string]interface{} {
 
 func getDeployedClaimDialectNames() []string {
 
-	claimdialects, err := getClaimDialectsList()
+	claimDialects, err := getClaimDialectsList()
 	if err != nil {
 		return []string{}
 	}
 
-	var claimdialectNames []string
-	for _, claimdialect := range claimdialects {
-		claimdialectNames = append(claimdialectNames, claimdialect.DialectURI)
+	var claimDialectNames []string
+	for _, claimDialect := range claimDialects {
+		formattedName := formatFileName(claimDialect.DialectURI)
+		claimDialectNames = append(claimDialectNames, formattedName)
 	}
-	return claimdialectNames
+	return claimDialectNames
+}
+
+func formatFileName(fileName string) string {
+
+	formattedFileName := regexp.MustCompile(`[^\w\d]+`).ReplaceAllString(fileName, "_")
+	if len(formattedFileName) > 255 {
+		formattedFileName = formattedFileName[:255]
+	}
+	return formattedFileName
 }
 
 func getClaimDialectId(claimDialectFilePath string) (string, error) {
@@ -95,6 +105,7 @@ func getClaimDialectId(claimDialectFilePath string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error when reading the file: %s. %s", claimDialectFilePath, err)
 	}
+
 	var claimDialectConfig ClaimDialectConfigurations
 	err = yaml.Unmarshal(fileContent, &claimDialectConfig)
 	if err != nil {
@@ -111,5 +122,6 @@ func getClaimDialectId(claimDialectFilePath string) (string, error) {
 			return dialect.Id, nil
 		}
 	}
+	// Claim dialect does not exist, returning an empty user ID
 	return "", nil
 }
