@@ -78,16 +78,35 @@ func importUserStore(userStoreId string, importFilePath string) error {
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), userStoreKeywordMapping)
 
 	if userStoreId == "" {
-		log.Println("Creating new user store: " + fileInfo.ResourceName)
-		err = utils.SendImportRequest(importFilePath, modifiedFileData, utils.USERSTORES)
-	} else {
-		log.Println("Updating user store: " + fileInfo.ResourceName)
-		err = utils.SendUpdateRequest(userStoreId, importFilePath, modifiedFileData, utils.USERSTORES)
+		return importUserStoreOperation(importFilePath, modifiedFileData, fileInfo)
 	}
+
+	return updateUserStoreOperation(userStoreId, importFilePath, modifiedFileData, fileInfo)
+}
+
+func importUserStoreOperation(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+
+	log.Println("Creating new user store: " + fileInfo.ResourceName)
+	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.USERSTORES)
 	if err != nil {
+		utils.UpdateFailureSummary(utils.USERSTORES, fileInfo.ResourceName, err.Error())
 		return fmt.Errorf("error when importing user store: %s", err)
 	}
+	utils.UpdateSuccessSummary(utils.USERSTORES, utils.IMPORT)
 	log.Println("User store imported successfully.")
+	return nil
+}
+
+func updateUserStoreOperation(userStoreId string, importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+
+	log.Println("Updating user store: " + fileInfo.ResourceName)
+	err := utils.SendUpdateRequest(userStoreId, importFilePath, modifiedFileData, utils.USERSTORES)
+	if err != nil {
+		utils.UpdateFailureSummary(utils.USERSTORES, fileInfo.ResourceName, err.Error())
+		return fmt.Errorf("error when updating user store: %s", err)
+	}
+	utils.UpdateSuccessSummary(utils.USERSTORES, utils.UPDATE)
+	log.Println("User store updated successfully.")
 	return nil
 }
 
@@ -113,7 +132,9 @@ deployedResourcess:
 		log.Println("User store not found locally. Deleting userstore: ", userstore.Name)
 		err := utils.SendDeleteRequest(userstore.Id, utils.USERSTORES)
 		if err != nil {
+			utils.UpdateFailureSummary(utils.USERSTORES, userstore.Name, err.Error())
 			log.Println("Error deleting user store: ", err)
 		}
+		utils.UpdateSuccessSummary(utils.USERSTORES, utils.DELETE)
 	}
 }

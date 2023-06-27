@@ -103,15 +103,43 @@ func importApp(importFilePath string, isUpdate bool) error {
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), appKeywordMapping)
 
 	if isUpdate {
-		log.Println("Updating application: " + fileInfo.ResourceName)
-		err = utils.SendUpdateRequest("", importFilePath, modifiedFileData, utils.APPLICATIONS)
-	} else {
-		log.Println("Creating new application: " + fileInfo.ResourceName)
-		err = utils.SendImportRequest(importFilePath, modifiedFileData, utils.APPLICATIONS)
+		return updateApplication(importFilePath, modifiedFileData, fileInfo)
 	}
+
+	return importApplication(importFilePath, modifiedFileData, fileInfo)
+}
+
+func updateApplication(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+
+	log.Println("Updating application: " + fileInfo.ResourceName)
+	err := utils.SendUpdateRequest("", importFilePath, modifiedFileData, utils.APPLICATIONS)
 	if err != nil {
-		return fmt.Errorf("error when importing application: %s", err)
+		errorMsg := fmt.Sprintf("Error when updating application: %s", err)
+		utils.UpdateFailureSummary(utils.APPLICATIONS, fileInfo.ResourceName, errorMsg)
+		return fmt.Errorf(errorMsg)
 	}
+	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.UPDATE)
+	log.Println("Application updated successfully.")
+	return nil
+}
+
+func importApplication(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+
+	log.Println("Creating new application: " + fileInfo.ResourceName)
+	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.APPLICATIONS)
+	if err != nil {
+		errorMsg := fmt.Sprintf("Error when importing application: %s", err)
+		utils.UpdateFailureSummary(utils.APPLICATIONS, fileInfo.ResourceName, errorMsg)
+		return fmt.Errorf(errorMsg)
+	}
+
+	if authenticated, err := isAuthenticationApp(modifiedFileData); err != nil {
+		fmt.Println("error occurred:", err)
+	} else if authenticated {
+		utils.AddNewSecretApplication(fileInfo.ResourceName)
+	}
+
+	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.IMPORT)
 	log.Println("Application imported successfully.")
 	return nil
 }
@@ -127,15 +155,17 @@ deployedResources:
 				continue deployedResources
 			}
 		}
-		if utils.IsResourceExcluded(app.Name, utils.TOOL_CONFIGS.ApplicationConfigs) || app.Name == "Console" || app.Name == "My Account" {
+		if utils.IsResourceExcluded(app.Name, utils.TOOL_CONFIGS.ApplicationConfigs) || app.Name == "Console" || app.Name == "My Account" || app.Name == "Prod-mgt-SP" {
 			log.Printf("Application: %s is excluded from deletion.\n", app.Name)
 			continue
 		}
 		log.Println("Application not found locally. Deleting app: ", app.Name)
 		err := utils.SendDeleteRequest(app.Id, utils.APPLICATIONS)
 		if err != nil {
-			log.Println("Error deleting application: ", app.Name, err)
+			errorMsg := fmt.Sprintf("Error deleting application: %s %v", app.Name, err)
+			utils.UpdateFailureSummary(utils.APPLICATIONS, app.Name, errorMsg)
+			log.Println(errorMsg)
 		}
-
+		utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.DELETE)
 	}
 }

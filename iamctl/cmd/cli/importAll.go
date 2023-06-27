@@ -40,10 +40,16 @@ var importAllCmd = &cobra.Command{
 		if inputDirPath == "" {
 			inputDirPath = baseDir
 		}
+
+		utils.ResourceSummaries = make(map[string]utils.ResourceSummary)
+
 		claims.ImportAll(inputDirPath)
 		identityproviders.ImportAll(inputDirPath)
 		applications.ImportAll(inputDirPath)
 		userstores.ImportAll(inputDirPath)
+
+		utils.PrintSummary()
+		utils.PrintImportSummary()
 	},
 }
 
