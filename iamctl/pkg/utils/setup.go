@@ -19,6 +19,7 @@
 package utils
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"io/ioutil"
@@ -106,20 +107,23 @@ func loadConfigsFromEnvVar() (toolConfigPath string, keywordConfigPath string) {
 	SERVER_CONFIGS.TenantDomain = os.Getenv(TENANT_DOMAIN_CONFIG)
 
 	// Load tool config file path from environment variables.
-	toolConfigPath = os.Getenv("TOOL_CONFIG_PATH")
-	keywordConfigPath = os.Getenv("KEYWORD_CONFIG_PATH")
+	toolConfigPath = os.Getenv(TOOL_CONFIG_PATH)
+	keywordConfigPath = os.Getenv(KEYWORD_CONFIG_PATH)
 	return toolConfigPath, keywordConfigPath
 }
 
 func loadServerConfigsFromFile(configFilePath string) (serverConfigs ServerConfigs) {
 
-	configFile, err := os.Open(configFilePath)
+	configFile, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
-	defer configFile.Close()
 
-	jsonParser := json.NewDecoder(configFile)
+	// Replace placeholder keys with environment variable values
+	configFile = ReplacePlaceholders(configFile)
+
+	reader := bytes.NewReader(configFile)
+	jsonParser := json.NewDecoder(reader)
 	err = jsonParser.Decode(&serverConfigs)
 	if err != nil {
 		log.Fatalln(err)

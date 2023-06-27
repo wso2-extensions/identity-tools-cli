@@ -35,6 +35,21 @@ Example `keywordConfig.json` file in the ```config/prod``` directory:
 ```
 When importing the resource from the local directory to the prod environment, the ```CALLBACK_DOMAIN``` keyword is replaced with the value ```demo.prod.io``` and the resource callback url is updated to ```https://demo.prod.io/commonauth```.
 
+### Incorporate keyword mappings as environment variables
+You can also incorporate keyword mappings as environment variables using a similar approach. In the ```keywordConfig.json``` file, you can add ```${}``` placeholders for the keyword values. The tool will search for the keyword with the name given inside the placeholder in the environment and use its value instead.
+
+Example:
+```
+{
+    "KEYWORD_MAPPINGS" : {
+        "CALLBACK_DOMAIN" : "${DEV_CALLBACK_DOMAIN}"
+    }
+}
+```
+In the above example, the tool will look for the value of the ```CALLBACK_DOMAIN``` keyword in the corresponding environment variable named ```DEV_CALLBACK_DOMAIN``` and use that value instead.
+
+Make sure to set the environment variable ```DEV_CALLBACK_DOMAIN``` with the appropriate value before running the CLI commands.
+
 ### Recommended workflow
 1. Use the CLI tool to export once from the lowest environment and create the local resource configuration directory.
 2. Add the keyword placeholders to the exported files and add the relevant keyword mapping to the keyword configs of each environment.

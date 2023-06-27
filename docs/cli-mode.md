@@ -139,6 +139,18 @@ export KEYWORD_CONFIG_PATH="<path to the configs folder>/dev/keywordConfig.json"
 > 
 > It is recommended to use the ```serverConfig.json``` file to provide the server configurations as it is more secure and easier to maintain when dealing with multiple environments.
 
+#### Using environment variables in serverConfig.json
+You can also explicitly specify the use of environment variables for certain configurations in the ```serverConfig.json``` file itself. To do this, use the placeholder ```${YOUR_ENV_VAR_NAME}``` in the ```serverConfig.json``` file, as shown in the following example:
+```
+{
+  "CLIENT_ID": "${DEV_CLIENT_ID}",
+  "CLIENT_SECRET": "${DEV_CLIENT_SECRET}",
+  "SERVER_URL": "https://localhost:9443",
+  "TENANT_DOMAIN": "carbon.super"
+}
+```
+The tool will search for the keyword with the name given inside the placeholder in the environment and use its value instead.
+
 ### Tool configurations
 The ```toolConfig.json``` file contains the configurations needed for overriding the default behaviour of the tool. 
 
@@ -235,6 +247,8 @@ Example:
    }
 }
 ```
+> **Note:** Keyword mappings can also be incorporated as environment variables.
+
 Find more information on the keyword replacement feature [here](../keyword-replacement.md).
 
 ## Commands
