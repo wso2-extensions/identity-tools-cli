@@ -60,6 +60,8 @@ const MEDIA_TYPE_FORM = "application/x-www-form-urlencoded"
 const DEFAULT_TENANT_DOMAIN = "carbon.super"
 const SENSITIVE_FIELD_MASK = "'********'"
 const RESIDENT_IDP_NAME = "LOCAL"
+const CONSOLE = "Console"
+const MY_ACCOUNT = "My Account"
 
 // Error codes
 var ErrorCodes = map[int]string{

@@ -47,6 +47,7 @@ type AuthConfig struct {
 	InboundAuthenticationConfig struct {
 		InboundAuthenticationRequestConfigs []struct {
 			InboundAuthType string `yaml:"inboundAuthType"`
+			InboundAuthKey  string `yaml:"inboundAuthKey"`
 		} `yaml:"inboundAuthenticationRequestConfigs"`
 	} `yaml:"inboundAuthenticationConfig"`
 }
@@ -105,8 +106,7 @@ func getAppKeywordMapping(appName string) map[string]interface{} {
 
 func isAuthenticationApp(fileData string) (bool, error) {
 
-	var config AuthConfig
-	err := yaml.Unmarshal([]byte(fileData), &config)
+	config, err := unmarshalAuthConfig([]byte(fileData))
 	if err != nil {
 		return false, err
 	}
@@ -118,4 +118,26 @@ func isAuthenticationApp(fileData string) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func checkInboundAuthKey(fileData []byte) (bool, error) {
+
+	config, err := unmarshalAuthConfig(fileData)
+	if err != nil {
+		return false, err
+	}
+
+	for _, requestConfig := range config.InboundAuthenticationConfig.InboundAuthenticationRequestConfigs {
+		if requestConfig.InboundAuthKey == utils.SERVER_CONFIGS.ClientId {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func unmarshalAuthConfig(data []byte) (AuthConfig, error) {
+	var config AuthConfig
+	err := yaml.Unmarshal(data, &config)
+	return config, err
 }

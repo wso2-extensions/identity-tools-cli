@@ -44,7 +44,7 @@ func ImportAll(inputDirPath string) {
 			log.Println("Error importing applications: ", err)
 		}
 		if utils.TOOL_CONFIGS.AllowDelete {
-			removeDeletedDeployedApps(files)
+			removeDeletedDeployedApps(files, importFilePath)
 		}
 	}
 
@@ -144,18 +144,19 @@ func importApplication(importFilePath string, modifiedFileData string, fileInfo 
 	return nil
 }
 
-func removeDeletedDeployedApps(localFiles []os.FileInfo) {
+func removeDeletedDeployedApps(localFiles []os.FileInfo, importFilePath string) {
 
 	// Remove deployed applications that do not exist locally.
 	deployedApps := getAppList()
 deployedResources:
 	for _, app := range deployedApps {
 		for _, file := range localFiles {
-			if app.Name == utils.GetFileInfo(file.Name()).ResourceName {
+			if app.Name == utils.GetFileInfo(file.Name()).ResourceName || IsManagementApp(file, importFilePath) {
 				continue deployedResources
 			}
 		}
-		if utils.IsResourceExcluded(app.Name, utils.TOOL_CONFIGS.ApplicationConfigs) || app.Name == "Console" || app.Name == "My Account" || app.Name == "Prod-mgt-SP" {
+
+		if utils.IsResourceExcluded(app.Name, utils.TOOL_CONFIGS.ApplicationConfigs) || app.Name == utils.CONSOLE || app.Name == utils.MY_ACCOUNT {
 			log.Printf("Application: %s is excluded from deletion.\n", app.Name)
 			continue
 		}
@@ -168,4 +169,25 @@ deployedResources:
 		}
 		utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.DELETE)
 	}
+}
+
+func IsManagementApp(file os.FileInfo, importFilePath string) bool {
+
+	appFilePath := filepath.Join(importFilePath, file.Name())
+	fileData, err := ioutil.ReadFile(appFilePath)
+	if err != nil {
+		log.Printf("Error reading file: %s\n", err.Error())
+		return false
+	}
+	isManagement, err := checkInboundAuthKey(fileData)
+	if err != nil {
+		log.Printf("Error checking if file is a management app: %s\n", err.Error())
+		return false
+	}
+	if isManagement {
+		appName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
+		log.Printf("Info: Management App: %s is excluded from deletion.\n", appName)
+		return true
+	}
+	return false
 }
