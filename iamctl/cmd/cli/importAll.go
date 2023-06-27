@@ -41,15 +41,12 @@ var importAllCmd = &cobra.Command{
 			inputDirPath = baseDir
 		}
 
-		utils.ResourceSummaries = make(map[string]utils.ResourceSummary)
-
 		claims.ImportAll(inputDirPath)
 		identityproviders.ImportAll(inputDirPath)
 		applications.ImportAll(inputDirPath)
 		userstores.ImportAll(inputDirPath)
 
-		utils.PrintSummary()
-		utils.PrintImportSummary()
+		utils.PrintSummary(utils.IMPORT)
 	},
 }
 

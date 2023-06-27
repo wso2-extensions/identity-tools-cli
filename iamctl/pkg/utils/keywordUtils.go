@@ -355,7 +355,6 @@ func ReplacePlaceholders(configFile []byte) []byte {
 	configStr := string(configFile)
 
 	for _, value := range os.Environ() {
-		log.Println(value)
 		pair := strings.SplitN(value, "=", 2)
 		envVarName := fmt.Sprintf("${%s}", pair[0])
 		envVarValue := pair[1]

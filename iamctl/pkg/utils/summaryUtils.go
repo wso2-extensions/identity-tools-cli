@@ -44,7 +44,7 @@ var (
 	ResourceSummaries map[string]ResourceSummary
 )
 
-func PrintSummary() {
+func PrintSummary(Operation string) {
 
 	fmt.Println("========================================")
 	fmt.Println("Total Summary:")
@@ -52,6 +52,12 @@ func PrintSummary() {
 	fmt.Printf("Total Requests: %d\n", SummaryData.TotalRequests)
 	fmt.Printf("Successful Operations: %d\n", SummaryData.SuccessfulOperations)
 	fmt.Printf("Failed Operations: %d\n", SummaryData.FailedOperations)
+
+	if Operation == IMPORT {
+		PrintImportSummary()
+	} else if Operation == EXPORT {
+		PrintExportSummary()
+	}
 }
 
 func PrintExportSummary() {
@@ -127,6 +133,10 @@ func AddNewSecretApplication(appName string) {
 }
 
 func UpdateSuccessSummary(resourceType string, operation string) {
+
+	if ResourceSummaries == nil {
+		ResourceSummaries = make(map[string]ResourceSummary)
+	}
 
 	SummaryData.TotalRequests++
 	SummaryData.SuccessfulOperations++

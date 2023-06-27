@@ -42,15 +42,12 @@ var exportAllCmd = &cobra.Command{
 			outputDirPath = baseDir
 		}
 
-		utils.ResourceSummaries = make(map[string]utils.ResourceSummary)
-
 		identityproviders.ExportAll(outputDirPath, format)
 		applications.ExportAll(outputDirPath, format)
 		claims.ExportAll(outputDirPath, format)
 		userstores.ExportAll(outputDirPath, format)
 
-		utils.PrintSummary()
-		utils.PrintExportSummary()
+		utils.PrintSummary(utils.EXPORT)
 	},
 }
 
