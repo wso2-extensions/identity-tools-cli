@@ -41,7 +41,6 @@ var exportAllCmd = &cobra.Command{
 		if outputDirPath == "" {
 			outputDirPath = baseDir
 		}
-
 		identityproviders.ExportAll(outputDirPath, format)
 		applications.ExportAll(outputDirPath, format)
 		claims.ExportAll(outputDirPath, format)

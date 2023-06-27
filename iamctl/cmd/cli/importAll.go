@@ -40,7 +40,6 @@ var importAllCmd = &cobra.Command{
 		if inputDirPath == "" {
 			inputDirPath = baseDir
 		}
-
 		claims.ImportAll(inputDirPath)
 		identityproviders.ImportAll(inputDirPath)
 		applications.ImportAll(inputDirPath)

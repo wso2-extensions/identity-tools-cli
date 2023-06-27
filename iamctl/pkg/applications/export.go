@@ -25,7 +25,6 @@ import (
 	"mime"
 	"os"
 	"path/filepath"
-	"regexp"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -51,9 +50,8 @@ func ExportAll(exportFilePath string, format string) {
 			log.Println("Exporting application: ", app.Name)
 			err := exportApp(app.Id, exportFilePath, format, excludeSecrets)
 			if err != nil {
-				errorMsg := fmt.Sprintf("Error while exporting application: %s. %s", app.Name, err)
-				utils.UpdateFailureSummary(utils.APPLICATIONS, app.Name, errorMsg)
-				log.Println(errorMsg)
+				utils.UpdateFailureSummary(utils.APPLICATIONS, app.Name)
+				log.Printf("Error while exporting application: %s. %s", app.Name, err)
 			} else {
 				utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.EXPORT)
 				log.Println("Application exported successfully: ", app.Name)
@@ -103,22 +101,9 @@ func exportApp(appId string, outputDirPath string, format string, excludeSecrets
 	if excludeSecrets {
 		modifiedFile = maskOAuthConsumerSecret(modifiedFile)
 	}
-
 	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 	if err != nil {
 		return fmt.Errorf("error when writing the exported content to file: %w", err)
 	}
 	return nil
-}
-
-func maskOAuthConsumerSecret(fileContent []byte) []byte {
-
-	// Find and replace the value of oauthConsumerSecret with asterisks
-	maskedValue := "'********'"
-	pattern := "(?m)(^\\s*oauthConsumerSecret:\\s*)null\\s*$"
-
-	re := regexp.MustCompile(pattern)
-	maskedContent := re.ReplaceAllString(string(fileContent), "${1}"+maskedValue)
-
-	return []byte(maskedContent)
 }

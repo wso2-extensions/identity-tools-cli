@@ -95,16 +95,34 @@ func importClaimDialect(dialectId string, importFilePath string) error {
 	fileInfo.ResourceName = claimDialectConfigurations.URI
 
 	if dialectId == "" {
-		log.Println("Creating new claim dialect: " + fileInfo.ResourceName)
-		err = utils.SendImportRequest(importFilePath, modifiedFileData, utils.CLAIMS)
-	} else {
-		log.Println("Updating claim dialect: " + fileInfo.ResourceName)
-		err = utils.SendUpdateRequest(dialectId, importFilePath, modifiedFileData, utils.CLAIMS)
+		return importDialect(importFilePath, modifiedFileData, fileInfo)
 	}
+	return updateDialect(dialectId, importFilePath, modifiedFileData, fileInfo)
+}
+
+func importDialect(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+
+	log.Println("Creating new claim dialect: " + fileInfo.ResourceName)
+	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.CLAIMS)
 	if err != nil {
-		return fmt.Errorf("%s", err)
+		utils.UpdateFailureSummary(utils.CLAIMS, fileInfo.ResourceName)
+		return fmt.Errorf("error when importing claim dialect: %s", err)
 	}
-	log.Println("Claim dialects imported successfully.")
+	utils.UpdateSuccessSummary(utils.CLAIMS, utils.IMPORT)
+	log.Println("Claim dialect imported successfully.")
+	return nil
+}
+
+func updateDialect(dialectId string, importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+
+	log.Println("Updating claim dialect: " + fileInfo.ResourceName)
+	err := utils.SendUpdateRequest(dialectId, importFilePath, modifiedFileData, utils.CLAIMS)
+	if err != nil {
+		utils.UpdateFailureSummary(utils.CLAIMS, fileInfo.ResourceName)
+		return fmt.Errorf("error when updating claim dialect: %s", err)
+	}
+	utils.UpdateSuccessSummary(utils.CLAIMS, utils.UPDATE)
+	log.Println("Claim dialect updated successfully.")
 	return nil
 }
 

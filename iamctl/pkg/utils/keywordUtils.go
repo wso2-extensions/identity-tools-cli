@@ -360,6 +360,5 @@ func ReplacePlaceholders(configFile []byte) []byte {
 		envVarValue := pair[1]
 		configStr = strings.ReplaceAll(configStr, envVarName, envVarValue)
 	}
-
 	return []byte(configStr)
 }

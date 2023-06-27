@@ -62,6 +62,7 @@ const SENSITIVE_FIELD_MASK = "'********'"
 const RESIDENT_IDP_NAME = "LOCAL"
 const CONSOLE = "Console"
 const MY_ACCOUNT = "My Account"
+const OAUTH2 = "oauth2"
 
 // Error codes
 var ErrorCodes = map[int]string{

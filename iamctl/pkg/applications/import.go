@@ -105,7 +105,6 @@ func importApp(importFilePath string, isUpdate bool) error {
 	if isUpdate {
 		return updateApplication(importFilePath, modifiedFileData, fileInfo)
 	}
-
 	return importApplication(importFilePath, modifiedFileData, fileInfo)
 }
 
@@ -114,9 +113,8 @@ func updateApplication(importFilePath string, modifiedFileData string, fileInfo 
 	log.Println("Updating application: " + fileInfo.ResourceName)
 	err := utils.SendUpdateRequest("", importFilePath, modifiedFileData, utils.APPLICATIONS)
 	if err != nil {
-		errorMsg := fmt.Sprintf("Error when updating application: %s", err)
-		utils.UpdateFailureSummary(utils.APPLICATIONS, fileInfo.ResourceName, errorMsg)
-		return fmt.Errorf(errorMsg)
+		utils.UpdateFailureSummary(utils.APPLICATIONS, fileInfo.ResourceName)
+		return fmt.Errorf("Error when updating application: %s", err)
 	}
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.UPDATE)
 	log.Println("Application updated successfully.")
@@ -128,9 +126,8 @@ func importApplication(importFilePath string, modifiedFileData string, fileInfo 
 	log.Println("Creating new application: " + fileInfo.ResourceName)
 	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.APPLICATIONS)
 	if err != nil {
-		errorMsg := fmt.Sprintf("Error when importing application: %s", err)
-		utils.UpdateFailureSummary(utils.APPLICATIONS, fileInfo.ResourceName, errorMsg)
-		return fmt.Errorf(errorMsg)
+		utils.UpdateFailureSummary(utils.APPLICATIONS, fileInfo.ResourceName)
+		return fmt.Errorf("Error when importing application: %s", err)
 	}
 
 	if authenticated, err := isAuthenticationApp(modifiedFileData); err != nil {
@@ -138,7 +135,6 @@ func importApplication(importFilePath string, modifiedFileData string, fileInfo 
 	} else if authenticated {
 		utils.AddNewSecretApplication(fileInfo.ResourceName)
 	}
-
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.IMPORT)
 	log.Println("Application imported successfully.")
 	return nil
@@ -155,7 +151,6 @@ deployedResources:
 				continue deployedResources
 			}
 		}
-
 		if utils.IsResourceExcluded(app.Name, utils.TOOL_CONFIGS.ApplicationConfigs) || app.Name == utils.CONSOLE || app.Name == utils.MY_ACCOUNT {
 			log.Printf("Application: %s is excluded from deletion.\n", app.Name)
 			continue
@@ -163,31 +158,9 @@ deployedResources:
 		log.Println("Application not found locally. Deleting app: ", app.Name)
 		err := utils.SendDeleteRequest(app.Id, utils.APPLICATIONS)
 		if err != nil {
-			errorMsg := fmt.Sprintf("Error deleting application: %s %v", app.Name, err)
-			utils.UpdateFailureSummary(utils.APPLICATIONS, app.Name, errorMsg)
-			log.Println(errorMsg)
+			utils.UpdateFailureSummary(utils.APPLICATIONS, app.Name)
+			log.Println("Error deleting application: ", app.Name, err)
 		}
 		utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.DELETE)
 	}
-}
-
-func IsManagementApp(file os.FileInfo, importFilePath string) bool {
-
-	appFilePath := filepath.Join(importFilePath, file.Name())
-	fileData, err := ioutil.ReadFile(appFilePath)
-	if err != nil {
-		log.Printf("Error reading file: %s\n", err.Error())
-		return false
-	}
-	isManagement, err := checkInboundAuthKey(fileData)
-	if err != nil {
-		log.Printf("Error checking if file is a management app: %s\n", err.Error())
-		return false
-	}
-	if isManagement {
-		appName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
-		log.Printf("Info: Management App: %s is excluded from deletion.\n", appName)
-		return true
-	}
-	return false
 }

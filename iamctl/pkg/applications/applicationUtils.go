@@ -23,6 +23,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
 	"text/tabwriter"
 
@@ -112,11 +114,10 @@ func isAuthenticationApp(fileData string) (bool, error) {
 	}
 
 	for _, requestConfig := range config.InboundAuthenticationConfig.InboundAuthenticationRequestConfigs {
-		if strings.ToLower(requestConfig.InboundAuthType) == "oauth2" {
+		if strings.ToLower(requestConfig.InboundAuthType) == utils.OAUTH2 {
 			return true, nil
 		}
 	}
-
 	return false, nil
 }
 
@@ -132,7 +133,6 @@ func checkInboundAuthKey(fileData []byte) (bool, error) {
 			return true, nil
 		}
 	}
-
 	return false, nil
 }
 
@@ -140,4 +140,36 @@ func unmarshalAuthConfig(data []byte) (AuthConfig, error) {
 	var config AuthConfig
 	err := yaml.Unmarshal(data, &config)
 	return config, err
+}
+
+func maskOAuthConsumerSecret(fileContent []byte) []byte {
+
+	// Find and replace the value of oauthConsumerSecret with asterisks
+	maskedValue := "'********'"
+	pattern := "(?m)(^\\s*oauthConsumerSecret:\\s*)null\\s*$"
+	re := regexp.MustCompile(pattern)
+	maskedContent := re.ReplaceAllString(string(fileContent), "${1}"+maskedValue)
+
+	return []byte(maskedContent)
+}
+
+func IsManagementApp(file os.FileInfo, importFilePath string) bool {
+
+	appFilePath := filepath.Join(importFilePath, file.Name())
+	fileData, err := ioutil.ReadFile(appFilePath)
+	if err != nil {
+		log.Printf("Error reading file: %s\n", err.Error())
+		return false
+	}
+	isManagement, err := checkInboundAuthKey(fileData)
+	if err != nil {
+		log.Printf("Error checking if file is a management app: %s\n", err.Error())
+		return false
+	}
+	if isManagement {
+		appName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
+		log.Printf("Info: Management App: %s is excluded from deletion.\n", appName)
+		return true
+	}
+	return false
 }

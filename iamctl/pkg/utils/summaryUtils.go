@@ -157,21 +157,17 @@ func UpdateSuccessSummary(resourceType string, operation string) {
 	switch operation {
 	case EXPORT:
 		summary.SuccessfulExport++
-
 	case IMPORT:
 		summary.SuccessfulImport++
-
 	case UPDATE:
 		summary.SuccessfulUpdate++
-
 	case DELETE:
 		summary.Deleted++
 	}
-
 	ResourceSummaries[resourceType] = summary
 }
 
-func UpdateFailureSummary(resourceType string, resourceName string, reason string) {
+func UpdateFailureSummary(resourceType string, resourceName string) {
 
 	SummaryData.TotalRequests++
 	SummaryData.FailedOperations++
@@ -185,6 +181,5 @@ func UpdateFailureSummary(resourceType string, resourceName string, reason strin
 
 	summary.Failed++
 	summary.FailedResources = append(summary.FailedResources, resourceName)
-
 	ResourceSummaries[resourceType] = summary
 }

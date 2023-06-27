@@ -53,8 +53,10 @@ func ExportAll(exportFilePath string, format string) {
 
 				err := exportClaimDialect(dialect.Id, exportFilePath, format)
 				if err != nil {
+					utils.UpdateFailureSummary(utils.CLAIMS, dialect.DialectURI)
 					log.Printf("Error while exporting Claim Dialect: %s. %s", dialect.DialectURI, err)
 				} else {
+					utils.UpdateSuccessSummary(utils.CLAIMS, dialect.DialectURI)
 					log.Println("Claim Dialect exported successfully: ", dialect.DialectURI)
 				}
 			}
