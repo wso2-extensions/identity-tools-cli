@@ -158,6 +158,7 @@ Example configuration file:
 ```
 {
    "ALLOW_DELETE" : true,
+   "EXCLUDE" : ["Claims"]
    "APPLICATIONS" : {
        "EXCLUDE" : ["App1", "App2"]
    },
@@ -170,11 +171,14 @@ Example configuration file:
 ```
 The following properties can be configured through the tool configs to manage your resources.
 #### Exclude resources
-The ```EXCLUDE``` property can be used to exclude specific resources based on their name during import or export. The resources that need to be excluded can be added as an array of strings to the ```EXCLUDE``` property in tool configs under the relevant resource type.
+The ```EXCLUDE``` property can be used to exclude a specific resource type during import or export. The resource types that need to be excluded can be added as an array of strings to the ```EXCLUDE``` property in tool configs. 
+
+The ```EXCLUDE``` property can also be used to exclude specific resources based on their name during import or export. These should be specified under the relevant resource type.
 
 Here is the format for adding the ```EXCLUDE``` property to the tool configs:
 ```
 {
+   "EXCLUDE" : ["resourceType1", "resourceType2"]
    "<RESOURCE_TYPE_NAME>" : {
       "EXCLUDE" : ["resource1", "resource2"]
    }
@@ -184,15 +188,19 @@ Here is the format for adding the ```EXCLUDE``` property to the tool configs:
 Example:
 ```
 {
+   "EXCLUDE" : ["IdentityProviders", "UserStores"]
    "APPLICATIONS" : {
        "EXCLUDE" : ["App1", "App2"]
    }
 }
 ```
 #### Include only selected resources
-The ```INCLUDE_ONLY``` property can be used to include only specific resources based on their name during import or export. The resources that need to be included can be added as an array of strings to the ```INCLUDE_ONLY``` property in tool configs under the relevant resource type.
+The ```INCLUDE_ONLY``` property can be used to include only specific resource types during import or export. The resource types that need to be included can be added as an array of strings to the ```INCLUDE_ONLY``` property in tool configs.
+
+The ```INCLUDE_ONLY``` property can also be used to include only specific resources based on their name during import or export. These should be specified under the relevant resource type.
 ```
 {
+   "INCLUDE_ONLY" : ["resourceType1", "resourceType2"]
    "RESOURCE_TYPE_NAME" : {
        "INCLUDE_ONLY" : ["resource1", "resource2"]
    }
@@ -201,30 +209,10 @@ The ```INCLUDE_ONLY``` property can be used to include only specific resources b
 Example:
 ```
 {
+   "INCLUDE_ONLY" : ["Applications", "Claims"]
    "APPLICATIONS" : {
        "INCLUDE_ONLY" : ["App1", "App2"]
    }
-}
-```
-### Exclude or Include Specific Resource Types
-In addition to excluding or including specific resources by name, it is also possible to exclude or include entire resource types. 
-
-To exclude specific resource types:
-```
-{
-    "EXCLUDE": ["ResourceType1", "ResourceType2"]
-}
-```
-To include only selected resource types:
-```
-{
-    "INCLUDE_ONLY": ["ResourceType1", "ResourceType2"]
-}
-```
-Example:
-```
-{
-   "EXCLUDE": ["IdentityProviders", "UserStores"]
 }
 ```
 > **Note:** When both EXCLUDE and INCLUDE_ONLY properties are used, INCLUDE_ONLY takes precedence over EXCLUDE.
