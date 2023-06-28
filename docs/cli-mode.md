@@ -218,7 +218,7 @@ Example:
 > **Note:** When both EXCLUDE and INCLUDE_ONLY properties are used, INCLUDE_ONLY takes precedence over EXCLUDE.
 
 #### Exclude secrets from exported resources
-By default, secrets are removed from the exported resources. For applications, identity providers, and user stores the value of secrets will be masked by a string: ```'********'```.
+By default, secrets fields are masked by a string: ```'********'```.
 The ```EXCLUDE_SECRETS``` config can be used to override this behaviour and include the secrets in the exported resources. 
 
 > **Note:** This config cannot be used to include secrets for userstores. The secrets of userstores will always be masked by the string: ```'********'```
