@@ -32,9 +32,12 @@ import (
 func ExportAll(exportFilePath string, format string) {
 
 	// Export all claim dialects with related claims.
-	log.Println("Exporting Claims...")
+	log.Println("Exporting claims...")
 	exportFilePath = filepath.Join(exportFilePath, utils.CLAIMS)
 
+	if utils.IsResourceTypeExcluded(utils.CLAIMS) {
+		return
+	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		os.MkdirAll(exportFilePath, 0700)
 	} else {

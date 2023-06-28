@@ -35,6 +35,9 @@ func ExportAll(exportFilePath string, format string) {
 	log.Println("Exporting identity providers...")
 	exportFilePath = filepath.Join(exportFilePath, utils.IDENTITY_PROVIDERS)
 
+	if utils.IsResourceTypeExcluded(utils.IDENTITY_PROVIDERS) {
+		return
+	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		os.MkdirAll(exportFilePath, 0700)
 	} else {

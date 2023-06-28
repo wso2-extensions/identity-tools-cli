@@ -206,28 +206,55 @@ Example:
    }
 }
 ```
+### Exclude or Include Specific Resource Types
+In addition to excluding or including specific resources by name, it is also possible to exclude or include entire resource types. 
+
+To exclude specific resource types:
+```
+{
+    "EXCLUDE": ["ResourceType1", "ResourceType2"]
+}
+```
+To include only selected resource types:
+```
+{
+    "INCLUDE_ONLY": ["ResourceType1", "ResourceType2"]
+}
+```
+Example:
+```
+{
+   "EXCLUDE": ["IdentityProviders", "UserStores"]
+}
+```
+> **Note:** When both EXCLUDE and INCLUDE_ONLY properties are used, INCLUDE_ONLY takes precedence over EXCLUDE.
+
 #### Exclude secrets from exported resources
 By default, secrets are removed from the exported resources. For applications, identity providers, and user stores the value of secrets will be masked by a string: ```'********'```.
 The ```EXCLUDE_SECRETS``` config can be used to override this behaviour and include the secrets in the exported resources. 
 
 > **Note:** This config cannot be used to include secrets for userstores. The secrets of userstores will always be masked by the string: ```'********'```
 > 
-The ```EXCLUDE_SECRETS``` property can be added to the tool configs under the relevant resource type as shown below.
+The ```EXCLUDE_SECRETS``` property can be added to the tool configs globally ```or``` under the relevant resource type as shown below.
 ```
 {
+   "EXCLUDE_SECRETS" : false
    "RESOURCE_TYPE_NAME" : {
-       "EXCLUDE_SECRETS" : false
+       "EXCLUDE_SECRETS" : true
    }
 }
 ```
 Example:
 ```
 {
+   "EXCLUDE_SECRETS" : false
     "IDENTITY_PROVIDERS" : {
-        "EXCLUDE_SECRETS" : false
+        "EXCLUDE_SECRETS" : true
     }   
 }
 ```
+> **Note:** Configurations under a particular resource type will take precedence over the global configurations for that resource type.
+
 ### Keyword Mapping configurations
 The ```keywordConfig.json``` file contains the configurations needed for keyword replacement for environment-specific variables.
 

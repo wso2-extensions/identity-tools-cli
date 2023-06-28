@@ -35,6 +35,9 @@ func ExportAll(exportFilePath string, format string) {
 	log.Println("Exporting applications...")
 	exportFilePath = filepath.Join(exportFilePath, utils.APPLICATIONS)
 
+	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
+		return
+	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		os.MkdirAll(exportFilePath, 0700)
 	} else {

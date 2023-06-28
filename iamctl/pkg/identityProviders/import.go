@@ -35,6 +35,9 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing identity providers...")
 	importFilePath := filepath.Join(inputDirPath, utils.IDENTITY_PROVIDERS)
 
+	if utils.IsResourceTypeExcluded(utils.IDENTITY_PROVIDERS) {
+		return
+	}
 	var files []os.FileInfo
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
 		log.Println("No identity providers to import.")

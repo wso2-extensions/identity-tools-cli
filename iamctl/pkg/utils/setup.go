@@ -49,6 +49,9 @@ type ServerConfigs struct {
 
 type ToolConfigs struct {
 	AllowDelete         bool                   `json:"ALLOW_DELETE"`
+	Exclude             []string               `json:"EXCLUDE"`
+	IncludeOnly         []string               `json:"INCLUDE_ONLY"`
+	ExcludeSecrets      bool                   `json:"EXCLUDE_SECRETS"`
 	ApplicationConfigs  map[string]interface{} `json:"APPLICATIONS"`
 	IdpConfigs          map[string]interface{} `json:"IDENTITY_PROVIDERS"`
 	ClaimDialectConfigs map[string]interface{} `json:"CLAIM_DIALECTS"`
@@ -143,6 +146,7 @@ func loadToolConfigsFromFile(configFilePath string) (toolConfigs ToolConfigs) {
 		return toolConfigs
 	}
 
+	TOOL_CONFIGS.ExcludeSecrets = true
 	err = json.Unmarshal(configFile, &toolConfigs)
 	if err != nil {
 		log.Fatalln("Tool configs are not in the correct format. Please check the config file.", err)

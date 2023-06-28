@@ -34,6 +34,9 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing user stores...")
 	importFilePath := filepath.Join(inputDirPath, utils.USERSTORES)
 
+	if utils.IsResourceTypeExcluded(utils.USERSTORES) {
+		return
+	}
 	var files []os.FileInfo
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
 		log.Println("No user stores to import.")

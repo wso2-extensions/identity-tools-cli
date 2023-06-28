@@ -36,6 +36,9 @@ func ExportAll(exportFilePath string, format string) {
 	log.Println("Exporting user stores...")
 	exportFilePath = filepath.Join(exportFilePath, utils.USERSTORES)
 
+	if utils.IsResourceTypeExcluded(utils.USERSTORES) {
+		return
+	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		os.MkdirAll(exportFilePath, 0700)
 	} else {

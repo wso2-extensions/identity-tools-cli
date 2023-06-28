@@ -52,6 +52,29 @@ func IsResourceExcluded(resourceName string, resourceConfigs map[string]interfac
 	}
 }
 
+func IsResourceTypeExcluded(resourceType string) bool {
+
+	// Include only the resource types added to INCLUDE_ONLY config. Note: INCLUDE_ONLY config overrides the EXCLUDE config.
+	if len(TOOL_CONFIGS.IncludeOnly) > 0 {
+		for _, resource := range TOOL_CONFIGS.IncludeOnly {
+			if resource == resourceType {
+				return false
+			}
+		}
+		log.Println("Skipping Excluded resource: " + resourceType)
+		return true
+	} else if len(TOOL_CONFIGS.Exclude) > 0 {
+		// Exclude resource types added to EXCLUDE config.
+		for _, resource := range TOOL_CONFIGS.Exclude {
+			if resource == resourceType {
+				log.Println("Skipping Excluded resource: " + resourceType)
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func ResolveAdvancedKeywordMapping(resourceName string, resourceConfigs map[string]interface{}) map[string]interface{} {
 
 	defaultKeywordMapping := KEYWORD_CONFIGS.KeywordMappings
@@ -81,7 +104,9 @@ func AreSecretsExcluded(resourceConfigs map[string]interface{}) bool {
 	if secretsExcluded, ok := resourceConfigs[EXCLUDE_SECRETS_CONFIG].(bool); ok {
 		return secretsExcluded
 	}
-	return true
+
+	// Check if secrets are excluded for all resources.
+	return TOOL_CONFIGS.ExcludeSecrets
 }
 
 func RemoveDeletedLocalResources(filePath string, deployedResourceNames []string) {

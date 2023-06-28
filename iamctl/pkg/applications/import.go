@@ -35,6 +35,9 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing applications...")
 	importFilePath := filepath.Join(inputDirPath, utils.APPLICATIONS)
 
+	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
+		return
+	}
 	var files []os.FileInfo
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
 		log.Println("No applications to import.")
