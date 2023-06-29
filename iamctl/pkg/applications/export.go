@@ -35,6 +35,9 @@ func ExportAll(exportFilePath string, format string) {
 	log.Println("Exporting applications...")
 	exportFilePath = filepath.Join(exportFilePath, utils.APPLICATIONS)
 
+	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
+		return
+	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		os.MkdirAll(exportFilePath, 0700)
 	} else {
@@ -50,8 +53,10 @@ func ExportAll(exportFilePath string, format string) {
 			log.Println("Exporting application: ", app.Name)
 			err := exportApp(app.Id, exportFilePath, format, excludeSecrets)
 			if err != nil {
+				utils.UpdateFailureSummary(utils.APPLICATIONS, app.Name)
 				log.Printf("Error while exporting application: %s. %s", app.Name, err)
 			} else {
+				utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.EXPORT)
 				log.Println("Application exported successfully: ", app.Name)
 			}
 		}
@@ -90,6 +95,9 @@ func exportApp(appId string, outputDirPath string, format string, excludeSecrets
 		return fmt.Errorf("error while reading the response body when exporting app: %s. %s", fileName, err)
 	}
 
+	if excludeSecrets {
+		body = maskOAuthConsumerSecret(body)
+	}
 	appKeywordMapping := getAppKeywordMapping(fileInfo.ResourceName)
 	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, appKeywordMapping, utils.APPLICATIONS)
 	if err != nil {

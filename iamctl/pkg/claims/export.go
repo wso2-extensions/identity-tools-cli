@@ -32,9 +32,12 @@ import (
 func ExportAll(exportFilePath string, format string) {
 
 	// Export all claim dialects with related claims.
-	log.Println("Exporting Claims...")
+	log.Println("Exporting claims...")
 	exportFilePath = filepath.Join(exportFilePath, utils.CLAIMS)
 
+	if utils.IsResourceTypeExcluded(utils.CLAIMS) {
+		return
+	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		os.MkdirAll(exportFilePath, 0700)
 	} else {
@@ -48,13 +51,15 @@ func ExportAll(exportFilePath string, format string) {
 		log.Println("Error while retrieving Claim Dialect list.", err)
 	} else {
 		for _, dialect := range claimDialects {
-			if !utils.IsResourceExcluded(dialect.DialectURI, utils.TOOL_CONFIGS.ClaimDialectConfigs) {
+			if !utils.IsResourceExcluded(dialect.DialectURI, utils.TOOL_CONFIGS.ClaimConfigs) {
 				log.Println("Exporting Claim Dialect: ", dialect.DialectURI)
 
 				err := exportClaimDialect(dialect.Id, exportFilePath, format)
 				if err != nil {
+					utils.UpdateFailureSummary(utils.CLAIMS, dialect.DialectURI)
 					log.Printf("Error while exporting Claim Dialect: %s. %s", dialect.DialectURI, err)
 				} else {
+					utils.UpdateSuccessSummary(utils.CLAIMS, dialect.DialectURI)
 					log.Println("Claim Dialect exported successfully: ", dialect.DialectURI)
 				}
 			}

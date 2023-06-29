@@ -85,5 +85,12 @@ func createConfigFolder(baseDirPath string) {
 		log.Println("Error in creating the tool config file", err)
 	}
 	defer file.Close()
+
+	// Create keyword config directory.
+	file, err = os.OpenFile(envConfigDir+utils.KEYWORD_CONFIG_FILE, os.O_CREATE, 0644)
+	if err != nil {
+		log.Println("Error in creating the keyword config file", err)
+	}
+	defer file.Close()
 	log.Println("Config folder created successfully at : " + baseDirPath)
 }

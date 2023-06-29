@@ -32,9 +32,12 @@ import (
 
 func ImportAll(inputDirPath string) {
 
-	log.Println("Importing Claims...")
+	log.Println("Importing claims...")
 	importFilePath := filepath.Join(inputDirPath, utils.CLAIMS)
 
+	if utils.IsResourceTypeExcluded(utils.CLAIMS) {
+		return
+	}
 	var files []os.FileInfo
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
 		log.Println("No claim dialects to import.")
@@ -60,7 +63,7 @@ func ImportAll(inputDirPath string) {
 		claimFilePath := filepath.Join(importFilePath, file.Name())
 		dialectName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 
-		if !utils.IsResourceExcluded(dialectName, utils.TOOL_CONFIGS.ClaimDialectConfigs) {
+		if !utils.IsResourceExcluded(dialectName, utils.TOOL_CONFIGS.ClaimConfigs) {
 			dialectId, err := getClaimDialectId(claimFilePath)
 			if err != nil {
 				log.Printf("Invalid file configurations for Claim Dialect: %s. %s", dialectName, err)
@@ -95,16 +98,34 @@ func importClaimDialect(dialectId string, importFilePath string) error {
 	fileInfo.ResourceName = claimDialectConfigurations.URI
 
 	if dialectId == "" {
-		log.Println("Creating new claim dialect: " + fileInfo.ResourceName)
-		err = utils.SendImportRequest(importFilePath, modifiedFileData, utils.CLAIMS)
-	} else {
-		log.Println("Updating claim dialect: " + fileInfo.ResourceName)
-		err = utils.SendUpdateRequest(dialectId, importFilePath, modifiedFileData, utils.CLAIMS)
+		return importDialect(importFilePath, modifiedFileData, fileInfo)
 	}
+	return updateDialect(dialectId, importFilePath, modifiedFileData, fileInfo)
+}
+
+func importDialect(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+
+	log.Println("Creating new claim dialect: " + fileInfo.ResourceName)
+	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.CLAIMS)
 	if err != nil {
-		return fmt.Errorf("%s", err)
+		utils.UpdateFailureSummary(utils.CLAIMS, fileInfo.ResourceName)
+		return fmt.Errorf("error when importing claim dialect: %s", err)
 	}
-	log.Println("Claim dialects imported successfully.")
+	utils.UpdateSuccessSummary(utils.CLAIMS, utils.IMPORT)
+	log.Println("Claim dialect imported successfully.")
+	return nil
+}
+
+func updateDialect(dialectId string, importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+
+	log.Println("Updating claim dialect: " + fileInfo.ResourceName)
+	err := utils.SendUpdateRequest(dialectId, importFilePath, modifiedFileData, utils.CLAIMS)
+	if err != nil {
+		utils.UpdateFailureSummary(utils.CLAIMS, fileInfo.ResourceName)
+		return fmt.Errorf("error when updating claim dialect: %s", err)
+	}
+	utils.UpdateSuccessSummary(utils.CLAIMS, utils.UPDATE)
+	log.Println("Claim dialect updated successfully.")
 	return nil
 }
 
@@ -138,7 +159,7 @@ deployedResourcess:
 				continue deployedResourcess
 			}
 		}
-		if utils.IsResourceExcluded(claimDialect.DialectURI, utils.TOOL_CONFIGS.ClaimDialectConfigs) {
+		if utils.IsResourceExcluded(claimDialect.DialectURI, utils.TOOL_CONFIGS.ClaimConfigs) {
 			log.Printf("Claim dialect: %s is excluded from deletion.\n", claimDialect.DialectURI)
 			continue
 		}

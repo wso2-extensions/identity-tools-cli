@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -347,4 +348,17 @@ func AddTypeTags(data []byte) []byte {
 
 	re := regexp.MustCompile(`1typeTag: `)
 	return re.ReplaceAll(data, []byte("!!org.wso2."))
+}
+
+func ReplacePlaceholders(configFile []byte) []byte {
+
+	configStr := string(configFile)
+
+	for _, value := range os.Environ() {
+		pair := strings.SplitN(value, "=", 2)
+		envVarName := fmt.Sprintf("${%s}", pair[0])
+		envVarValue := pair[1]
+		configStr = strings.ReplaceAll(configStr, envVarName, envVarValue)
+	}
+	return []byte(configStr)
 }

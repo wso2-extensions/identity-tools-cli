@@ -25,17 +25,21 @@ const CLAIM_CONFIG = "CLAIMS"
 const USERSTORES_CONFIG = "USERSTORES"
 
 // Tool configs
-const KEYWORD_MAPPINGS_CONFIG = "KEYWORD_MAPPINGS"
 const EXCLUDE_CONFIG = "EXCLUDE"
 const INCLUDE_ONLY_CONFIG = "INCLUDE_ONLY"
 const EXCLUDE_SECRETS_CONFIG = "EXCLUDE_SECRETS"
 const ALLOW_DELETE_CONFIG = "ALLOW_DELETE"
+
+// Keyword configs
+const KEYWORD_MAPPINGS_CONFIG = "KEYWORD_MAPPINGS"
 
 // Server configs
 const SERVER_URL_CONFIG = "SERVER_URL"
 const CLIENT_ID_CONFIG = "CLIENT_ID"
 const CLIENT_SECRET_CONFIG = "CLIENT_SECRET"
 const TENANT_DOMAIN_CONFIG = "TENANT_DOMAIN"
+const TOOL_CONFIG_PATH = "TOOL_CONFIG_PATH"
+const KEYWORD_CONFIG_PATH = "KEYWORD_CONFIG_PATH"
 const TOKEN_CONFIG = "TOKEN"
 
 // Resource types
@@ -47,6 +51,7 @@ const USERSTORES = "UserStores"
 // Config file names
 const SERVER_CONFIG_FILE = "serverConfig.json"
 const TOOL_CONFIG_FILE = "toolConfig.json"
+const KEYWORD_CONFIG_FILE = "keywordConfig.json"
 
 // Media types
 const MEDIA_TYPE_JSON = "application/json"
@@ -57,6 +62,9 @@ const MEDIA_TYPE_FORM = "application/x-www-form-urlencoded"
 const DEFAULT_TENANT_DOMAIN = "carbon.super"
 const SENSITIVE_FIELD_MASK = "'********'"
 const RESIDENT_IDP_NAME = "LOCAL"
+const CONSOLE = "Console"
+const MY_ACCOUNT = "My Account"
+const OAUTH2 = "oauth2"
 
 // Error codes
 var ErrorCodes = map[int]string{
