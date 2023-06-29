@@ -46,6 +46,8 @@ var (
 
 func PrintSummary(Operation string) {
 
+	InitializeResourceSummary()
+
 	fmt.Println("========================================")
 	fmt.Println("Total Summary:")
 	fmt.Println("========================================")
@@ -126,7 +128,9 @@ func printNewSecretApplications(summary ResourceSummary) {
 	}
 }
 
-func IndicateNewSecretGenerated(appName string) {
+func AddNewSecretIndicatorToSummary(appName string) {
+
+	InitializeResourceSummary()
 
 	summary, ok := ResourceSummaries[APPLICATIONS]
 	if !ok {
@@ -140,9 +144,7 @@ func IndicateNewSecretGenerated(appName string) {
 
 func UpdateSuccessSummary(resourceType string, operation string) {
 
-	if ResourceSummaries == nil {
-		ResourceSummaries = make(map[string]ResourceSummary)
-	}
+	InitializeResourceSummary()
 
 	SummaryData.TotalRequests++
 	SummaryData.SuccessfulOperations++
@@ -168,6 +170,8 @@ func UpdateSuccessSummary(resourceType string, operation string) {
 
 func UpdateFailureSummary(resourceType string, resourceName string) {
 
+	InitializeResourceSummary()
+
 	SummaryData.TotalRequests++
 	SummaryData.FailedOperations++
 
@@ -180,4 +184,11 @@ func UpdateFailureSummary(resourceType string, resourceName string) {
 	summary.Failed++
 	summary.FailedResources = append(summary.FailedResources, resourceName)
 	ResourceSummaries[resourceType] = summary
+}
+
+func InitializeResourceSummary() {
+
+	if ResourceSummaries == nil {
+		ResourceSummaries = make(map[string]ResourceSummary)
+	}
 }

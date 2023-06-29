@@ -103,7 +103,8 @@ func importApp(importFilePath string, isUpdate bool) error {
 	// Replace keyword placeholders in the local file according to the keyword mappings added in configs.
 	fileInfo := utils.GetFileInfo(importFilePath)
 	appKeywordMapping := getAppKeywordMapping(fileInfo.ResourceName)
-	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), appKeywordMapping)
+	fileDataWithReplacedKeywords := utils.ReplaceKeywords(string(fileBytes), appKeywordMapping)
+	modifiedFileData := utils.RemoveSecretAsterisks(fileDataWithReplacedKeywords)
 
 	if isUpdate {
 		return updateApplication(importFilePath, modifiedFileData, fileInfo)
@@ -117,7 +118,7 @@ func updateApplication(importFilePath string, modifiedFileData string, fileInfo 
 	err := utils.SendUpdateRequest("", importFilePath, modifiedFileData, utils.APPLICATIONS)
 	if err != nil {
 		utils.UpdateFailureSummary(utils.APPLICATIONS, fileInfo.ResourceName)
-		return fmt.Errorf("Error when updating application: %s", err)
+		return fmt.Errorf("error when updating application: %s", err)
 	}
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.UPDATE)
 	log.Println("Application updated successfully.")
@@ -130,13 +131,16 @@ func importApplication(importFilePath string, modifiedFileData string, fileInfo 
 	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.APPLICATIONS)
 	if err != nil {
 		utils.UpdateFailureSummary(utils.APPLICATIONS, fileInfo.ResourceName)
-		return fmt.Errorf("Error when importing application: %s", err)
+		return fmt.Errorf("error when importing application: %s", err)
 	}
 
-	if authenticated, err := isAuthenticationApp(modifiedFileData); err != nil {
-		fmt.Println("error occurred:", err)
-	} else if authenticated {
-		utils.IndicateNewSecretGenerated(fileInfo.ResourceName)
+	if oauthApp, err := isOauthApp(modifiedFileData); err != nil {
+		fmt.Println("Failed to check if the applications is an OAuth app:", err.Error())
+	} else if oauthSecretGiven, err := isOauthSecretGiven(modifiedFileData); err != nil {
+		fmt.Println("Failed to check if oauthConsumerSecret is given:", err.Error())
+	} else if oauthApp && !oauthSecretGiven {
+		// Check if oauthConsumerSecret is given or else add an indicator to the summary informing a new secret is generated.
+		utils.AddNewSecretIndicatorToSummary(fileInfo.ResourceName)
 	}
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.IMPORT)
 	log.Println("Application imported successfully.")
@@ -152,7 +156,9 @@ deployedResources:
 		for _, file := range localFiles {
 			isToolManagementApp, err := isToolMgtApp(file, importFilePath)
 			if err != nil {
-				fmt.Printf("Error checking if file is a tool management app: %s\n", err.Error())
+				log.Printf("Error checking if application is a tool management app: %s\n", err.Error())
+				log.Printf("Application: %s is excluded from deletion.\n", app.Name)
+				continue deployedResources
 			}
 			if app.Name == utils.GetFileInfo(file.Name()).ResourceName || isToolManagementApp {
 				continue deployedResources

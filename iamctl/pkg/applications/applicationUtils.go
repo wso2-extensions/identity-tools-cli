@@ -49,8 +49,11 @@ type AppConfig struct {
 type AuthConfig struct {
 	InboundAuthenticationConfig struct {
 		InboundAuthenticationRequestConfigs []struct {
-			InboundAuthType string `yaml:"inboundAuthType"`
-			InboundAuthKey  string `yaml:"inboundAuthKey"`
+			InboundAuthType              string `yaml:"inboundAuthType"`
+			InboundAuthKey               string `yaml:"inboundAuthKey"`
+			InboundConfigurationProtocol struct {
+				OauthConsumerSecret string `yaml:"oauthConsumerSecret"`
+			} `yaml:"inboundConfigurationProtocol"`
 		} `yaml:"inboundAuthenticationRequestConfigs"`
 	} `yaml:"inboundAuthenticationConfig"`
 }
@@ -107,7 +110,7 @@ func getAppKeywordMapping(appName string) map[string]interface{} {
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
 
-func isAuthenticationApp(fileData string) (bool, error) {
+func isOauthApp(fileData string) (bool, error) {
 
 	config, err := unmarshalAuthConfig([]byte(fileData))
 	if err != nil {
@@ -125,8 +128,10 @@ func isAuthenticationApp(fileData string) (bool, error) {
 func unmarshalAuthConfig(data []byte) (AuthConfig, error) {
 
 	var config AuthConfig
-	err := yaml.Unmarshal(data, &config)
-	return config, err
+	if err := yaml.Unmarshal(data, &config); err != nil {
+		return AuthConfig{}, fmt.Errorf("failed to unmarshal auth config: %s", err.Error())
+	}
+	return config, nil
 }
 
 func maskOAuthConsumerSecret(fileContent []byte) []byte {
@@ -149,7 +154,7 @@ func isToolMgtApp(file os.FileInfo, importFilePath string) (bool, error) {
 
 	config, err := unmarshalAuthConfig(fileData)
 	if err != nil {
-		return false, fmt.Errorf("failed to unmarshal auth config: %s", err.Error())
+		return false, fmt.Errorf(err.Error())
 	}
 
 	for _, requestConfig := range config.InboundAuthenticationConfig.InboundAuthenticationRequestConfigs {
@@ -157,6 +162,23 @@ func isToolMgtApp(file os.FileInfo, importFilePath string) (bool, error) {
 			appName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 			log.Printf("Info: Tool Management App: %s is excluded from deletion.\n", appName)
 			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func isOauthSecretGiven(modifiedFileData string) (bool, error) {
+
+	config, err := unmarshalAuthConfig([]byte(modifiedFileData))
+	if err != nil {
+		return false, fmt.Errorf(err.Error())
+	}
+
+	for _, requestConfig := range config.InboundAuthenticationConfig.InboundAuthenticationRequestConfigs {
+		if strings.ToLower(requestConfig.InboundAuthType) == utils.OAUTH2 {
+			if requestConfig.InboundConfigurationProtocol.OauthConsumerSecret != "" {
+				return true, nil
+			}
 		}
 	}
 	return false, nil

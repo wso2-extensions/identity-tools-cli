@@ -23,6 +23,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func IsResourceExcluded(resourceName string, resourceConfigs map[string]interface{}) bool {
@@ -129,4 +130,10 @@ func RemoveDeletedLocalResources(filePath string, deployedResourceNames []string
 			}
 		}
 	}
+}
+
+func RemoveSecretAsterisks(modifiedFileData string) string {
+
+	modifiedFileData = strings.ReplaceAll(modifiedFileData, SENSITIVE_FIELD_MASK, "null")
+	return modifiedFileData
 }
