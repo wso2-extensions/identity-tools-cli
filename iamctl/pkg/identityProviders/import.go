@@ -87,8 +87,7 @@ func importIdp(idpId string, importFilePath string) error {
 	// Replace keyword placeholders in the local file according to the keyword mappings added in configs.
 	fileInfo := utils.GetFileInfo(importFilePath)
 	idpKeywordMapping := getIdpKeywordMapping(fileInfo.ResourceName)
-	fileDataWithReplacedKeywords := utils.ReplaceKeywords(string(fileBytes), idpKeywordMapping)
-	modifiedFileData := utils.RemoveSecretAsterisks(fileDataWithReplacedKeywords)
+	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), idpKeywordMapping)
 
 	if idpId == "" {
 		return importIdentityProvider(importFilePath, modifiedFileData, fileInfo)

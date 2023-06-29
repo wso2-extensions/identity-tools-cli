@@ -106,7 +106,7 @@ func AreSecretsExcluded(resourceConfigs map[string]interface{}) bool {
 		return secretsExcluded
 	}
 
-	// Check if secrets are excluded for all resources. Note: global config will override resource level config.
+	// Check if secrets are excluded for all resources. Note: global config will be overridden by resource level config.
 	return TOOL_CONFIGS.ExcludeSecrets
 }
 
@@ -132,7 +132,7 @@ func RemoveDeletedLocalResources(filePath string, deployedResourceNames []string
 	}
 }
 
-func RemoveSecretAsterisks(modifiedFileData string) string {
+func RemoveSecretMasks(modifiedFileData string) string {
 
 	modifiedFileData = strings.ReplaceAll(modifiedFileData, SENSITIVE_FIELD_MASK, "null")
 	return modifiedFileData

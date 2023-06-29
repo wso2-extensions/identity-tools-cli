@@ -104,7 +104,7 @@ func importApp(importFilePath string, isUpdate bool) error {
 	fileInfo := utils.GetFileInfo(importFilePath)
 	appKeywordMapping := getAppKeywordMapping(fileInfo.ResourceName)
 	fileDataWithReplacedKeywords := utils.ReplaceKeywords(string(fileBytes), appKeywordMapping)
-	modifiedFileData := utils.RemoveSecretAsterisks(fileDataWithReplacedKeywords)
+	modifiedFileData := utils.RemoveSecretMasks(fileDataWithReplacedKeywords)
 
 	if isUpdate {
 		return updateApplication(importFilePath, modifiedFileData, fileInfo)

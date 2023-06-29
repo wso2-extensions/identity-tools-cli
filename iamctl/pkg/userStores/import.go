@@ -78,8 +78,7 @@ func importUserStore(userStoreId string, importFilePath string) error {
 	// Replace keyword placeholders in the local file according to the keyword mappings added in configs.
 	fileInfo := utils.GetFileInfo(importFilePath)
 	userStoreKeywordMapping := getUserStoreKeywordMapping(fileInfo.ResourceName)
-	fileDataWithReplacedKeywords := utils.ReplaceKeywords(string(fileBytes), userStoreKeywordMapping)
-	modifiedFileData := utils.RemoveSecretAsterisks(fileDataWithReplacedKeywords)
+	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), userStoreKeywordMapping)
 
 	if userStoreId == "" {
 		return importUserStoreOperation(importFilePath, modifiedFileData, fileInfo)
