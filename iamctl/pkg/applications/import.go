@@ -136,7 +136,7 @@ func importApplication(importFilePath string, modifiedFileData string, fileInfo 
 	if authenticated, err := isAuthenticationApp(modifiedFileData); err != nil {
 		fmt.Println("error occurred:", err)
 	} else if authenticated {
-		utils.AddNewSecretApplication(fileInfo.ResourceName)
+		utils.IndicateNewSecretGenerated(fileInfo.ResourceName)
 	}
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.IMPORT)
 	log.Println("Application imported successfully.")
@@ -150,7 +150,11 @@ func removeDeletedDeployedApps(localFiles []os.FileInfo, importFilePath string) 
 deployedResources:
 	for _, app := range deployedApps {
 		for _, file := range localFiles {
-			if app.Name == utils.GetFileInfo(file.Name()).ResourceName || IsManagementApp(file, importFilePath) {
+			isToolManagementApp, err := isToolMgtApp(file, importFilePath)
+			if err != nil {
+				fmt.Printf("Error checking if file is a tool management app: %s\n", err.Error())
+			}
+			if app.Name == utils.GetFileInfo(file.Name()).ResourceName || isToolManagementApp {
 				continue deployedResources
 			}
 		}

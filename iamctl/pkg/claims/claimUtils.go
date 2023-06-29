@@ -69,8 +69,8 @@ func getClaimDialectsList() ([]claimDialect, error) {
 
 func getClaimKeywordMapping(claimDialectName string) map[string]interface{} {
 
-	if utils.KEYWORD_CONFIGS.ClaimDialectConfigs != nil {
-		return utils.ResolveAdvancedKeywordMapping(claimDialectName, utils.KEYWORD_CONFIGS.ClaimDialectConfigs)
+	if utils.KEYWORD_CONFIGS.ClaimConfigs != nil {
+		return utils.ResolveAdvancedKeywordMapping(claimDialectName, utils.KEYWORD_CONFIGS.ClaimConfigs)
 	}
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }

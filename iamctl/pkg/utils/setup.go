@@ -48,22 +48,22 @@ type ServerConfigs struct {
 }
 
 type ToolConfigs struct {
-	AllowDelete         bool                   `json:"ALLOW_DELETE"`
-	Exclude             []string               `json:"EXCLUDE"`
-	IncludeOnly         []string               `json:"INCLUDE_ONLY"`
-	ExcludeSecrets      bool                   `json:"EXCLUDE_SECRETS"`
-	ApplicationConfigs  map[string]interface{} `json:"APPLICATIONS"`
-	IdpConfigs          map[string]interface{} `json:"IDENTITY_PROVIDERS"`
-	ClaimDialectConfigs map[string]interface{} `json:"CLAIM_DIALECTS"`
-	UserStoreConfigs    map[string]interface{} `json:"USERSTORES"`
+	AllowDelete        bool                   `json:"ALLOW_DELETE"`
+	Exclude            []string               `json:"EXCLUDE"`
+	IncludeOnly        []string               `json:"INCLUDE_ONLY"`
+	ExcludeSecrets     bool                   `json:"EXCLUDE_SECRETS"`
+	ApplicationConfigs map[string]interface{} `json:"APPLICATIONS"`
+	IdpConfigs         map[string]interface{} `json:"IDENTITY_PROVIDERS"`
+	ClaimConfigs       map[string]interface{} `json:"CLAIMS"`
+	UserStoreConfigs   map[string]interface{} `json:"USERSTORES"`
 }
 
 type KeywordConfigs struct {
-	KeywordMappings     map[string]interface{} `json:"KEYWORD_MAPPINGS"`
-	ApplicationConfigs  map[string]interface{} `json:"APPLICATIONS"`
-	IdpConfigs          map[string]interface{} `json:"IDENTITY_PROVIDERS"`
-	ClaimDialectConfigs map[string]interface{} `json:"CLAIM_DIALECTS"`
-	UserStoreConfigs    map[string]interface{} `json:"USERSTORES"`
+	KeywordMappings    map[string]interface{} `json:"KEYWORD_MAPPINGS"`
+	ApplicationConfigs map[string]interface{} `json:"APPLICATIONS"`
+	IdpConfigs         map[string]interface{} `json:"IDENTITY_PROVIDERS"`
+	ClaimConfigs       map[string]interface{} `json:"CLAIMS"`
+	UserStoreConfigs   map[string]interface{} `json:"USERSTORES"`
 }
 
 var SERVER_CONFIGS ServerConfigs

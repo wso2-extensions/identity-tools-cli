@@ -165,9 +165,14 @@ Example configuration file:
    "IDENTITY_PROVIDERS" : {
        "INCLUDE_ONLY" : ["Idp1", "Idp2"],
        "EXCLUDE_SECRETS" : false
-    }
+   },
+   "USERSTORES" : {
+       "EXCLUDE" : ["US1", "US2"],
+   },
+   "CLAIMS" : {
+       "INCLUDE_ONLY" : ["local"],
+   },
 }
-
 ```
 The following properties can be configured through the tool configs to manage your resources.
 #### Exclude resources

@@ -29,14 +29,14 @@ type Summary struct {
 }
 
 type ResourceSummary struct {
-	ResourceType          string
-	SuccessfulExport      int
-	SuccessfulImport      int
-	SuccessfulUpdate      int
-	Failed                int
-	Deleted               int
-	NewSecretApplications []string
-	FailedResources       []string
+	ResourceType                string
+	SuccessfulExport            int
+	SuccessfulImport            int
+	SuccessfulUpdate            int
+	Failed                      int
+	Deleted                     int
+	SecretGeneratedApplications []string
+	FailedResources             []string
 }
 
 var (
@@ -64,7 +64,7 @@ func PrintExportSummary() {
 
 	for _, summary := range ResourceSummaries {
 		fmt.Println("----------------------------------------")
-		fmt.Printf("%s:\n", summary.ResourceType)
+		fmt.Printf("%s\n", summary.ResourceType)
 		fmt.Println("----------------------------------------")
 		fmt.Printf("Successful Exports: %d\n", summary.SuccessfulExport)
 
@@ -79,7 +79,7 @@ func PrintImportSummary() {
 
 	for _, summary := range ResourceSummaries {
 		fmt.Println("----------------------------------------")
-		fmt.Printf("%s:\n", summary.ResourceType)
+		fmt.Printf("%s\n", summary.ResourceType)
 		fmt.Println("----------------------------------------")
 		fmt.Printf("Successful Imports: %d\n", summary.SuccessfulImport)
 		fmt.Printf("Successful Updates: %d\n", summary.SuccessfulUpdate)
@@ -112,11 +112,11 @@ func PrintFailedResources(summary ResourceSummary) {
 
 func printNewSecretApplications(summary ResourceSummary) {
 
-	if len(summary.NewSecretApplications) > 0 {
+	if len(summary.SecretGeneratedApplications) > 0 {
 		fmt.Println("....................")
 		fmt.Printf("New Client Secrets generated for: ")
-		for i, appName := range summary.NewSecretApplications {
-			if i != len(summary.NewSecretApplications)-1 {
+		for i, appName := range summary.SecretGeneratedApplications {
+			if i != len(summary.SecretGeneratedApplications)-1 {
 				fmt.Printf("%s, ", appName)
 			} else {
 				fmt.Print(appName)
@@ -126,7 +126,7 @@ func printNewSecretApplications(summary ResourceSummary) {
 	}
 }
 
-func AddNewSecretApplication(appName string) {
+func IndicateNewSecretGenerated(appName string) {
 
 	summary, ok := ResourceSummaries[APPLICATIONS]
 	if !ok {
@@ -134,7 +134,7 @@ func AddNewSecretApplication(appName string) {
 			ResourceType: APPLICATIONS,
 		}
 	}
-	summary.NewSecretApplications = append(summary.NewSecretApplications, appName)
+	summary.SecretGeneratedApplications = append(summary.SecretGeneratedApplications, appName)
 	ResourceSummaries[APPLICATIONS] = summary
 }
 

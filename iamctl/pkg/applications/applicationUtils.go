@@ -20,6 +20,7 @@ package applications
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -121,22 +122,8 @@ func isAuthenticationApp(fileData string) (bool, error) {
 	return false, nil
 }
 
-func checkInboundAuthKey(fileData []byte) (bool, error) {
-
-	config, err := unmarshalAuthConfig(fileData)
-	if err != nil {
-		return false, err
-	}
-
-	for _, requestConfig := range config.InboundAuthenticationConfig.InboundAuthenticationRequestConfigs {
-		if requestConfig.InboundAuthKey == utils.SERVER_CONFIGS.ClientId {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
 func unmarshalAuthConfig(data []byte) (AuthConfig, error) {
+
 	var config AuthConfig
 	err := yaml.Unmarshal(data, &config)
 	return config, err
@@ -145,31 +132,32 @@ func unmarshalAuthConfig(data []byte) (AuthConfig, error) {
 func maskOAuthConsumerSecret(fileContent []byte) []byte {
 
 	// Find and replace the value of oauthConsumerSecret with asterisks
-	maskedValue := "'********'"
 	pattern := "(?m)(^\\s*oauthConsumerSecret:\\s*)null\\s*$"
 	re := regexp.MustCompile(pattern)
-	maskedContent := re.ReplaceAllString(string(fileContent), "${1}"+maskedValue)
+	maskedContent := re.ReplaceAllString(string(fileContent), "${1}"+utils.SENSITIVE_FIELD_MASK)
 
 	return []byte(maskedContent)
 }
 
-func IsManagementApp(file os.FileInfo, importFilePath string) bool {
+func isToolMgtApp(file os.FileInfo, importFilePath string) (bool, error) {
 
 	appFilePath := filepath.Join(importFilePath, file.Name())
 	fileData, err := ioutil.ReadFile(appFilePath)
 	if err != nil {
-		log.Printf("Error reading file: %s\n", err.Error())
-		return false
+		return false, fmt.Errorf("failed to read file: %s", err.Error())
 	}
-	isManagement, err := checkInboundAuthKey(fileData)
+
+	config, err := unmarshalAuthConfig(fileData)
 	if err != nil {
-		log.Printf("Error checking if file is a management app: %s\n", err.Error())
-		return false
+		return false, fmt.Errorf("failed to unmarshal auth config: %s", err.Error())
 	}
-	if isManagement {
-		appName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
-		log.Printf("Info: Management App: %s is excluded from deletion.\n", appName)
-		return true
+
+	for _, requestConfig := range config.InboundAuthenticationConfig.InboundAuthenticationRequestConfigs {
+		if requestConfig.InboundAuthKey == utils.SERVER_CONFIGS.ClientId {
+			appName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
+			log.Printf("Info: Tool Management App: %s is excluded from deletion.\n", appName)
+			return true, nil
+		}
 	}
-	return false
+	return false, nil
 }

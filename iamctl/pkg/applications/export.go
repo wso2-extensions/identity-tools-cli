@@ -95,15 +95,15 @@ func exportApp(appId string, outputDirPath string, format string, excludeSecrets
 		return fmt.Errorf("error while reading the response body when exporting app: %s. %s", fileName, err)
 	}
 
+	if excludeSecrets {
+		body = maskOAuthConsumerSecret(body)
+	}
 	appKeywordMapping := getAppKeywordMapping(fileInfo.ResourceName)
 	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, appKeywordMapping, utils.APPLICATIONS)
 	if err != nil {
 		return fmt.Errorf("error while processing exported data: %s", err)
 	}
 
-	if excludeSecrets {
-		modifiedFile = maskOAuthConsumerSecret(modifiedFile)
-	}
 	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 	if err != nil {
 		return fmt.Errorf("error when writing the exported content to file: %w", err)

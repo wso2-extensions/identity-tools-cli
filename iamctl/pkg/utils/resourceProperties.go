@@ -105,7 +105,7 @@ func AreSecretsExcluded(resourceConfigs map[string]interface{}) bool {
 		return secretsExcluded
 	}
 
-	// Check if secrets are excluded for all resources.
+	// Check if secrets are excluded for all resources. Note: global config will override resource level config.
 	return TOOL_CONFIGS.ExcludeSecrets
 }
 

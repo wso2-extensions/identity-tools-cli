@@ -51,7 +51,7 @@ func ExportAll(exportFilePath string, format string) {
 		log.Println("Error while retrieving Claim Dialect list.", err)
 	} else {
 		for _, dialect := range claimDialects {
-			if !utils.IsResourceExcluded(dialect.DialectURI, utils.TOOL_CONFIGS.ClaimDialectConfigs) {
+			if !utils.IsResourceExcluded(dialect.DialectURI, utils.TOOL_CONFIGS.ClaimConfigs) {
 				log.Println("Exporting Claim Dialect: ", dialect.DialectURI)
 
 				err := exportClaimDialect(dialect.Id, exportFilePath, format)

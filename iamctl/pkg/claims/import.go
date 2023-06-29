@@ -63,7 +63,7 @@ func ImportAll(inputDirPath string) {
 		claimFilePath := filepath.Join(importFilePath, file.Name())
 		dialectName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 
-		if !utils.IsResourceExcluded(dialectName, utils.TOOL_CONFIGS.ClaimDialectConfigs) {
+		if !utils.IsResourceExcluded(dialectName, utils.TOOL_CONFIGS.ClaimConfigs) {
 			dialectId, err := getClaimDialectId(claimFilePath)
 			if err != nil {
 				log.Printf("Invalid file configurations for Claim Dialect: %s. %s", dialectName, err)
@@ -159,7 +159,7 @@ deployedResourcess:
 				continue deployedResourcess
 			}
 		}
-		if utils.IsResourceExcluded(claimDialect.DialectURI, utils.TOOL_CONFIGS.ClaimDialectConfigs) {
+		if utils.IsResourceExcluded(claimDialect.DialectURI, utils.TOOL_CONFIGS.ClaimConfigs) {
 			log.Printf("Claim dialect: %s is excluded from deletion.\n", claimDialect.DialectURI)
 			continue
 		}
