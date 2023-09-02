@@ -313,7 +313,7 @@ Flags:
 ```
 The ```--config``` flag can be used to provide the path to the env specific config folder that contains the ```serverConfig.json``` and ```toolConfig.json``` files with the details of the environment to which the resources should be imported. If the flag is not provided, the tool looks for the server configurations in the environment variables.
 
-The ```--inputDir``` flag can be used to provide the path to the local directory where the resource configuration files are stored. If the flag is not provided, the tool looks for the resource configuration files at the current working directory.
+The ```--inputDir``` flag can be used to provide the path to the local directory where the resource configuration files are stored. If the flag is not provided, the tool looks for the resource configuration files in the current working directory.
 
 ## Supported resource types
 The tool supports the following resource types:
