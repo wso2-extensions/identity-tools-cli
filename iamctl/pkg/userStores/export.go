@@ -36,6 +36,9 @@ func ExportAll(exportFilePath string, format string) {
 	log.Println("Exporting user stores...")
 	exportFilePath = filepath.Join(exportFilePath, utils.USERSTORES)
 
+	if utils.IsResourceTypeExcluded(utils.USERSTORES) {
+		return
+	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		os.MkdirAll(exportFilePath, 0700)
 	} else {
@@ -57,8 +60,10 @@ func ExportAll(exportFilePath string, format string) {
 
 				err := exportUserStore(userstore.Id, exportFilePath, format)
 				if err != nil {
+					utils.UpdateFailureSummary(utils.USERSTORES, userstore.Name)
 					log.Printf("Error while exporting user store: %s. %s", userstore.Name, err)
 				} else {
+					utils.UpdateSuccessSummary(utils.USERSTORES, utils.EXPORT)
 					log.Println("User store exported successfully: ", userstore.Name)
 				}
 			}
@@ -103,7 +108,7 @@ func exportUserStore(userStoreId string, outputDirPath string, format string) er
 	modifiedBody := []byte(strings.ReplaceAll(string(body), USERSTORE_SECRET_MASK, utils.SENSITIVE_FIELD_MASK))
 
 	userStoreKeywordMapping := getUserStoreKeywordMapping(fileInfo.ResourceName)
-	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, modifiedBody, userStoreKeywordMapping)
+	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, modifiedBody, userStoreKeywordMapping, utils.USERSTORES)
 	if err != nil {
 		return fmt.Errorf("error while processing the exported content: %s", err)
 	}

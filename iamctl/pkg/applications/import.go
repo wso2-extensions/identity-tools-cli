@@ -35,6 +35,9 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing applications...")
 	importFilePath := filepath.Join(inputDirPath, utils.APPLICATIONS)
 
+	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
+		return
+	}
 	var files []os.FileInfo
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
 		log.Println("No applications to import.")
@@ -44,7 +47,7 @@ func ImportAll(inputDirPath string) {
 			log.Println("Error importing applications: ", err)
 		}
 		if utils.TOOL_CONFIGS.AllowDelete {
-			removeDeletedDeployedApps(files)
+			removeDeletedDeployedApps(files, importFilePath)
 		}
 	}
 
@@ -100,42 +103,77 @@ func importApp(importFilePath string, isUpdate bool) error {
 	// Replace keyword placeholders in the local file according to the keyword mappings added in configs.
 	fileInfo := utils.GetFileInfo(importFilePath)
 	appKeywordMapping := getAppKeywordMapping(fileInfo.ResourceName)
-	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), appKeywordMapping)
+	fileDataWithReplacedKeywords := utils.ReplaceKeywords(string(fileBytes), appKeywordMapping)
+	modifiedFileData := utils.RemoveSecretMasks(fileDataWithReplacedKeywords)
 
 	if isUpdate {
-		log.Println("Updating application: " + fileInfo.ResourceName)
-		err = utils.SendUpdateRequest("", importFilePath, modifiedFileData, utils.APPLICATIONS)
-	} else {
-		log.Println("Creating new application: " + fileInfo.ResourceName)
-		err = utils.SendImportRequest(importFilePath, modifiedFileData, utils.APPLICATIONS)
+		return updateApplication(importFilePath, modifiedFileData, fileInfo)
 	}
+	return importApplication(importFilePath, modifiedFileData, fileInfo)
+}
+
+func updateApplication(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+
+	log.Println("Updating application: " + fileInfo.ResourceName)
+	err := utils.SendUpdateRequest("", importFilePath, modifiedFileData, utils.APPLICATIONS)
 	if err != nil {
+		utils.UpdateFailureSummary(utils.APPLICATIONS, fileInfo.ResourceName)
+		return fmt.Errorf("error when updating application: %s", err)
+	}
+	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.UPDATE)
+	log.Println("Application updated successfully.")
+	return nil
+}
+
+func importApplication(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+
+	log.Println("Creating new application: " + fileInfo.ResourceName)
+	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.APPLICATIONS)
+	if err != nil {
+		utils.UpdateFailureSummary(utils.APPLICATIONS, fileInfo.ResourceName)
 		return fmt.Errorf("error when importing application: %s", err)
 	}
+
+	if oauthApp, err := isOauthApp(modifiedFileData); err != nil {
+		fmt.Println("Failed to check if the applications is an OAuth app:", err.Error())
+	} else if oauthSecretGiven, err := isOauthSecretGiven(modifiedFileData); err != nil {
+		fmt.Println("Failed to check if oauthConsumerSecret is given:", err.Error())
+	} else if oauthApp && !oauthSecretGiven {
+		// Check if oauthConsumerSecret is given or else add an indicator to the summary informing a new secret is generated.
+		utils.AddNewSecretIndicatorToSummary(fileInfo.ResourceName)
+	}
+	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.IMPORT)
 	log.Println("Application imported successfully.")
 	return nil
 }
 
-func removeDeletedDeployedApps(localFiles []os.FileInfo) {
+func removeDeletedDeployedApps(localFiles []os.FileInfo, importFilePath string) {
 
 	// Remove deployed applications that do not exist locally.
 	deployedApps := getAppList()
 deployedResources:
 	for _, app := range deployedApps {
 		for _, file := range localFiles {
-			if app.Name == utils.GetFileInfo(file.Name()).ResourceName {
+			isToolManagementApp, err := isToolMgtApp(file, importFilePath)
+			if err != nil {
+				log.Printf("Error checking if application is a tool management app: %s\n", err.Error())
+				log.Printf("Application: %s is excluded from deletion.\n", app.Name)
+				continue deployedResources
+			}
+			if app.Name == utils.GetFileInfo(file.Name()).ResourceName || isToolManagementApp {
 				continue deployedResources
 			}
 		}
-		if utils.IsResourceExcluded(app.Name, utils.TOOL_CONFIGS.ApplicationConfigs) || app.Name == "Console" || app.Name == "My Account" {
+		if utils.IsResourceExcluded(app.Name, utils.TOOL_CONFIGS.ApplicationConfigs) || app.Name == utils.CONSOLE || app.Name == utils.MY_ACCOUNT {
 			log.Printf("Application: %s is excluded from deletion.\n", app.Name)
 			continue
 		}
 		log.Println("Application not found locally. Deleting app: ", app.Name)
 		err := utils.SendDeleteRequest(app.Id, utils.APPLICATIONS)
 		if err != nil {
+			utils.UpdateFailureSummary(utils.APPLICATIONS, app.Name)
 			log.Println("Error deleting application: ", app.Name, err)
 		}
-
+		utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.DELETE)
 	}
 }

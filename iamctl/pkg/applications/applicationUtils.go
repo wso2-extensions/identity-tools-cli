@@ -20,12 +20,17 @@ package applications
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
+	"gopkg.in/yaml.v2"
 )
 
 type Application struct {
@@ -39,6 +44,18 @@ type AppList struct {
 
 type AppConfig struct {
 	ApplicationName string `yaml:"applicationName"`
+}
+
+type AuthConfig struct {
+	InboundAuthenticationConfig struct {
+		InboundAuthenticationRequestConfigs []struct {
+			InboundAuthType              string `yaml:"inboundAuthType"`
+			InboundAuthKey               string `yaml:"inboundAuthKey"`
+			InboundConfigurationProtocol struct {
+				OauthConsumerSecret string `yaml:"oauthConsumerSecret"`
+			} `yaml:"inboundConfigurationProtocol"`
+		} `yaml:"inboundAuthenticationRequestConfigs"`
+	} `yaml:"inboundAuthenticationConfig"`
 }
 
 func getDeployedAppNames() []string {
@@ -87,8 +104,82 @@ func getAppList() (spIdList []Application) {
 
 func getAppKeywordMapping(appName string) map[string]interface{} {
 
-	if utils.TOOL_CONFIGS.ApplicationConfigs != nil {
-		return utils.ResolveAdvancedKeywordMapping(appName, utils.TOOL_CONFIGS.ApplicationConfigs)
+	if utils.KEYWORD_CONFIGS.ApplicationConfigs != nil {
+		return utils.ResolveAdvancedKeywordMapping(appName, utils.KEYWORD_CONFIGS.ApplicationConfigs)
 	}
-	return utils.TOOL_CONFIGS.KeywordMappings
+	return utils.KEYWORD_CONFIGS.KeywordMappings
+}
+
+func isOauthApp(fileData string) (bool, error) {
+
+	config, err := unmarshalAuthConfig([]byte(fileData))
+	if err != nil {
+		return false, err
+	}
+
+	for _, requestConfig := range config.InboundAuthenticationConfig.InboundAuthenticationRequestConfigs {
+		if strings.ToLower(requestConfig.InboundAuthType) == utils.OAUTH2 {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func unmarshalAuthConfig(data []byte) (AuthConfig, error) {
+
+	var config AuthConfig
+	if err := yaml.Unmarshal(data, &config); err != nil {
+		return AuthConfig{}, fmt.Errorf("failed to unmarshal auth config: %s", err.Error())
+	}
+	return config, nil
+}
+
+func maskOAuthConsumerSecret(fileContent []byte) []byte {
+
+	// Find and replace the value of oauthConsumerSecret with a mask.
+	pattern := "(?m)(^\\s*oauthConsumerSecret:\\s*)null\\s*$"
+	re := regexp.MustCompile(pattern)
+	maskedContent := re.ReplaceAllString(string(fileContent), "${1}"+utils.SENSITIVE_FIELD_MASK)
+
+	return []byte(maskedContent)
+}
+
+func isToolMgtApp(file os.FileInfo, importFilePath string) (bool, error) {
+
+	appFilePath := filepath.Join(importFilePath, file.Name())
+	fileData, err := ioutil.ReadFile(appFilePath)
+	if err != nil {
+		return false, fmt.Errorf("failed to read file: %s", err.Error())
+	}
+
+	config, err := unmarshalAuthConfig(fileData)
+	if err != nil {
+		return false, fmt.Errorf(err.Error())
+	}
+
+	for _, requestConfig := range config.InboundAuthenticationConfig.InboundAuthenticationRequestConfigs {
+		if requestConfig.InboundAuthKey == utils.SERVER_CONFIGS.ClientId {
+			appName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
+			log.Printf("Info: Tool Management App: %s is excluded from deletion.\n", appName)
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func isOauthSecretGiven(modifiedFileData string) (bool, error) {
+
+	config, err := unmarshalAuthConfig([]byte(modifiedFileData))
+	if err != nil {
+		return false, fmt.Errorf(err.Error())
+	}
+
+	for _, requestConfig := range config.InboundAuthenticationConfig.InboundAuthenticationRequestConfigs {
+		if strings.ToLower(requestConfig.InboundAuthType) == utils.OAUTH2 {
+			if requestConfig.InboundConfigurationProtocol.OauthConsumerSecret != "" {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }

@@ -35,6 +35,9 @@ func ExportAll(exportFilePath string, format string) {
 	log.Println("Exporting identity providers...")
 	exportFilePath = filepath.Join(exportFilePath, utils.IDENTITY_PROVIDERS)
 
+	if utils.IsResourceTypeExcluded(utils.IDENTITY_PROVIDERS) {
+		return
+	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		os.MkdirAll(exportFilePath, 0700)
 	} else {
@@ -55,8 +58,10 @@ func ExportAll(exportFilePath string, format string) {
 
 				err := exportIdp(idp.Id, exportFilePath, format, excludeSecerts)
 				if err != nil {
+					utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, idp.Name)
 					log.Printf("Error while exporting identity providers: %s. %s", idp.Name, err)
 				} else {
+					utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.EXPORT)
 					log.Println("Identity provider exported successfully: ", idp.Name)
 				}
 			}
@@ -108,7 +113,7 @@ func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets
 	}
 
 	idpKeywordMapping := getIdpKeywordMapping(fileInfo.ResourceName)
-	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, idpKeywordMapping)
+	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, idpKeywordMapping, utils.IDENTITY_PROVIDERS)
 	if err != nil {
 		return fmt.Errorf("error while processing the exported content: %s", err)
 	}

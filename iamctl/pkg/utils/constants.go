@@ -21,30 +21,37 @@ package utils
 // Resource type configs
 const APPLICATIONS_CONFIG = "APPLICATIONS"
 const IDP_CONFIG = "IDENTITY_PROVIDERS"
+const CLAIM_CONFIG = "CLAIMS"
 const USERSTORES_CONFIG = "USERSTORES"
 
 // Tool configs
-const KEYWORD_MAPPINGS_CONFIG = "KEYWORD_MAPPINGS"
 const EXCLUDE_CONFIG = "EXCLUDE"
 const INCLUDE_ONLY_CONFIG = "INCLUDE_ONLY"
 const EXCLUDE_SECRETS_CONFIG = "EXCLUDE_SECRETS"
 const ALLOW_DELETE_CONFIG = "ALLOW_DELETE"
+
+// Keyword configs
+const KEYWORD_MAPPINGS_CONFIG = "KEYWORD_MAPPINGS"
 
 // Server configs
 const SERVER_URL_CONFIG = "SERVER_URL"
 const CLIENT_ID_CONFIG = "CLIENT_ID"
 const CLIENT_SECRET_CONFIG = "CLIENT_SECRET"
 const TENANT_DOMAIN_CONFIG = "TENANT_DOMAIN"
+const TOOL_CONFIG_PATH = "TOOL_CONFIG_PATH"
+const KEYWORD_CONFIG_PATH = "KEYWORD_CONFIG_PATH"
 const TOKEN_CONFIG = "TOKEN"
 
 // Resource types
 const APPLICATIONS = "Applications"
 const IDENTITY_PROVIDERS = "IdentityProviders"
+const CLAIMS = "Claims"
 const USERSTORES = "UserStores"
 
 // Config file names
 const SERVER_CONFIG_FILE = "serverConfig.json"
 const TOOL_CONFIG_FILE = "toolConfig.json"
+const KEYWORD_CONFIG_FILE = "keywordConfig.json"
 
 // Media types
 const MEDIA_TYPE_JSON = "application/json"
@@ -55,6 +62,9 @@ const MEDIA_TYPE_FORM = "application/x-www-form-urlencoded"
 const DEFAULT_TENANT_DOMAIN = "carbon.super"
 const SENSITIVE_FIELD_MASK = "'********'"
 const RESIDENT_IDP_NAME = "LOCAL"
+const CONSOLE = "Console"
+const MY_ACCOUNT = "My Account"
+const OAUTH2 = "oauth2"
 
 // Error codes
 var ErrorCodes = map[int]string{
@@ -67,8 +77,8 @@ var ErrorCodes = map[int]string{
 	500: "Internal server error.",
 }
 
-// Identifiers of array types
-var arrayIdentifiers = map[string]string{
+// Identifiers of array types for each resource type
+var applicationArrayIdentifiers = map[string]string{
 
 	"inboundAuthenticationRequestConfigs": "inboundAuthKey",
 	"spProperties":                        "name",
@@ -77,8 +87,6 @@ var arrayIdentifiers = map[string]string{
 	"federatedIdentityProviders":          "identityProviderName",
 	"federatedAuthenticatorConfigs":       "name",
 	"properties":                          "name",
-	"subProperties":                       "name",
-	"idpProperties":                       "name",
 	"provisioningConnectorConfigs":        "name",
 	"provisioningIdentityProviders":       "identityProviderName",
 	"requestPathAuthenticatorConfigs":     "name",
@@ -86,5 +94,31 @@ var arrayIdentifiers = map[string]string{
 	"claimMappings":                       "localClaim.claimUri",
 	"idpClaims":                           "claimId",
 	"provisioningProperties":              "name",
-	"claimAttributeMappings":              "claimURI",
+	"applicationRoleMappingConfig":        "idPName",
+}
+
+var idpArrayIdentifiers = map[string]string{
+
+	"claimMappings":                 "localClaim.claimUri",
+	"idpClaims":                     "claimId",
+	"properties":                    "name",
+	"idpProperties":                 "name",
+	"permissions":                   "value",
+	"roleMappings":                  "localRole.localRoleName",
+	"provisioningConnectorConfigs":  "name",
+	"federatedAuthenticatorConfigs": "name",
+	"provisioningProperties":        "name",
+}
+
+var userStoreArrayIdentifiers = map[string]string{
+
+	"claimAttributeMappings": "claimURI",
+	"properties":             "name",
+}
+
+var claimArrayIdentifiers = map[string]string{
+
+	"properties":       "key",
+	"attributeMapping": "mappedAttribute",
+	"claims":           "id",
 }

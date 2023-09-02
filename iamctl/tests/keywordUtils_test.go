@@ -62,13 +62,13 @@ func TestResolveAdvancedKeywordMapping(t *testing.T) {
 	testCases := []struct {
 		description    string
 		resourceName   string
-		toolConfig     utils.ToolConfigs
+		keywordConfig  utils.KeywordConfigs
 		expectedResult map[string]interface{}
 	}{
 		{
 			description:  "Test with advanced keyword mapping",
 			resourceName: "App1",
-			toolConfig: utils.ToolConfigs{
+			keywordConfig: utils.KeywordConfigs{
 				KeywordMappings: map[string]interface{}{
 					"CALLBACK_DOMAIN": "dev.env",
 				},
@@ -87,7 +87,7 @@ func TestResolveAdvancedKeywordMapping(t *testing.T) {
 		{
 			description:  "Test only with default keyword mapping",
 			resourceName: "App2",
-			toolConfig: utils.ToolConfigs{
+			keywordConfig: utils.KeywordConfigs{
 				KeywordMappings: map[string]interface{}{
 					"CALLBACK_DOMAIN": "dev.env",
 				},
@@ -107,8 +107,8 @@ func TestResolveAdvancedKeywordMapping(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
-			utils.TOOL_CONFIGS = tc.toolConfig
-			result := utils.ResolveAdvancedKeywordMapping(tc.resourceName, tc.toolConfig.ApplicationConfigs)
+			utils.KEYWORD_CONFIGS = tc.keywordConfig
+			result := utils.ResolveAdvancedKeywordMapping(tc.resourceName, tc.keywordConfig.ApplicationConfigs)
 			if !reflect.DeepEqual(result, tc.expectedResult) {
 				t.Errorf("Unexpected result for %s: expected %v, but got %v", tc.description, tc.expectedResult, result)
 			}
@@ -234,7 +234,7 @@ func TestGetKeywordLocations(t *testing.T) {
 		"claimMappings.[localClaim.claimUri=http://wso2.org/claims/identity/accountLocked].remoteClaim.claimUri",
 	}
 
-	result := utils.GetKeywordLocations(fileData, []string{}, keywordMapping)
+	result := utils.GetKeywordLocations(fileData, []string{}, keywordMapping, utils.APPLICATIONS)
 
 	sort.Strings(result)
 	sort.Strings(expectedResult)
@@ -603,7 +603,7 @@ func TestAddKeywords(t *testing.T) {
 		"ENV":     "dev",
 		"KEYWORD": "keyword value",
 	}
-	result, err := utils.AddKeywords(exportedFileData, localFileData, keywordMapping)
+	result, err := utils.AddKeywords(exportedFileData, localFileData, keywordMapping, utils.APPLICATIONS)
 	if err != nil {
 		log.Println("Error when adding keywords: ", err)
 	}

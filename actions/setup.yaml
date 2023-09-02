@@ -1,0 +1,77 @@
+name: Setup
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_VERSION: v1.0.6
+      FULL_FILE_NAME: iamctl-1.0.6-linux-x64.tar.gz
+      FILE_NAME: iamctl-1.0.6
+      ENV_NAME: ${{ env.ENV_NAME }}
+    steps:
+      - name: Download files from the current repository
+        uses: actions/checkout@v2
+        
+      - name: Use environment secret
+        run: |
+          echo "the id is ${{secrets.CLIENT_ID}}"
+          echo "the env var is ${{env.TEST_VAR}}"
+      
+      - name: Fetch All Remote Branches
+        run: git fetch --all
+
+      - name: Get Branch Names
+        id: branch-names
+        run: |
+          branches=$(git branch -r --format="%(refname:short)" | sed 's/origin\///')
+          echo "::set-output name=branches::$branches"
+        
+      - name: Download and unzip latest identity-tools-cli release
+        run: |
+          # Download the release file
+          curl -L -o "${FULL_FILE_NAME}" "https://github.com/wso2-extensions/identity-tools-cli/releases/download/${RELEASE_VERSION}/${FULL_FILE_NAME}"
+          tar -xzf "${FULL_FILE_NAME}"
+          
+      - name: Extract release file
+        run: tar -xzf "${FULL_FILE_NAME}"
+      
+      - name: Remove old configs folder
+        run: |
+          rm -rf configs
+  
+      - name: Run setup command
+        run: |
+          cd "${FILE_NAME}/bin"
+          ./iamctl setupCLI -d "../../"
+          
+      - name: Create Branch Folders and Copy Configurations
+        run: |
+          branches=${{ steps.branch-names.outputs.branches }}
+          for branch in $branches; do
+            mkdir -p configs/"$branch"
+            cp -R configs/env/. configs/"$branch"
+          done
+      
+      - name: Rename configuration folder
+        run: mv "./configs/env" "./configs/${ENV_NAME}"
+          
+      - name: Delete release files
+        run: |
+          rm "${{ env.FULL_FILE_NAME }}"
+          rm -rf "${{ env.FILE_NAME }}"
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          commit-message: "Exported configurations"
+          title: "Exported configurations"
+          body: |
+            Changes have been exported from the Identity Server.
+            Please review and merge if applicable.
+          branch: export-configurations
+          branch-suffix: timestamp
+          delete-branch: true
+          base: ${{ env.ENV_NAME }}
+          labels: export, automated pr

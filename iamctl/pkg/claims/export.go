@@ -16,7 +16,7 @@
 * under the License.
  */
 
-package applications
+package claims
 
 import (
 	"fmt"
@@ -31,39 +31,43 @@ import (
 
 func ExportAll(exportFilePath string, format string) {
 
-	// Export all applications to the Applications folder.
-	log.Println("Exporting applications...")
-	exportFilePath = filepath.Join(exportFilePath, utils.APPLICATIONS)
+	// Export all claim dialects with related claims.
+	log.Println("Exporting claims...")
+	exportFilePath = filepath.Join(exportFilePath, utils.CLAIMS)
 
-	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
+	if utils.IsResourceTypeExcluded(utils.CLAIMS) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		os.MkdirAll(exportFilePath, 0700)
 	} else {
 		if utils.TOOL_CONFIGS.AllowDelete {
-			utils.RemoveDeletedLocalResources(exportFilePath, getDeployedAppNames())
+			utils.RemoveDeletedLocalResources(exportFilePath, getDeployedClaimDialectNames())
 		}
 	}
 
-	apps := getAppList()
-	for _, app := range apps {
-		excludeSecrets := utils.AreSecretsExcluded(utils.TOOL_CONFIGS.ApplicationConfigs)
-		if !utils.IsResourceExcluded(app.Name, utils.TOOL_CONFIGS.ApplicationConfigs) {
-			log.Println("Exporting application: ", app.Name)
-			err := exportApp(app.Id, exportFilePath, format, excludeSecrets)
-			if err != nil {
-				utils.UpdateFailureSummary(utils.APPLICATIONS, app.Name)
-				log.Printf("Error while exporting application: %s. %s", app.Name, err)
-			} else {
-				utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.EXPORT)
-				log.Println("Application exported successfully: ", app.Name)
+	claimDialects, err := getClaimDialectsList()
+	if err != nil {
+		log.Println("Error while retrieving Claim Dialect list.", err)
+	} else {
+		for _, dialect := range claimDialects {
+			if !utils.IsResourceExcluded(dialect.DialectURI, utils.TOOL_CONFIGS.ClaimConfigs) {
+				log.Println("Exporting Claim Dialect: ", dialect.DialectURI)
+
+				err := exportClaimDialect(dialect.Id, exportFilePath, format)
+				if err != nil {
+					utils.UpdateFailureSummary(utils.CLAIMS, dialect.DialectURI)
+					log.Printf("Error while exporting Claim Dialect: %s. %s", dialect.DialectURI, err)
+				} else {
+					utils.UpdateSuccessSummary(utils.CLAIMS, dialect.DialectURI)
+					log.Println("Claim Dialect exported successfully: ", dialect.DialectURI)
+				}
 			}
 		}
 	}
 }
 
-func exportApp(appId string, outputDirPath string, format string, excludeSecrets bool) error {
+func exportClaimDialect(dialectId string, outputDirPath string, format string) error {
 
 	var fileType string
 	// TODO: Extend support for json and xml formats.
@@ -76,10 +80,11 @@ func exportApp(appId string, outputDirPath string, format string, excludeSecrets
 		fileType = utils.MEDIA_TYPE_YAML
 	}
 
-	resp, err := utils.SendExportRequest(appId, fileType, utils.APPLICATIONS, excludeSecrets)
+	resp, err := utils.SendExportRequest(dialectId, fileType, utils.CLAIMS, true)
 	if err != nil {
-		return fmt.Errorf("error while exporting the application: %s", err)
+		return fmt.Errorf("error while exporting the claim dialect: %s", err)
 	}
+
 	var attachmentDetail = resp.Header.Get("Content-Disposition")
 	_, params, err := mime.ParseMediaType(attachmentDetail)
 	if err != nil {
@@ -92,16 +97,13 @@ func exportApp(appId string, outputDirPath string, format string, excludeSecrets
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("error while reading the response body when exporting app: %s. %s", fileName, err)
+		return fmt.Errorf("error while reading the response body when exporting claim dialect: %s. %s", fileName, err)
 	}
 
-	if excludeSecrets {
-		body = maskOAuthConsumerSecret(body)
-	}
-	appKeywordMapping := getAppKeywordMapping(fileInfo.ResourceName)
-	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, appKeywordMapping, utils.APPLICATIONS)
+	claimDialectKeywordMapping := getClaimKeywordMapping(fileInfo.ResourceName)
+	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, claimDialectKeywordMapping, utils.CLAIMS)
 	if err != nil {
-		return fmt.Errorf("error while processing exported data: %s", err)
+		return fmt.Errorf("error while processing the exported content: %s", err)
 	}
 
 	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)

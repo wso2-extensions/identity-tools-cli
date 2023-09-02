@@ -84,10 +84,10 @@ func getDeployedUserstoreNames() []string {
 
 func getUserStoreKeywordMapping(userStoreName string) map[string]interface{} {
 
-	if utils.TOOL_CONFIGS.UserStoreConfigs != nil {
-		return utils.ResolveAdvancedKeywordMapping(userStoreName, utils.TOOL_CONFIGS.UserStoreConfigs)
+	if utils.KEYWORD_CONFIGS.UserStoreConfigs != nil {
+		return utils.ResolveAdvancedKeywordMapping(userStoreName, utils.KEYWORD_CONFIGS.UserStoreConfigs)
 	}
-	return utils.TOOL_CONFIGS.KeywordMappings
+	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
 
 func getUserStoreId(userStoreFilePath string) (string, error) {
