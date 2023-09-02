@@ -321,7 +321,7 @@ The tool supports the following resource types:
 ### Applications
 The tool supports exporting and importing applications. The exported application configuration files can be found under the ```Applications``` folder in the local directory. If it is required to deploy a new application through the `import` command of the tool, the new file should be placed under the ```Applications``` folder in the local directory.
 
-Since the system applications: ```Console``` and ```My Account``` are made read-only in WSO2-IS, if it is required to update the console and myaccount applications through the import command, add the following to the ```deployment.toml``` of the WSO2 Identity Server and restart the server.
+Since the ```Console``` and ```My Account``` are read-only system applications in WSO2 Identity Server, if it is required to update these applications through the `import` command, add the following configurations to the ```deployment.toml``` file and restart the server.
 ```
 [system_applications]
 read_only_apps = []
