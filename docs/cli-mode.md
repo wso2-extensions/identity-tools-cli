@@ -240,7 +240,7 @@ The ```ALLOW_DELETE``` property can be used to override this behaviour and allow
     "ALLOW_DELETE" : true
 }
 ```
-> **Caution:** Use this property with caution as it can delete unexpected resources if configured incorrectly.
+> **Caution:** Use this property cautiously as it can delete required resources if configured incorrectly.
 > If using this config, make sure to exclude the resources that should not be deleted, using the ```EXCLUDE``` property.
 >
 > Ex: Applications - "Console", "My Account", Management application created for the tool, etc.
