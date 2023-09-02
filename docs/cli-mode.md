@@ -328,7 +328,7 @@ read_only_apps = []
 ```
 > **Caution:** Be cautious when updating the system applications: ```Console``` and ```My Account``` through the tool, since it will result in unexpected errors in these apps if edited incorrectly. It is recommended to exclude the ```Console```, ```My Account``` and the Management application created for the tool during normal usage, unless it is required to update them through the tool.
 
-### Identity Providers
+### Identity providers
 The tool supports exporting and importing identity providers. The exported identity provider configuration files can be found under the ```IdentityProviders``` folder in the local directory. If it is required to deploy a new identity provider through the import command of the tool, the new file should be placed under the ```IdentityProviders``` folder in the local directory.
 
 The resident identity provider can also be exported into a file named ```LOCAL``` and can be updated by modifying the ```LOCAL``` file and using the import command.
