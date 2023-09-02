@@ -315,7 +315,7 @@ The ```--config``` flag can be used to provide the path to the env specific conf
 
 The ```--inputDir``` flag can be used to provide the path to the local directory where the resource configuration files are stored. If the flag is not provided, the tool looks for the resource configuration files at the current working directory.
 
-## Supported Resource Types
+## Supported resource types
 The tool supports the following resource types:
 
 ### Applications
