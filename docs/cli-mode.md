@@ -231,7 +231,7 @@ Example:
     }   
 }
 ```
-#### Allow Deleting Resources
+#### Allow deleting resources
 By default, the tool does not delete any resources during export or import. During export, the deletion of a resource in the target environment will not delete the corresponding resource file in the local directory. The file will have to be deleted manually. Similarly, during import, the deletion of a resource file in the local directory will not delete the corresponding resource in the target environment. 
 The ```ALLOW_DELETE``` property can be used to override this behaviour and allow the tool to delete resources.
 
