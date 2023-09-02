@@ -334,6 +334,6 @@ The tool supports exporting and importing identity providers. The exported ident
 The resident identity provider can also be exported into a file named ```LOCAL``` and can be updated by modifying the ```LOCAL``` file and using the import command.
 > **Caution:** Be cautious when updating the resident identity provider through the ```LOCAL``` file since it will result in unexpected errors in the server if edited incorrectly. It is recommended to exclude the ```LOCAL``` file during normal usage, unless it is required to update the resident identity provider through the tool.
 
-### User Stores
+### User stores
 The tool supports exporting and importing secondary user stores. The exported user store configuration files can be found under the ```UserStores``` folder in the local directory. If it is required to deploy a new user store through the import command of the tool, the new file should be placed under the ```UserStores``` folder in the local directory.
 By default, the tool masks the secrets of the user stores in the exported files. Make sure to add the correct values for the masked fields (connection password, etc.) during import, to properly deploy the user stores.
