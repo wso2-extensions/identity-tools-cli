@@ -6,7 +6,7 @@ This repository provides instructions on continuously propagating resources acro
 
 To manage resources when multiple environments exist, follow this recommended workflow:
 
-1. **Set Up WSO2 Identity Server Instances**: Have separate WSO2 Identity Server instances for each environment, hosted somewhere accessible by the public.
+1. **Set up WSO2 Identity Server instances**: Have separate WSO2 Identity Server instances for each environment, hosted somewhere accessible by the public.
 
 2. **Create Management Application**: Create an application with the Management Application enabled in the target Identity Server. Update the OAuth inbound authentication configuration with a dummy callback URL. Make note of the Client ID and Client Secret for later use. *(Automation will be implemented in the future)*
 
