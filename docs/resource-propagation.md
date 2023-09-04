@@ -44,6 +44,6 @@ To manage resources when multiple environments exist, follow this recommended wo
    - Use the import command to deploy the resources from the repository to the higher environment using another GitHub Action with the custom action `@action/import`.
    - *(Automation can also be implemented by triggering the Git action automatically upon merging to the branch.)*
 
-8. **Update and Import New Changes**:
+8. **Update and import new changes**:
    - When new changes are added to the lower environment, export the resources again to update the resource configurations in the branch.
    - Merge the changes to the higher environment repository and import them back to the higher environments.
