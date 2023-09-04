@@ -34,7 +34,7 @@ To manage resources when multiple environments exist, follow this recommended wo
    - Export resources from the lower environment to the lower environment branch using another GitHub action with the custom action `@action/export`.
    - A pull request will be created with the changes. Review and verify the correctness of the propagation, and then merge the pull request.
 
-5. **Environment-specific Variables**:
+5. **Environment-specific variables**:
    - If there are environment-specific variables, add keyword placeholders to the exported files and add the relevant keyword mapping to the tool configurations.
 
 6. **Merge to higher environment branch**:
