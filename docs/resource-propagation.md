@@ -14,7 +14,7 @@ To manage resources when multiple environments exist, follow this recommended wo
 
    - Create a Git repository with branches dedicated to each environment. Use the environment name (same as the branch name) as an environment variable with the key `ENV` for each branch. This is where the resource config files will reside for that environment.
 
-   - **Manual Approach**:
+   - **Manual approach**:
      - Clone the repository to your local machine.
      - Download the latest release of the IAM-CTL tool from [GitHub Releases](https://github.com/wso2-extensions/identity-tools-cli/releases) and unzip it.
      - Run the following command, replacing `<path to the cloned repo folder>` with the appropriate path: 
