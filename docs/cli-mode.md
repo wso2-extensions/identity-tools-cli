@@ -257,7 +257,7 @@ The ```ALLOW_DELETE``` property can be used to override this behavior and allow 
 }
 ```
 > **Caution:** Use this property cautiously, as it can delete required resources if misconfigured.
-> If using this config, make sure to exclude the resources that should not be deleted, using the ```EXCLUDE``` property.
+> If using this config, make sure to exclude the resources that should not be deleted using the ```EXCLUDE``` property.
 >
 > Ex: Applications - "Console", "My Account", Management application created for the tool, etc.
 > Identity Providers - Resident Identity Provider, etc.
