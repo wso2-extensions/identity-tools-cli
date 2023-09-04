@@ -37,7 +37,7 @@ To manage resources when multiple environments exist, follow this recommended wo
 5. **Environment-specific Variables**:
    - If there are environment-specific variables, add keyword placeholders to the exported files and add the relevant keyword mapping to the tool configurations.
 
-6. **Merge to Higher Environment Branch**:
+6. **Merge to higher environment branch**:
    - Merge the lower environment branch to the higher environment branch. *(Automation can be implemented to automatically merge the pull request from the lower environment to the higher environment branch.)*
 
 7. **Import Resources**:
