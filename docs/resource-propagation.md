@@ -10,7 +10,7 @@ To manage resources when multiple environments exist, follow this recommended wo
 
 2. **Create a management application**: Create an application with the Management Application capabilities enabled in the target Identity Server. Update the OAuth inbound authentication configuration with a dummy callback URL. Make note of the Client ID and Client Secret for later use. *(Automation will be implemented in the future)*
 
-3. **Git Repository Setup**:
+3. **Git repository setup**:
 
    - Create a Git repository with branches dedicated to each environment. Use the environment name (same as the branch name) as an environment variable with the key `ENV` for each branch. This is where the resource config files will reside for that environment.
 
