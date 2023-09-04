@@ -367,6 +367,7 @@ Since the ```Console``` and ```My Account``` are read-only system applications i
 [system_applications]
 read_only_apps = []
 ```
+
 > **Caution:** Be cautious when updating the system applications: ```Console``` and ```My Account``` through the tool, since it will result in unexpected errors in these apps if edited incorrectly. It is recommended to exclude the ```Console```, ```My Account``` and the Management application created for the tool during normal usage, unless it is required to update them through the tool.
 
 ### Identity providers
