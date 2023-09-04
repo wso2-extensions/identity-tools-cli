@@ -24,7 +24,7 @@ To manage resources when multiple environments exist, follow this recommended wo
      - Create subfolders for each environment in the `config` folder and configure each `serverConfig.json` file with the relevant server details and other configurations.
      - *Note: Variables of `serverConfig.json` can also be added as environment values. Refer to the [documentation](<LINK>) for more information on loading server configurations from environment variables.*
 
-   - **Workflow Automation**:
+   - **Workflow automation**:
      - Set up the environment variable. Refer to the [documentation](<LINK>) for more information on loading server configurations from environment variables.
      - Add a GitHub Action with the custom action `@action/setup` (replace with the correct action reference).
      - Trigger the action.
