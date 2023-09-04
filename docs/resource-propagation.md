@@ -22,7 +22,7 @@ To manage resources when multiple environments exist, follow this recommended wo
        iamctl setupCLI -d "<path to the cloned repo folder>"
        ```
      - Create subfolders for each environment in the `config` folder and configure each `serverConfig.json` file with the relevant server details and other configurations.
-     - *Note: Variables of `serverConfig.json` can also be added as environment values. Refer to the [documentation](<LINK>) for more information on loading server configurations from environment variables.*
+     - *Note: Variables of `serverConfig.json` can also be added as environment values. Refer to the [documentation](https://github.com/wso2-extensions/identity-tools-cli/blob/master/docs/cli-mode.md#load-server-configurations-from-environment-variables) for more information on loading server configurations from environment variables.*
 
    - **Workflow automation**:
      - Set up the environment variable. Refer to the [documentation](<LINK>) for more information on loading server configurations from environment variables.
