@@ -8,7 +8,7 @@ To manage resources when multiple environments exist, follow this recommended wo
 
 1. **Set up WSO2 Identity Server instances**: Have separate WSO2 Identity Server instances for each environment, hosted somewhere accessible by the public.
 
-2. **Create Management Application**: Create an application with the Management Application enabled in the target Identity Server. Update the OAuth inbound authentication configuration with a dummy callback URL. Make note of the Client ID and Client Secret for later use. *(Automation will be implemented in the future)*
+2. **Create a management application**: Create an application with the Management Application capabilities enabled in the target Identity Server. Update the OAuth inbound authentication configuration with a dummy callback URL. Make note of the Client ID and Client Secret for later use. *(Automation will be implemented in the future)*
 
 3. **Git Repository Setup**:
 
