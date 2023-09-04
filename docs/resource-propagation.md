@@ -30,7 +30,7 @@ To manage resources when multiple environments exist, follow this recommended wo
      - Trigger the action.
      - An automatically generated `config` folder will be added to the repository.
 
-4. **Export Resources**:
+4. **Export resources**:
    - Export resources from the lower environment to the lower environment branch using another GitHub Action with the custom action `@action/export`.
    - A pull request will be created with the changes. Review and verify the correctness of the propagation, and then merge the pull request.
 
