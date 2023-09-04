@@ -246,6 +246,39 @@ Example:
     }   
 }
 ```
+
+#### Allow deleting resources
+By default, the tool does not delete any resources during export or import. During export, the deletion of a resource in the target environment will not delete the corresponding resource file in the local directory. The file will have to be deleted manually. Similarly, during import, the deletion of a resource file in the local directory will not delete the corresponding resource in the target environment. 
+The ```ALLOW_DELETE``` property can be used to override this behavior and allow the tool to delete resources.
+
+```
+{
+    "ALLOW_DELETE" : true
+}
+```
+> **Caution:** Use this property cautiously, as it can delete required resources if misconfigured.
+> If using this config, make sure to exclude the resources that should not be deleted using the ```EXCLUDE``` property.
+>
+> Ex: Applications - "Console", "My Account", Management application created for the tool, etc.
+> Identity Providers - Resident Identity Provider, etc.
+
+Example:
+```
+{
+   "KEYWORD_MAPPINGS" : {
+      "CALLBACK_URL" : "https://demo.dev.io/callback"
+   },
+    "ALLOW_DELETE" : true,
+    
+    "APPLICATIONS" : {
+        "EXCLUDE" : ["Console", "My Account", "Dev-mgt-app"]
+    },
+    "IDENTITY_PROVIDERS" : {
+        "EXCLUDE" : "LOCAL"
+    }  
+}
+```
+
 > **Note:** Configurations under a particular resource type will take precedence over the global configurations for that resource type.
 
 ### Keyword Mapping configurations
@@ -321,4 +354,29 @@ Flags:
 ```
 The ```--config``` flag can be used to provide the path to the env specific config folder that contains the ```serverConfig.json```, ```toolConfig.json```, and ```keywordConfig.json``` files with the details of the environment to which the resources should be imported. If the flag is not provided, the tool looks for the server configurations in the environment variables.
 
-The ```--inputDir``` flag can be used to provide the path to the local directory where the resource configuration files are stored. If the flag is not provided, the tool looks for the resource configuration files at the current working directory.
+The ```--inputDir``` flag can be used to provide the path to the local directory where the resource configuration files are stored. If the flag is not provided, the tool looks for the resource configuration files in the current working directory.
+
+## Supported resource types
+The tool supports the following resource types:
+
+### Applications
+The tool supports exporting and importing applications. The exported application configuration files can be found under the ```Applications``` folder in the local directory. If it is required to deploy a new application through the `import` command of the tool, the new file should be placed under the ```Applications``` folder in the local directory.
+
+Since the ```Console``` and ```My Account``` are read-only system applications in WSO2 Identity Server, if it is required to update these applications through the `import` command, add the following configurations to the ```deployment.toml``` file and restart the server.
+```
+[system_applications]
+read_only_apps = []
+```
+
+> **Caution:** Be cautious when updating the system applications: ```Console``` and ```My Account``` through the tool, since it will result in unexpected errors in these apps if edited incorrectly. It is recommended to exclude the ```Console```, ```My Account``` and the Management application created for the tool during normal usage, unless it is required to update them through the tool.
+
+### Identity providers
+The tool supports exporting and importing identity providers. The exported identity provider configuration files can be found under the ```IdentityProviders``` folder in the local directory. If it is required to deploy a new identity provider through the import command of the tool, the new file should be placed under the ```IdentityProviders``` folder in the local directory.
+
+The resident identity provider can also be exported into a file named ```LOCAL``` and can be updated by modifying the ```LOCAL``` file and using the import command.
+
+> **Caution:** Be cautious when updating the resident identity provider through the ```LOCAL``` file since it will result in unexpected errors in the server if edited incorrectly. It is recommended to exclude the ```LOCAL``` file during normal usage unless it is required to update the resident identity provider through the tool.
+
+### User stores
+The tool supports exporting and importing secondary user stores. The exported user store configuration files can be found under the ```UserStores``` folder in the local directory. If it is required to deploy a new user store through the import command of the tool, the new file should be placed under the ```UserStores``` folder in the local directory.
+By default, the tool masks the secrets of the user stores in the exported files. Make sure to add the correct values for the masked fields (connection password, etc.) during import, to properly deploy the user stores.
