@@ -25,7 +25,7 @@ To manage resources when multiple environments exist, follow this recommended wo
      - *Note: Variables of `serverConfig.json` can also be added as environment values. Refer to the [documentation](https://github.com/wso2-extensions/identity-tools-cli/blob/master/docs/cli-mode.md#load-server-configurations-from-environment-variables) for more information on loading server configurations from environment variables.*
 
    - **Workflow automation**:
-     - Set up the environment variable. Refer to the [documentation](<LINK>) for more information on loading server configurations from environment variables.
+     - Set up the environment variable. Refer to the [documentation](https://github.com/wso2-extensions/identity-tools-cli/blob/master/docs/cli-mode.md#load-server-configurations-from-environment-variables) for more information on loading server configurations from environment variables.
      - Add a GitHub Action with the custom action `@action/setup` (replace with the correct action reference).
      - Trigger the action.
      - An automatically generated `config` folder will be added to the repository.
