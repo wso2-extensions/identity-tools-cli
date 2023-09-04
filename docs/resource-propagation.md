@@ -40,7 +40,7 @@ To manage resources when multiple environments exist, follow this recommended wo
 6. **Merge to higher environment branch**:
    - Merge the lower environment branch to the higher environment branch. *(Automation can be implemented to automatically merge the pull request from the lower environment to the higher environment branch.)*
 
-7. **Import Resources**:
+7. **Import resources**:
    - Use the import command to deploy the resources from the repository to the higher environment using another GitHub Action with the custom action `@action/import`.
    - *(Automation can also be implemented by triggering the Git action automatically upon merging to the branch.)*
 
