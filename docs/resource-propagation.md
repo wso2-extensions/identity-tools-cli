@@ -1,6 +1,6 @@
 # Resource Propagation across Multiple Environments
 
-This repository provides instructions on how to continuously propagate resources across multiple environments using the IAM-CTL tool.
+This repository provides instructions on continuously propagating resources across multiple environments using the IAM-CTL tool.
 
 ## Recommended Workflow
 
