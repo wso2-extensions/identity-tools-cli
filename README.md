@@ -24,7 +24,7 @@ You need to [setup](https://is.docs.wso2.com/en/latest/get-started/sample-use-ca
    * windows
 
        ```
-       doskey iamctl=<IAM-CTL-PATH>/bin/iamctl.exe $*
+       doskey iamctl=<IAM-CTL-PATH>\bin\iamctl.exe $*
        ```
  
 4. Run the tool using the following command to get the basic details.
