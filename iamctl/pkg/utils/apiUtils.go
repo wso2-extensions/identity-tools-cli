@@ -248,7 +248,7 @@ func SendDeleteRequest(resourceId string, resourceType string) error {
 	return fmt.Errorf("unexpected error when deleting resource: %s", resp.Status)
 }
 
-func SendGetListRequest(resourceType string) (*http.Response, error) {
+func SendGetListRequest(resourceType string, resourceLimit int) (*http.Response, error) {
 
 	var reqUrl = buildRequestUrl(LIST, resourceType, "")
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
@@ -256,6 +256,12 @@ func SendGetListRequest(resourceType string) (*http.Response, error) {
 	req, _ := http.NewRequest("GET", reqUrl, bytes.NewBuffer(nil))
 	req.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
 	req.Header.Set("accept", "*/*")
+
+	if resourceLimit != -1 {
+		query := req.URL.Query()
+		query.Add("limit", strconv.Itoa(resourceLimit))
+		req.URL.RawQuery = query.Encode()
+	}
 	defer req.Body.Close()
 
 	httpClient := &http.Client{}
