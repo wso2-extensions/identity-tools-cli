@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -32,6 +33,7 @@ type identityProvider struct {
 }
 
 type idpList struct {
+	IdpCount          int                `json:"totalResults"`
 	IdentityProviders []identityProvider `json:"identityProviders"`
 }
 
@@ -42,8 +44,12 @@ type idpConfig struct {
 
 func getIdpList() ([]identityProvider, error) {
 
+	idpCount, err := getTotalIdpCount()
+	if err != nil {
+		log.Println("Error: when retrieving IDP count. Retrieving only the default count.", err)
+	}
 	var list idpList
-	resp, err := utils.SendGetListRequest(utils.IDENTITY_PROVIDERS)
+	resp, err := utils.SendGetListRequest(utils.IDENTITY_PROVIDERS, idpCount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve available IDP list. %w", err)
 	}
@@ -67,6 +73,35 @@ func getIdpList() ([]identityProvider, error) {
 		return nil, fmt.Errorf("error while retrieving IDP list. Status code: %d, Error: %s", statusCode, error)
 	}
 	return nil, fmt.Errorf("error while retrieving identity provider list")
+}
+
+func getTotalIdpCount() (count int, err error) {
+
+	var list idpList
+	resp, err := utils.SendGetListRequest(utils.IDENTITY_PROVIDERS, -1)
+	if err != nil {
+		return -1, fmt.Errorf("failed to retrieve available IDP list. %w", err)
+	}
+	defer resp.Body.Close()
+
+	statusCode := resp.StatusCode
+	if statusCode == 200 {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return -1, fmt.Errorf("error when reading the retrived IDP list. %w", err)
+		}
+
+		err = json.Unmarshal(body, &list)
+		if err != nil {
+			return -1, fmt.Errorf("error when unmarshalling the retrived IDP list. %w", err)
+		}
+		resp.Body.Close()
+
+		return list.IdpCount, nil
+	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
+		return -1, fmt.Errorf("error while retrieving IDP count. Status code: %d, Error: %s", statusCode, error)
+	}
+	return -1, fmt.Errorf("error while retrieving identity provider count")
 }
 
 func getDeployedIdpNames() []string {

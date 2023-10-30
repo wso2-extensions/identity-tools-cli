@@ -39,6 +39,7 @@ type Application struct {
 }
 
 type AppList struct {
+	AppCount     int           `json:"totalResults"`
 	Applications []Application `json:"applications"`
 }
 
@@ -70,8 +71,12 @@ func getDeployedAppNames() []string {
 
 func getAppList() (spIdList []Application) {
 
+	totalAppCount, err := getTotalAppCount()
+	if err != nil {
+		log.Println("Error while retrieving application count. Retrieving only the default count.", err)
+	}
 	var list AppList
-	resp, err := utils.SendGetListRequest(utils.APPLICATIONS)
+	resp, err := utils.SendGetListRequest(utils.APPLICATIONS, totalAppCount)
 	if err != nil {
 		log.Println("Error while retrieving application list", err)
 	}
@@ -100,6 +105,35 @@ func getAppList() (spIdList []Application) {
 		log.Println("Error while retrieving application list")
 	}
 	return spIdList
+}
+
+func getTotalAppCount() (count int, err error) {
+
+	var list AppList
+	resp, err := utils.SendGetListRequest(utils.APPLICATIONS, -1)
+	if err != nil {
+		return -1, fmt.Errorf("failed to retrieve available app list. %w", err)
+	}
+	defer resp.Body.Close()
+
+	statusCode := resp.StatusCode
+	if statusCode == 200 {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return -1, fmt.Errorf("error when reading the retrived app list. %w", err)
+		}
+
+		err = json.Unmarshal(body, &list)
+		if err != nil {
+			return -1, fmt.Errorf("error when unmarshalling the retrived app list. %w", err)
+		}
+		resp.Body.Close()
+
+		return list.AppCount, nil
+	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
+		return -1, fmt.Errorf("error while retrieving app count. Status code: %d, Error: %s", statusCode, error)
+	}
+	return -1, fmt.Errorf("error while retrieving application count")
 }
 
 func getAppKeywordMapping(appName string) map[string]interface{} {

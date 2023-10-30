@@ -42,7 +42,7 @@ type UserStoreConfigurations struct {
 func getUserStoreList() ([]userStore, error) {
 
 	var list []userStore
-	resp, err := utils.SendGetListRequest(utils.USERSTORES)
+	resp, err := utils.SendGetListRequest(utils.USERSTORES, -1)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving userstore list. %w", err)
 	}

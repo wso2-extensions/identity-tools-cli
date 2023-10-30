@@ -41,7 +41,7 @@ type ClaimDialectConfigurations struct {
 func getClaimDialectsList() ([]claimDialect, error) {
 
 	var list []claimDialect
-	resp, err := utils.SendGetListRequest(utils.CLAIMS)
+	resp, err := utils.SendGetListRequest(utils.CLAIMS, -1)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving claim dialect list. %w", err)
 	}
