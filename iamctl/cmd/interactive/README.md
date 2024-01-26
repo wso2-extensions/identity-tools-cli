@@ -6,7 +6,7 @@ The interactive mode can be used to handle application configurations in an inte
 
 See the topics given below to run the tool in interactive mode.
 #### Tool initialization
-1. Set up the tool and WSO2 IS following the steps in the [How to run the tool ](../README.md##How to run the tool ) section.
+1. Set up the tool and WSO2 IS following the steps in the [How to run the tool ](../../../README.md##How to run the tool ) section.
 2. Run the following command to initialize the tool by providing details of WSO2 IS and the client ID/secret of the app you created.
 ```
 iamctl init
