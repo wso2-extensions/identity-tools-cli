@@ -30,8 +30,17 @@ You need to [setup](https://is.docs.wso2.com/en/latest/get-started/sample-use-ca
     ```
     iamctl -h
     ```
-5. Start WSO2 IS and [create an application](https://is.docs.wso2.com/en/6.1.0/guides/applications/register-sp) with **Management Application** enabled.
-6. Update the Oauth inbound authentication configuration with a dummy callback URL and take note of the client ID and client secret.
+5. Start WSO2 IS and [register a M2M application](https://is.docs.wso2.com/en/latest/guides/applications/register-machine-to-machine-app/) with the following API authorization.
+
+
+API                                              | Scopes
+------------------------------------------------ | --------------------------------------------------------------------
+Management --> Application Management API        | Create Application, Update Application, Delete Application, View Application
+Management --> Claim Management API              | Create Claim, Update Claim, Delete Claim, View Claim
+Management --> Identity Provider Management API  | Create Identity Provider, Update Identity Provider, Delete Identity Provider, View Identity Provider
+Management --> Userstore Management API          | Create Userstore, Update Userstore, Delete Userstore, View Userstore
+
+6. Take note of the client ID and client secret of this application.
 
 ## CLI mode
 
