@@ -4,7 +4,7 @@ The CLI mode can be used for bulk resource management.
 Usages:
 * Export all/selected resources from a WSO2 IS to a local directory.
 * Import all/selected resources from a local directory to a WSO2 IS.
-* Propagate resources across multiple environments.
+* Promote resources across multiple environments.
 * Deploy new resources from resource configuration files to a WSO2 IS.
 * Have a backup of resources in a local directory.
 
