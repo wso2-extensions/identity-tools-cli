@@ -70,12 +70,14 @@ The tool should be initialized with the server details of the environment it is 
 
 Example configurations:
 
-    ```
-    "SERVER_URL" : "https://localhost:9443",
-    "CLIENT-ID" : "********",
-    "CLIENT-SECRET" : "********",
-    "TENANT-DOMAIN" : "carbon.super"
-    ```
+```
+    {
+       "SERVER_URL" : "https://localhost:9443",
+       "CLIENT-ID" : "********",
+       "CLIENT-SECRET" : "********",
+       "TENANT-DOMAIN" : "carbon.super"
+    }
+```
 
 #### Export
 Run the following command to export all supported resource configurations from the target environment to the current directory.
