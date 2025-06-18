@@ -35,6 +35,7 @@ var serverConfigTemplate = map[string]string{
 	utils.CLIENT_ID_CONFIG:     "",
 	utils.CLIENT_SECRET_CONFIG: "",
 	utils.TENANT_DOMAIN_CONFIG: "",
+	utils.ORGANIZATION_CONFIG: "",
 }
 
 var setupCmd = &cobra.Command{
