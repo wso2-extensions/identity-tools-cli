@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
+* Copyright (c) 2023-2025, WSO2 LLC. (https://www.wso2.com).
 *
 * WSO2 LLC. licenses this file to you under the Apache License,
 * Version 2.0 (the "License"); you may not use this file except
@@ -289,7 +289,12 @@ func getResourcePath(resourceType string) string {
 
 func getResourceBaseUrl(resourceType string) string {
 
-	return SERVER_CONFIGS.ServerUrl + "/t/" + SERVER_CONFIGS.TenantDomain + "/api/server/v1/" + getResourcePath(resourceType) + "/"
+	basePath := "/t/" + SERVER_CONFIGS.TenantDomain
+	if IsSubOrganization() {
+		basePath += "/o"
+	}
+	basePath += "/api/server/v1/" + getResourcePath(resourceType) + "/"
+	return SERVER_CONFIGS.ServerUrl + basePath
 }
 
 func buildRequestUrl(requestType, resourceType, resourceId string) (reqUrl string) {

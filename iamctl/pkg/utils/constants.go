@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
+* Copyright (c) 2023-2025, WSO2 LLC. (https://www.wso2.com).
 *
 * WSO2 LLC. licenses this file to you under the Apache License,
 * Version 2.0 (the "License"); you may not use this file except
@@ -15,7 +15,7 @@
 * specific language governing permissions and limitations
 * under the License.
  */
-
+ 
 package utils
 
 // Resource type configs
@@ -38,6 +38,7 @@ const SERVER_URL_CONFIG = "SERVER_URL"
 const CLIENT_ID_CONFIG = "CLIENT_ID"
 const CLIENT_SECRET_CONFIG = "CLIENT_SECRET"
 const TENANT_DOMAIN_CONFIG = "TENANT_DOMAIN"
+const ORGANIZATION_CONFIG = "ORGANIZATION"
 const TOOL_CONFIG_PATH = "TOOL_CONFIG_PATH"
 const KEYWORD_CONFIG_PATH = "KEYWORD_CONFIG_PATH"
 const TOKEN_CONFIG = "TOKEN"
