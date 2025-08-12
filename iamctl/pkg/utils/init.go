@@ -1,19 +1,19 @@
-/*
- * Copyright (c) 2020, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
- *
- * WSO2 Inc. licenses this file to you under the Apache License,
- * Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+/**
+* Copyright (c) 2020-2025, WSO2 LLC. (https://www.wso2.com).
+*
+* WSO2 LLC. licenses this file to you under the Apache License,
+* Version 2.0 (the "License"); you may not use this file except
+* in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied. See the License for the
+* specific language governing permissions and limitations
+* under the License.
  */
 
 package utils
@@ -30,7 +30,7 @@ var dir, _ = os.Getwd()
 var Path = dir + "/iamctl.json"
 var PathSampleSPDetails = dir + "/init.json"
 
-const SCOPE string = "internal_application_mgt_update internal_application_mgt_create internal_application_mgt_view internal_application_mgt_delete internal_idp_update internal_idp_create internal_idp_view internal_idp_delete internal_userstore_view internal_userstore_create internal_userstore_update internal_userstore_delete internal_claim_meta_create internal_claim_meta_view internal_claim_meta_update internal_claim_meta_delete"
+const SCOPE string = "internal_application_mgt_update internal_application_mgt_create internal_application_mgt_view internal_application_mgt_delete internal_idp_update internal_idp_create internal_idp_view internal_idp_delete internal_userstore_view internal_userstore_create internal_userstore_update internal_userstore_delete internal_claim_meta_create internal_claim_meta_view internal_claim_meta_update internal_claim_meta_delete internal_org_idp_delete internal_org_idp_view internal_org_idp_update internal_org_idp_create internal_org_claim_meta_update internal_org_claim_meta_view internal_org_application_mgt_update internal_org_application_mgt_create internal_org_application_mgt_view internal_org_application_mgt_delete internal_org_userstore_create internal_org_userstore_view internal_org_userstore_delete internal_org_userstore_update"
 
 const (
 	AppName       = "IAM-CTL"

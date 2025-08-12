@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2023, WSO2 LLC. (https://www.wso2.com) All Rights Reserved.
+* Copyright (c) 2023-2025, WSO2 LLC. (https://www.wso2.com).
 *
 * WSO2 LLC. licenses this file to you under the Apache License,
 * Version 2.0 (the "License"); you may not use this file except
@@ -44,6 +44,7 @@ type ServerConfigs struct {
 	ClientId     string `json:"CLIENT_ID"`
 	ClientSecret string `json:"CLIENT_SECRET"`
 	TenantDomain string `json:"TENANT_DOMAIN"`
+	Organization string `json:"ORGANIZATION"`
 	Token        string `json:"TOKEN"`
 }
 
@@ -108,6 +109,7 @@ func loadConfigsFromEnvVar() (toolConfigPath string, keywordConfigPath string) {
 	SERVER_CONFIGS.ClientId = os.Getenv(CLIENT_ID_CONFIG)
 	SERVER_CONFIGS.ClientSecret = os.Getenv(CLIENT_SECRET_CONFIG)
 	SERVER_CONFIGS.TenantDomain = os.Getenv(TENANT_DOMAIN_CONFIG)
+	SERVER_CONFIGS.Organization = os.Getenv(ORGANIZATION_CONFIG)
 
 	// Load tool config file path from environment variables.
 	toolConfigPath = os.Getenv(TOOL_CONFIG_PATH)
@@ -227,7 +229,60 @@ func getAccessToken(config ServerConfigs) string {
 	if err2 != nil {
 		log.Fatalln(err2)
 	}
+	if IsSubOrganization() {
+		log.Println("Getting access token for Organization: " + SERVER_CONFIGS.Organization)
+		return switchAccessToken(config, response.AccessToken)
+	}
+	return response.AccessToken
+}
 
+func switchAccessToken(config ServerConfigs, accessToken string) string {
+
+	var err error
+	var response oAuthResponse
+
+	authUrl := config.ServerUrl + "/t/" + config.TenantDomain + "/oauth2/token"
+
+	body := url.Values{}
+	body.Set("grant_type", "organization_switch")
+	body.Set("scope", SCOPE)
+	body.Set("token", accessToken)
+	body.Set("switching_organization", config.Organization)
+
+	req, err := http.NewRequest("POST", authUrl, strings.NewReader(body.Encode()))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	req.SetBasicAuth(config.ClientId, config.ClientSecret)
+	req.Header.Set("Content-Type", MEDIA_TYPE_FORM)
+	defer req.Body.Close()
+
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	if resp.StatusCode != 200 {
+		log.Fatalln("Error in switching access token, response: " + string(respBody))
+	}
+
+	err2 := json.Unmarshal(respBody, &response)
+	if err2 != nil {
+		log.Fatalln(err2)
+	}
 	return response.AccessToken
 }
 
@@ -240,4 +295,9 @@ func sanitizeServerConfigs() {
 		log.Println("Tenant domain not defined. Defaulting to: carbon.super")
 		SERVER_CONFIGS.TenantDomain = DEFAULT_TENANT_DOMAIN
 	}
+}
+
+func IsSubOrganization() bool {
+	
+	return SERVER_CONFIGS.Organization != ""
 }
