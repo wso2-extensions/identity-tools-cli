@@ -30,17 +30,44 @@ You need to [setup](https://is.docs.wso2.com/en/latest/get-started/sample-use-ca
     ```
     iamctl -h
     ```
-5. Start WSO2 IS and [register a M2M application](https://is.docs.wso2.com/en/latest/guides/applications/register-machine-to-machine-app/) with the following API authorization.
+   
+### Registering an Application in WSO2 Identity Server
 
+#### For Export and Import in the Root Organization
+1. Start WSO2 IS
+2. Open the Console application
+3. Login as the admin user (admin/admin)
+4. [Register a M2M application](https://is.docs.wso2.com/en/latest/guides/applications/register-machine-to-machine-app/).
+5. Grant the following API authorizations under Management APIs.
 
 API                                              | Scopes
 ------------------------------------------------ | --------------------------------------------------------------------
-Management --> Application Management API        | Create Application, Update Application, Delete Application, View Application
+Management --> Application Management API        | Create Application, Update Application, Delete Application, View Application, Update authorised business APIs of an Application, Update authorised internal APIs of an Application, View application client secret, Regenerate application client secret
+Management --> Application Authentication Script Management API | Update Application Authentication Script
 Management --> Claim Management API              | Create Claim, Update Claim, Delete Claim, View Claim
 Management --> Identity Provider Management API  | Create Identity Provider, Update Identity Provider, Delete Identity Provider, View Identity Provider
 Management --> Userstore Management API          | Create Userstore, Update Userstore, Delete Userstore, View Userstore
 
 6. Take note of the client ID and client secret of this application.
+
+#### For Export and Import in a Sub-Organization
+1. Start WSO2 IS
+2. Open the Console application.
+3. Login as the admin user (admin/admin)
+4. [Register a Standard-Based Application](https://is.docs.wso2.com/en/latest/guides/applications/register-standard-based-app/).
+5. Share the application with the relevant sub-organization (e.g., `wso2.com`)
+6. Grant the following API authorizations under Organization APIs.
+
+API                                              | Scopes
+------------------------------------------------ | --------------------------------------------------------------------
+Organization --> Application Management API        | Create Application, Update Application, Delete Application, View Application, View application client secret, Regenerate application client secret
+Organization --> Application Authentication Script Management API | Update Application Authentication Script
+Organization --> Claim Management API              | Create Claim, Update Claim, Delete Claim, View Claim
+Organization --> Identity Provider Management API  | Create Identity Provider, Update Identity Provider, Delete Identity Provider, View Identity Provider
+Organization --> Userstore Management API          | Create Userstore, Update Userstore, Delete Userstore, View Userstore
+
+6. Take note of the client ID and client secret of this application.
+
 
 ## CLI mode
 
@@ -70,6 +97,8 @@ The tool should be initialized with the server details of the environment it is 
 
 Example configurations:
 
+*Root Organization*
+
 ```
     {
        "SERVER_URL" : "https://localhost:9443",
@@ -79,12 +108,25 @@ Example configurations:
     }
 ```
 
+*Sub Organization*
+
+```
+    {
+       "SERVER_URL" : "https://localhost:9443",
+       "CLIENT-ID" : "********",
+       "CLIENT-SECRET" : "********",
+       "TENANT-DOMAIN" : "carbon.super",
+       "ORGANIZATION":"b833d7de-264c-4c4e-8d52-61f9c57e84ca"
+    }
+```
+
 #### Export
 Run the following command to export all supported resource configurations from the target environment to the current directory.
 ```
 iamctl exportAll -c ./configs/env
 ```
 A new set of folders are created, which are named after each resource type, with exported yaml files for each available resource in WSO2 IS.
+
 
 #### Import
 Run the following command to import all supported resource configurations from the current directory to the target environment.
