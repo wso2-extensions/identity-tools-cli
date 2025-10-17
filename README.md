@@ -34,9 +34,9 @@ You need to [setup](https://is.docs.wso2.com/en/latest/get-started/sample-use-ca
 ### Registering an Application in WSO2 Identity Server
 
 #### For Export and Import in the Root Organization
-1. Start WSO2 IS
-2. Open the Console application
-3. Login as the admin user (admin/admin)
+1. Start WSO2 Identity Server.
+2. Open the Console application.
+3. Login as the admin user (admin/admin).
 4. [Register a M2M application](https://is.docs.wso2.com/en/latest/guides/applications/register-machine-to-machine-app/).
 5. Grant the following API authorizations under Management APIs.
 
@@ -51,11 +51,11 @@ Management --> Userstore Management API          | Create Userstore, Update User
 6. Take note of the client ID and client secret of this application.
 
 #### For Export and Import in a Sub-Organization
-1. Start WSO2 IS
+1. WSO2 Identity Server.
 2. Open the Console application.
-3. Login as the admin user (admin/admin)
+3. Login as the admin user (admin/admin).
 4. [Register a Standard-Based Application](https://is.docs.wso2.com/en/latest/guides/applications/register-standard-based-app/).
-5. Share the application with the relevant sub-organization (e.g., `wso2.com`)
+5. Share the application with the relevant sub-organization (e.g., `wso2.com`).
 6. Grant the following API authorizations under Organization APIs.
 
 API                                              | Scopes
@@ -116,7 +116,7 @@ Example configurations:
        "CLIENT-ID" : "********",
        "CLIENT-SECRET" : "********",
        "TENANT-DOMAIN" : "carbon.super",
-       "ORGANIZATION":"b833d7de-264c-4c4e-8d52-61f9c57e84ca"
+       "ORGANIZATION": "b833d7de-264c-4c4e-8d52-61f9c57e84ca"
     }
 ```
 
