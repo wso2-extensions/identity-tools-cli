@@ -6,6 +6,9 @@ To build the IAM-ctl in your computer, you should have go installed. If you do n
 Now you can build the IAM-ctl.
 Here onwards, the location of the identity-tools-cli repository will be referred as ```<PROJECT_ROOT>```.
 1. Open a terminal and set directory to ```<PROJECT_ROOT>/iamctl```
+```
+cd iamctl
+```
 
 2. Then build the IAM-ctl.
 ```
