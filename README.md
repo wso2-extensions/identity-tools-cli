@@ -53,32 +53,39 @@ Management --> Userstore Management API          | Create Userstore, Update User
 #### For Export and Import in a Sub-Organization
 1. WSO2 Identity Server.
 2. Open the Console application.
-3. Login as the admin user (admin/admin).
-4. [Register a Standard-Based Application](https://is.docs.wso2.com/en/latest/guides/applications/register-standard-based-app/).
+3. Login as the admin user (admin/admin) of the root organization.
+4. [Register a Standard-Based Application](https://is.docs.wso2.com/en/latest/guides/applications/register-standard-based-app/) in the root organization.
 5. Share the application with the relevant sub-organization (e.g., `wso2.com`).
-6. Grant the following API authorizations under Organization APIs.
+6. Allow following grant types in the newly created Standard-Based Application:
+   * Client Credentials
+   * Organization Switch
+7. Grant the following API authorizations under Organization APIs.
 
 API                                              | Scopes
 ------------------------------------------------ | --------------------------------------------------------------------
 Organization --> Application Management API        | Create Application, Update Application, Delete Application, View Application, View application client secret, Regenerate application client secret
 Organization --> Application Authentication Script Management API | Update Application Authentication Script
-Organization --> Claim Management API              | Create Claim, Update Claim, Delete Claim, View Claim
 Organization --> Identity Provider Management API  | Create Identity Provider, Update Identity Provider, Delete Identity Provider, View Identity Provider
 Organization --> Userstore Management API          | Create Userstore, Update Userstore, Delete Userstore, View Userstore
 
-6. Take note of the client ID and client secret of this application.
+8. Take note of the client ID and client secret of this application from the root organization.
 
 
 ## CLI mode
 
 The CLI mode of the tool can be used to handle bulk configurations in the target environment. This can be used to promote resources across multiple environments, deploy new configurations to target environments, and act as a backup of each environment's configurations.
 
-This mode consists of the `exportAll` and `importAll` commands that can be used to export and import all configurations of the supported resource types from or to a target environment. 
+This mode consists of the `exportAll` and `importAll` commands that can be used to export and import all configurations of the supported resource types from or to a target environment. This can be used to transfer resources across sub organisations. 
 
-Currently, the supported resource types are: 
+The supported resource types to transfer resources between root organizations are: 
 * Applications
 * Identity Providers
 * Claims
+* User Stores
+
+The supported resource types to transfer resources between sub organizations are:
+* Applications
+* Identity Providers
 * User Stores
 
 ### Running the tool in the CLI mode
