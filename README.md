@@ -3,7 +3,7 @@
 IAM-CTL is a tool that can manage WSO2 Identity Server configurations from the command line. It is written in [GO](https://go.dev/) and uses the management REST APIs of WSO2 Identity Server to manage configurations.
 
 ### Prerequisites
-You need to [setup](https://is.docs.wso2.com/en/latest/get-started/sample-use-cases/set-up/) WSO2 Identity Server 7.0.0.
+You need to [setup](https://is.docs.wso2.com/en/latest/get-started/sample-use-cases/set-up/) WSO2 Identity Server.
 
 ### Run the tool
 
@@ -20,10 +20,10 @@ You need to [setup](https://is.docs.wso2.com/en/latest/get-started/sample-use-ca
        alias iamctl="<IAM-CTL-PATH>/bin/iamctl" 
        ```
 
-   * windows
+   * windows (On Command Prompt):
 
        ```
-       doskey iamctl=<IAM-CTL-PATH>\bin\iamctl.exe $*
+       doskey iamctl="<IAM-CTL-PATH>\bin\iamctl.exe" $*
        ```
  
 4. Run the tool using the following command to get the basic details.
@@ -129,17 +129,37 @@ Example configurations:
 
 #### Export
 Run the following command to export all supported resource configurations from the target environment to the current directory.
-```
-iamctl exportAll -c ./configs/env
-```
+
+* linux/mac:
+
+    ```
+    iamctl exportAll -c ./configs/env
+    ```
+
+ * windows (On Command Prompt):
+
+    ```
+    iamctl exportAll -c .\configs\env
+    ```
+
 A new set of folders are created, which are named after each resource type, with exported yaml files for each available resource in WSO2 IS.
 
 
 #### Import
 Run the following command to import all supported resource configurations from the current directory to the target environment.
-```
-iamctl importAll -c ./configs/env
-```
+
+* linux/mac:
+
+    ```
+    iamctl importAll -c ./configs/env
+    ```
+
+* windows (On Command Prompt):
+
+   ```
+   iamctl importAll -c .\configs\env
+   ```
+  
 All resources available inside each resource type folder in the current directory will be imported to WSO2 IS.
 
 ## Documentation
