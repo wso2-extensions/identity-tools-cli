@@ -10,8 +10,9 @@ const (
 
 // commands
 const (
-	ROOT_COMMAND  string = "iamctl"
-	LOGIN_COMMAND string = "login"
+	ROOT_COMMAND   string = "iamctl"
+	LOGIN_COMMAND  string = "login"
+	LOGOUT_COMMAND string = "logout"
 )
 
 // URL Components
