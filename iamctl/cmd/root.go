@@ -26,6 +26,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/internal"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
@@ -33,7 +34,7 @@ var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   utils.AppName,
+	Use:   internal.ROOT_COMMAND,
 	Short: utils.ShortAppDesc,
 	Long:  utils.LongAPPConfig,
 	Run:   func(cmd *cobra.Command, args []string) {},

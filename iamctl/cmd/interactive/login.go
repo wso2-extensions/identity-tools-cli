@@ -4,11 +4,13 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package interactive
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/spf13/cobra"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
 	question "github.com/wso2-extensions/identity-tools-cli/iamctl/cmd/interactive/survey"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/components"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/core/api"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/internal"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/styles"
@@ -18,12 +20,13 @@ import (
 var loginCmd = &cobra.Command{
 	Use:   internal.LOGIN_COMMAND,
 	Short: "Login and connect with the Server",
-	Long: `Login and connect with the Server using Client ID, Client Secret and Organization Name (Asgardeo) or Tenant Domain (Identity Server)
-		You will be asked to select the server type (Asgardeo/Identity Server) and provide the required details to login.
-		You can provide the Client ID and Organization Name (Asgardeo) or Tenant Domain (Identity Server) as flags, or you will be prompted to enter them interactively.
-		You can also provide the Client Secret as a flag. If not provided, you will be prompted to enter it securely. We recommend using flags for non-interactive usage (Automation) and secure prompts for interactive usage.`,
-	Example: internal.ROOT_COMMAND + " " + internal.LOGIN_COMMAND + ` --client-id <client-id> --org <org-name> --client-secret <client-secret> --server-type "Asgardeo"` + "\n" +
-		internal.ROOT_COMMAND + " " + internal.LOGIN_COMMAND + ` --client-id <client-id> --org <tenant-domain> --client-secret <client-secret> --server-type "Identity Server" --identity-server-url https://localhost:9443` + "\n" + internal.ROOT_COMMAND + " " + internal.LOGIN_COMMAND,
+	Long: fmt.Sprintf(`Login and connect with the Server using Client ID, Client Secret and Organization Name (Asgardeo) or Tenant Domain (Identity Server). 
+You will be asked to select the server type (Asgardeo/Identity Server) and provide the required details to login. 
+You can provide the Client ID and Organization Name (Asgardeo) or Tenant Domain (Identity Server) as flags, or you will be prompted to enter them interactively. 
+You can also provide the Client Secret as a flag. If not provided, you will be prompted to enter it securely. 
+We recommend using flags for non-interactive usage (Automation) and secure prompts for interactive usage.`),
+	Example: fmt.Sprintf("%s %s --client-id <client-id> --org <org-name> --client-secret <client-secret> --server-type \"Asgardeo\"\n%s %s --client-id <client-id> --org <tenant-domain> --client-secret <client-secret> --server-type \"Identity Server\" --identity-server-url https://localhost:9443\n%s %s",
+		internal.ROOT_COMMAND, internal.LOGIN_COMMAND, internal.ROOT_COMMAND, internal.LOGIN_COMMAND, internal.ROOT_COMMAND, internal.LOGIN_COMMAND),
 	Run: func(cmd *cobra.Command, args []string) {
 		var loginTheme = styles.GetLoginTheme()
 
@@ -38,7 +41,7 @@ var loginCmd = &cobra.Command{
 			serverType = serverTypeFlag
 		} else {
 			if err := question.SelectServerPrompt.Value(&serverType).WithTheme(loginTheme).Run(); err != nil {
-				log.Println(styles.StylizeErrorMessage("Error while selecting server type: " + err.Error()))
+				log.Println(fmt.Sprintf(components.StylizeErrorMessage("Error while selecting server: %s"), err.Error()))
 				return
 			}
 		}
@@ -49,7 +52,7 @@ var loginCmd = &cobra.Command{
 				identityServerURL = identityServerURLFlag
 			} else {
 				if err := question.IdentityServerURLPrompt.Value(&identityServerURL).WithTheme(loginTheme).Run(); err != nil {
-					log.Println(styles.StylizeErrorMessage("Error while entering Identity Server URL: " + err.Error()))
+					log.Println(fmt.Sprintf(components.StylizeErrorMessage("Error while entering Identity Server URL: %s"), err.Error()))
 					return
 				}
 			}
@@ -59,8 +62,8 @@ var loginCmd = &cobra.Command{
 		if orgNameFlag != "" {
 			orgName = orgNameFlag
 		} else {
-			if err := question.OrgNamePrompt.Value(&orgName).WithTheme(loginTheme).Run(); err != nil {
-				log.Println(styles.StylizeErrorMessage("Error while entering Organization Name/Tenant Domain: " + err.Error()))
+			if err := question.GetOrgNamePrompt(serverType).Value(&orgName).WithTheme(loginTheme).Run(); err != nil {
+				log.Println(fmt.Sprintf(components.StylizeErrorMessage("Error while entering Organization Name/Tenant Domain: %s"), err.Error()))
 				return
 			}
 		}
@@ -70,7 +73,7 @@ var loginCmd = &cobra.Command{
 			clientID = clientIDFlag
 		} else {
 			if err := question.ClientIDPrompt.Value(&clientID).WithTheme(loginTheme).Run(); err != nil {
-				log.Println(styles.StylizeErrorMessage("Error while entering Client ID: " + err.Error()))
+				log.Println(fmt.Sprintf(components.StylizeErrorMessage("Error while entering Client ID: %s"), err.Error()))
 				return
 			}
 		}
@@ -80,14 +83,14 @@ var loginCmd = &cobra.Command{
 			clientSecret = clientSecretFlag
 		} else {
 			if err := question.ClientSecretPrompt.Value(&clientSecret).WithTheme(loginTheme).Run(); err != nil {
-				log.Println(styles.StylizeErrorMessage("Error while entering Client Secret: " + err.Error()))
+				log.Println(fmt.Sprintf(components.StylizeErrorMessage("Error while entering Client Secret: %s"), err.Error()))
 				return
 			}
 		}
 
-		err = api.Login(serverType, clientID, clientSecret, orgName, identityServerURL)
+		err := api.Login(serverType, clientID, clientSecret, orgName, identityServerURL)
 		if err != nil {
-			log.Println(styles.StylizeErrorMessage("Error during login: " + err.Error()))
+			log.Println(fmt.Sprintf(components.StylizeErrorMessage("Error during login: %s"), err.Error()))
 			return
 		}
 	},

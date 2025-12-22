@@ -9,9 +9,9 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/components"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/core/utils"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/internal"
-	"github.com/wso2-extensions/identity-tools-cli/iamctl/styles"
 )
 
 type AuthResponse struct {
@@ -71,7 +71,7 @@ func loginAndGetToken(serverUrl string, clientID string, clientSecret string, or
 		return err
 	}
 
-	log.Println(styles.StylizeSuccessMessage("Logged in Successfully!"))
+	log.Println(components.StylizeSuccessMessage("Logged in Successfully!"))
 	utils.StoretoKeyring(internal.ACCESS_TOKEN_KEY, authResponse.AccessToken)
 	utils.StoretoKeyring(internal.ORG_NAME_KEY, orgName)
 	utils.StoretoKeyring(internal.CLIENT_ID_KEY, clientID)
