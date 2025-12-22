@@ -35,8 +35,8 @@ var cfgFile string
 // rootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   internal.ROOT_COMMAND,
-	Short: utils.ShortAppDesc,
-	Long:  utils.LongAPPConfig,
+	Short: "A CLI tool to manage Identity and Access Management tasks",
+	Long:  "A CLI tool to manage Identity and Access Management tasks for WSO2 Identity Server and Asgardeo.",
 	Run:   func(cmd *cobra.Command, args []string) {},
 }
 
