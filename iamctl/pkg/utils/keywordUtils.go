@@ -256,11 +256,11 @@ func ReplaceValue(data interface{}, pathString string, replacement string) inter
 
 	path := GetPathKeys(pathString)
 	if len(path) == 1 {
-		switch data.(type) {
+		switch data := data.(type) {
 		case map[interface{}]interface{}:
-			data.(map[interface{}]interface{})[path[0]] = replacement
+			data[path[0]] = replacement
 		case map[string]interface{}:
-			data.(map[string]interface{})[path[0]] = replacement
+			data[path[0]] = replacement
 		}
 	} else {
 		switch v := data.(type) {
