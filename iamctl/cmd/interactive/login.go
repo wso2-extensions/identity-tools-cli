@@ -4,7 +4,7 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package interactive
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/spf13/cobra"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
@@ -38,7 +38,7 @@ var loginCmd = &cobra.Command{
 			serverType = serverTypeFlag
 		} else {
 			if err := question.SelectServerPrompt.Value(&serverType).WithTheme(loginTheme).Run(); err != nil {
-				fmt.Println("Error while selecting server type:", err)
+				log.Println(styles.StylizeErrorMessage("Error while selecting server type: " + err.Error()))
 				return
 			}
 		}
@@ -49,7 +49,7 @@ var loginCmd = &cobra.Command{
 				identityServerURL = identityServerURLFlag
 			} else {
 				if err := question.IdentityServerURLPrompt.Value(&identityServerURL).WithTheme(loginTheme).Run(); err != nil {
-					fmt.Println("Error while entering Identity Server URL:", err)
+					log.Println(styles.StylizeErrorMessage("Error while entering Identity Server URL: " + err.Error()))
 					return
 				}
 			}
@@ -60,7 +60,7 @@ var loginCmd = &cobra.Command{
 			orgName = orgNameFlag
 		} else {
 			if err := question.OrgNamePrompt.Value(&orgName).WithTheme(loginTheme).Run(); err != nil {
-				fmt.Println("Error while entering Organization Name/Tenant Domain:", err)
+				log.Println(styles.StylizeErrorMessage("Error while entering Organization Name/Tenant Domain: " + err.Error()))
 				return
 			}
 		}
@@ -70,7 +70,7 @@ var loginCmd = &cobra.Command{
 			clientID = clientIDFlag
 		} else {
 			if err := question.ClientIDPrompt.Value(&clientID).WithTheme(loginTheme).Run(); err != nil {
-				fmt.Println("Error while entering Client ID:", err)
+				log.Println(styles.StylizeErrorMessage("Error while entering Client ID: " + err.Error()))
 				return
 			}
 		}
@@ -80,14 +80,14 @@ var loginCmd = &cobra.Command{
 			clientSecret = clientSecretFlag
 		} else {
 			if err := question.ClientSecretPrompt.Value(&clientSecret).WithTheme(loginTheme).Run(); err != nil {
-				fmt.Println("Error while entering Client Secret:", err)
+				log.Println(styles.StylizeErrorMessage("Error while entering Client Secret: " + err.Error()))
 				return
 			}
 		}
 
 		err = api.Login(serverType, clientID, clientSecret, orgName, identityServerURL)
 		if err != nil {
-			fmt.Println("Error during login:", err)
+			log.Println(styles.StylizeErrorMessage("Error during login: " + err.Error()))
 			return
 		}
 	},

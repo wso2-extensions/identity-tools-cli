@@ -1,16 +1,17 @@
 package api
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/core/utils"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/internal"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/styles"
 )
 
 type AuthResponse struct {
@@ -20,27 +21,44 @@ type AuthResponse struct {
 	Scope       string `json:"scope"`
 }
 
+func buildTokenRequest(serverUrl, clientID, clientSecret string, body url.Values) (*http.Request, error) {
+	req, err := http.NewRequest("POST", serverUrl, strings.NewReader(body.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.SetBasicAuth(clientID, clientSecret)
+	return req, nil
+}
+
+func parseAuthResponse(resp *http.Response) (*AuthResponse, error) {
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("Login failed with status: " + resp.Status + " Response: " + string(data))
+	}
+
+	var authResponse AuthResponse
+	if err := json.Unmarshal(data, &authResponse); err != nil {
+		return nil, err
+	}
+	return &authResponse, nil
+}
+
 func loginAndGetToken(serverUrl string, clientID string, clientSecret string, orgName string) error {
 
 	body := url.Values{}
 	body.Set("grant_type", internal.AUTH_GRANT_TYPE)
 	body.Set("scope", internal.REQUIRED_SCOPES)
 
-	client := &http.Client{}
-	req, err := http.NewRequest("POST", serverUrl, strings.NewReader(body.Encode()))
-
+	client := utils.CreateHttpClient(true)
+	req, err := buildTokenRequest(serverUrl, clientID, clientSecret, body)
 	if err != nil {
 		return err
 	}
-
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	req.SetBasicAuth(clientID, clientSecret)
-
-	// Skip SSL verification for self-signed certificates (for development purposes only)
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client.Transport = tr
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -48,21 +66,17 @@ func loginAndGetToken(serverUrl string, clientID string, clientSecret string, or
 	}
 	defer resp.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
+	authResponse, err := parseAuthResponse(resp)
 	if err != nil {
 		return err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return errors.New("Login failed with status: " + resp.Status + " Response: " + string(data))
-	}
-
-	var authResponse AuthResponse
-	if err := json.Unmarshal(data, &authResponse); err != nil {
-		return err
-	}
-	fmt.Println("Login successful!")
-	fmt.Println("Access Token:", authResponse.AccessToken)
+	log.Println(styles.StylizeSuccessMessage("Logged in Successfully!"))
+	utils.StoretoKeyring(internal.ACCESS_TOKEN_KEY, authResponse.AccessToken)
+	utils.StoretoKeyring(internal.ORG_NAME_KEY, orgName)
+	utils.StoretoKeyring(internal.CLIENT_ID_KEY, clientID)
+	utils.StoretoKeyring(internal.SERVER_URL_KEY, serverUrl)
+	utils.StoretoKeyring(internal.CLIENT_SECRET_KEY, clientSecret)
 	return nil
 
 }

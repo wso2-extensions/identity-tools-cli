@@ -21,11 +21,23 @@ const (
 	AUTH_TOKEN_ENDPOINT string = "/oauth2/token"
 )
 
+// Auth grant type
 const AUTH_GRANT_TYPE string = "client_credentials"
 
 // scopes needed for the functionality
 const REQUIRED_SCOPES string = "internal_userstore_create internal_userstore_view internal_userstore_update internal_userstore_delete internal_user_mgt_create internal_user_mgt_list internal_user_mgt_view internal_user_mgt_delete internal_user_mgt_update internal_application_mgt_create internal_application_mgt_delete internal_application_mgt_update internal_application_mgt_view internal_group_mgt_delete internal_group_mgt_create internal_group_mgt_update internal_group_mgt_view internal_idp_update internal_idp_view internal_idp_delete internal_idp_create internal_application_script_update internal_role_mgt_users_update internal_role_mgt_meta_update internal_role_mgt_view internal_role_mgt_groups_update internal_role_mgt_meta_create internal_role_mgt_delete"
 
+// Keyring keys
+const (
+	CLIENT_ID_KEY     string = "client_id"
+	CLIENT_SECRET_KEY string = "client_secret"
+	ORG_NAME_KEY      string = "org_name"
+	SERVER_URL_KEY    string = "server_url"
+
+	ACCESS_TOKEN_KEY string = "access_token"
+)
+
+// Constants from old iamctl tool
 const APPLICATIONS_CONFIG = "APPLICATIONS"
 const IDP_CONFIG = "IDENTITY_PROVIDERS"
 const CLAIM_CONFIG = "CLAIMS"
