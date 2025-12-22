@@ -83,6 +83,6 @@ func Login(server string, clientID string, clientSecret string, orgName string, 
 	case internal.IS:
 		return loginToIS(clientID, clientSecret, orgName, serverUrl)
 	default:
-		return errors.New("Invalid Server Name")
+		return errors.New("Invalid Server Type (" + server + ") provided. Supported Server Types are Asgardeo and Identity Server")
 	}
 }
