@@ -7,7 +7,9 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/components"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/core/utils"
@@ -20,8 +22,6 @@ type AuthResponse struct {
 	AccessToken string `json:"access_token"`
 	Scope       string `json:"scope"`
 }
-
-var UrlPrefix string = ""
 
 func buildTokenRequest(serverUrl, clientID, clientSecret string, body url.Values) (*http.Request, error) {
 	req, err := http.NewRequest("POST", serverUrl, strings.NewReader(body.Encode()))
@@ -50,7 +50,7 @@ func parseAuthResponse(resp *http.Response) (*AuthResponse, error) {
 	return &authResponse, nil
 }
 
-func loginAndGetToken(serverUrl string, clientID string, clientSecret string, orgName string) error {
+func loginAndGetToken(serverUrl string, clientID string, clientSecret string, orgName string, prefixUrl string) error {
 
 	body := url.Values{}
 	body.Set("grant_type", internal.AUTH_GRANT_TYPE)
@@ -79,21 +79,24 @@ func loginAndGetToken(serverUrl string, clientID string, clientSecret string, or
 
 	utils.SetConfigValue(internal.ORG_NAME_KEY, orgName)
 	utils.SetConfigValue(internal.CLIENT_ID_KEY, clientID)
-	utils.SetConfigValue(internal.SERVER_URL_KEY, UrlPrefix)
+	utils.SetConfigValue(internal.PREFIX_URL_KEY, prefixUrl) 
+	utils.SetConfigValue(internal.TIME_REMAINING_KEY, strconv.Itoa(authResponse.ExpiresIn))
+	utils.SetConfigValue(internal.LAST_LOGIN_KEY, time.Now().Format(time.RFC3339))
+	utils.SetConfigValue(internal.AUTH_URL_KEY, serverUrl)
 
 	return nil
 
 }
 func loginToAsgardeo(clientID string, clientSecret string, orgName string) error {
 	serverUrl := internal.ASGARDEO_URL_PREFIX + orgName + internal.AUTH_TOKEN_ENDPOINT
-	UrlPrefix = internal.ASGARDEO_URL_PREFIX + orgName + "/"
-	return loginAndGetToken(serverUrl, clientID, clientSecret, orgName)
+	UrlPrefix := internal.ASGARDEO_URL_PREFIX + orgName + "/"
+	return loginAndGetToken(serverUrl, clientID, clientSecret, orgName, UrlPrefix)
 }
 
 func loginToIS(clientID string, clientSecret string, orgName string, serverUrl string) error {
 	fullURL := serverUrl + internal.AUTH_TOKEN_ENDPOINT
-	UrlPrefix = serverUrl + "/" + "t/" + orgName + "/"
-	return loginAndGetToken(fullURL, clientID, clientSecret, orgName)
+	UrlPrefix := serverUrl + "/" + "t/" + orgName + "/"
+	return loginAndGetToken(fullURL, clientID, clientSecret, orgName, UrlPrefix)
 }
 
 func Login(server string, clientID string, clientSecret string, orgName string, serverUrl string) error {

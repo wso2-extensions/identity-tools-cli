@@ -22,7 +22,7 @@ const ASGARDEO_URL_PREFIX string = "https://api.asgardeo.io/t/"
 
 const (
 	AUTH_TOKEN_ENDPOINT string = "/oauth2/token"
-	CONSOLE_URL_SUFFIX   string = "/console"
+	CONSOLE_URL_SUFFIX  string = "/console"
 )
 
 // Auth grant type
@@ -33,12 +33,14 @@ const REQUIRED_SCOPES string = "internal_userstore_create internal_userstore_vie
 
 // Keyring keys
 const (
-	CLIENT_ID_KEY     string = "client_id"
-	CLIENT_SECRET_KEY string = "client_secret"
-	ORG_NAME_KEY      string = "org_name"
-	SERVER_URL_KEY    string = "server_url"
-
-	ACCESS_TOKEN_KEY string = "access_token"
+	CLIENT_ID_KEY      string = "client_id"
+	CLIENT_SECRET_KEY  string = "client_secret"
+	ORG_NAME_KEY       string = "org_name"
+	PREFIX_URL_KEY     string = "prefix_url"
+	AUTH_URL_KEY       string = "auth_url"
+	ACCESS_TOKEN_KEY   string = "access_token"
+	TIME_REMAINING_KEY string = "time_remaining"
+	LAST_LOGIN_KEY     string = "last_login"
 )
 
 // Error messages

@@ -149,7 +149,19 @@ func ClearConfigOnLogout() error {
 	if err != nil {
 		return err
 	}
-	err = DeleteConfigValue(internal.SERVER_URL_KEY)
+	err = DeleteConfigValue(internal.PREFIX_URL_KEY)
+	if err != nil {
+		return err
+	}
+	err = DeleteConfigValue(internal.AUTH_URL_KEY)
+	if err != nil {
+		return err
+	}
+	err = DeleteConfigValue(internal.LAST_LOGIN_KEY)
+	if err != nil {
+		return err
+	}
+	err = DeleteConfigValue(internal.TIME_REMAINING_KEY)
 	if err != nil {
 		return err
 	}

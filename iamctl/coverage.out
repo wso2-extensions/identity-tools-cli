@@ -1,0 +1,6 @@
+mode: set
+github.com/wso2-extensions/identity-tools-cli/iamctl/main.go:33.13,34.54 1 0
+github.com/wso2-extensions/identity-tools-cli/iamctl/main.go:34.54,36.3 1 0
+github.com/wso2-extensions/identity-tools-cli/iamctl/main.go:38.2,38.22 1 0
+github.com/wso2-extensions/identity-tools-cli/iamctl/main.go:38.22,40.3 1 0
+github.com/wso2-extensions/identity-tools-cli/iamctl/main.go:40.8,42.3 1 0
