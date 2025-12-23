@@ -4,7 +4,6 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package interactive
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/spf13/cobra"
@@ -22,7 +21,7 @@ var logoutCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := api.Logout()
 		if err != nil {
-			log.Println(fmt.Sprintf(components.StylizeErrorMessage("Error Logging out: %s"), err.Error()))
+			log.Printf(components.StylizeErrorMessage("Error Logging out: %s"), err.Error())
 			return
 		}
 		log.Println(components.StylizeSuccessMessage("Successfully logged out!"))

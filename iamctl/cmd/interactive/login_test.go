@@ -1,7 +1,6 @@
 package interactive
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,11 +11,11 @@ func TestLogin(t *testing.T) {
 		cmd := loginCmd
 		assert.Equal(t, "login", cmd.Use)
 		assert.Contains(t, cmd.Short, "Login and connect with the Server")
-		assert.Contains(t, cmd.Long, fmt.Sprintf(`Login and connect with the Server using Client ID, Client Secret and Organization Name (Asgardeo) or Tenant Domain (Identity Server). 
+		assert.Contains(t, cmd.Long, `Login and connect with the Server using Client ID, Client Secret and Organization Name (Asgardeo) or Tenant Domain (Identity Server). 
 You will be asked to select the server type (Asgardeo/Identity Server) and provide the required details to login. 
 You can provide the Client ID and Organization Name (Asgardeo) or Tenant Domain (Identity Server) as flags, or you will be prompted to enter them interactively. 
 You can also provide the Client Secret as a flag. If not provided, you will be prompted to enter it securely. 
-We recommend using flags for non-interactive usage (Automation) and secure prompts for interactive usage.`))
+We recommend using flags for non-interactive usage (Automation) and secure prompts for interactive usage.`)
 		assert.NotNil(t, cmd.Run)
 	})
 

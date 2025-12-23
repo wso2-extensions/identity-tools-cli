@@ -20,11 +20,11 @@ import (
 var loginCmd = &cobra.Command{
 	Use:   internal.LOGIN_COMMAND,
 	Short: "Login and connect with the Server",
-	Long: fmt.Sprintf(`Login and connect with the Server using Client ID, Client Secret and Organization Name (Asgardeo) or Tenant Domain (Identity Server). 
+	Long: `Login and connect with the Server using Client ID, Client Secret and Organization Name (Asgardeo) or Tenant Domain (Identity Server). 
 You will be asked to select the server type (Asgardeo/Identity Server) and provide the required details to login. 
 You can provide the Client ID and Organization Name (Asgardeo) or Tenant Domain (Identity Server) as flags, or you will be prompted to enter them interactively. 
 You can also provide the Client Secret as a flag. If not provided, you will be prompted to enter it securely. 
-We recommend using flags for non-interactive usage (Automation) and secure prompts for interactive usage.`),
+We recommend using flags for non-interactive usage (Automation) and secure prompts for interactive usage.`,
 	Example: fmt.Sprintf("%s %s --client-id <client-id> --org <org-name> --client-secret <client-secret> --server-type \"Asgardeo\"\n%s %s --client-id <client-id> --org <tenant-domain> --client-secret <client-secret> --server-type \"Identity Server\" --identity-server-url https://localhost:9443\n%s %s",
 		internal.ROOT_COMMAND, internal.LOGIN_COMMAND, internal.ROOT_COMMAND, internal.LOGIN_COMMAND, internal.ROOT_COMMAND, internal.LOGIN_COMMAND),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -41,7 +41,7 @@ We recommend using flags for non-interactive usage (Automation) and secure promp
 			serverType = serverTypeFlag
 		} else {
 			if err := question.SelectServerPrompt.Value(&serverType).WithTheme(loginTheme).Run(); err != nil {
-				log.Println(fmt.Sprintf(components.StylizeErrorMessage("Error while selecting server: %s"), err.Error()))
+				log.Printf(components.StylizeErrorMessage("Error while selecting server: %s"), err.Error())
 				return
 			}
 		}
@@ -52,7 +52,7 @@ We recommend using flags for non-interactive usage (Automation) and secure promp
 				identityServerURL = identityServerURLFlag
 			} else {
 				if err := question.IdentityServerURLPrompt.Value(&identityServerURL).WithTheme(loginTheme).Run(); err != nil {
-					log.Println(fmt.Sprintf(components.StylizeErrorMessage("Error while entering Identity Server URL: %s"), err.Error()))
+					log.Printf(components.StylizeErrorMessage("Error while entering Identity Server URL: %s"), err.Error())
 					return
 				}
 			}
@@ -63,7 +63,7 @@ We recommend using flags for non-interactive usage (Automation) and secure promp
 			orgName = orgNameFlag
 		} else {
 			if err := question.GetOrgNamePrompt(serverType).Value(&orgName).WithTheme(loginTheme).Run(); err != nil {
-				log.Println(fmt.Sprintf(components.StylizeErrorMessage("Error while entering Organization Name/Tenant Domain: %s"), err.Error()))
+				log.Printf(components.StylizeErrorMessage("Error while entering Organization Name/Tenant Domain: %s"), err.Error())
 				return
 			}
 		}
@@ -73,7 +73,7 @@ We recommend using flags for non-interactive usage (Automation) and secure promp
 			clientID = clientIDFlag
 		} else {
 			if err := question.ClientIDPrompt.Value(&clientID).WithTheme(loginTheme).Run(); err != nil {
-				log.Println(fmt.Sprintf(components.StylizeErrorMessage("Error while entering Client ID: %s"), err.Error()))
+				log.Printf(components.StylizeErrorMessage("Error while entering Client ID: %s"), err.Error())
 				return
 			}
 		}
@@ -83,15 +83,18 @@ We recommend using flags for non-interactive usage (Automation) and secure promp
 			clientSecret = clientSecretFlag
 		} else {
 			if err := question.ClientSecretPrompt.Value(&clientSecret).WithTheme(loginTheme).Run(); err != nil {
-				log.Println(fmt.Sprintf(components.StylizeErrorMessage("Error while entering Client Secret: %s"), err.Error()))
+				log.Printf(components.StylizeErrorMessage("Error while entering Client Secret: %s"), err.Error())
 				return
 			}
 		}
 
-		err := api.Login(serverType, clientID, clientSecret, orgName, identityServerURL)
+		loginFunc := func() {
+			api.Login(serverType, clientID, clientSecret, orgName, identityServerURL)
+
+		}
+		err := components.GetSpinner("logging in...").Style(styles.GetSpinnerStyle()).Action(loginFunc).Run()
 		if err != nil {
-			log.Println(fmt.Sprintf(components.StylizeErrorMessage("Error during login: %s"), err.Error()))
-			return
+			log.Printf(components.StylizeErrorMessage("Error while Logging in: %s"), err.Error())
 		}
 	},
 }

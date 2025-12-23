@@ -38,6 +38,13 @@ const (
 	ACCESS_TOKEN_KEY string = "access_token"
 )
 
+// Error messages
+const (
+	KEYRING_ITEM_NOT_FOUND_ERROR string = "secret not found in keyring"
+	ALREADY_LOGGED_OUT_ERROR     string = "No active session found. Please login to continue"
+	REPEATED_LOGOUT_ERROR        string = "You are already logged out. Please login to continue"
+)
+
 // Constants from old iamctl tool
 const APPLICATIONS_CONFIG = "APPLICATIONS"
 const IDP_CONFIG = "IDENTITY_PROVIDERS"
