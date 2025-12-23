@@ -22,6 +22,7 @@ const ASGARDEO_URL_PREFIX string = "https://api.asgardeo.io/t/"
 
 const (
 	AUTH_TOKEN_ENDPOINT string = "/oauth2/token"
+	CONSOLE_URL_SUFFIX   string = "/console"
 )
 
 // Auth grant type
