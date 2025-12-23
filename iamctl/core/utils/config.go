@@ -1,7 +1,6 @@
 package utils
 
 import (
-	//"encoding/json"
 	"errors"
 	"log"
 	"os"
@@ -39,36 +38,6 @@ func GetAppDataPath() (string, error) {
 	}
 	return appDataPath, nil
 }
-
-// func WriteJSONFile(path string, data any) error {
-// 	file, err := os.Create(path)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer file.Close()
-
-// 	encoder := json.NewEncoder(file)
-// 	encoder.SetIndent("", "  ")
-// 	return encoder.Encode(data)
-// }
-
-// func WriteConfigJSONFile(data any) error {
-// 	path, err := GetAppDataPath()
-// 	path = filepath.Join(path, internal.CONFIG_FILE_NAME)
-// 	if err != nil {
-// 		return errors.New("Error while writing config: " + err.Error())
-// 	}
-// 	return WriteJSONFile(path, data)
-// }
-
-// func DeleteConfigJSONFile() error {
-// 	path, err := GetAppDataPath()
-// 	path = filepath.Join(path, internal.CONFIG_FILE_NAME)
-// 	if err != nil {
-// 		return errors.New("Error while deleting config: " + err.Error())
-// 	}
-// 	return os.Remove(path)
-// }
 
 func CreateConfigFileIfNotExists(dirPath string) error {
 	filePath := filepath.Join(dirPath, internal.CONFIG_FILE_NAME+"."+internal.CONFIG_FILE_TYPE)
