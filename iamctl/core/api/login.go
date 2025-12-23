@@ -77,12 +77,9 @@ func loginAndGetToken(serverUrl string, clientID string, clientSecret string, or
 	utils.StoretoKeyring(internal.ACCESS_TOKEN_KEY, authResponse.AccessToken)
 	utils.StoretoKeyring(internal.CLIENT_SECRET_KEY, clientSecret)
 
-	data := map[string]string{
-		internal.ORG_NAME_KEY:   orgName,
-		internal.CLIENT_ID_KEY:  clientID,
-		internal.SERVER_URL_KEY: UrlPrefix,
-	}
-	utils.WriteConfigJSONFile(data)
+	utils.SetConfigValue(internal.ORG_NAME_KEY, orgName)
+	utils.SetConfigValue(internal.CLIENT_ID_KEY, clientID)
+	utils.SetConfigValue(internal.SERVER_URL_KEY, UrlPrefix)
 
 	return nil
 

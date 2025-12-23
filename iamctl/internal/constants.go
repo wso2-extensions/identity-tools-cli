@@ -1,7 +1,8 @@
 package internal
 
 const APP_NAME string = "IAMCTL"
-const CONFIG_FILE_NAME string = "config.json"
+const CONFIG_FILE_NAME string = "config"
+const CONFIG_FILE_TYPE string = "json"
 
 // server names
 const (

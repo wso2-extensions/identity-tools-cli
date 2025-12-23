@@ -20,18 +20,24 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
 	_ "github.com/wso2-extensions/identity-tools-cli/iamctl/cmd/cli"
 	_ "github.com/wso2-extensions/identity-tools-cli/iamctl/cmd/interactive"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/components"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/core/utils"
 )
 
 func main() {
+	if err := utils.InitializeViperConfig(); err != nil {
+		log.Printf(components.StylizeErrorMessage("Error while initializing config: %s"), err.Error())
+	}
 
 	if len(os.Args) > 1 {
 		cmd.Execute()
 	} else {
-		fmt.Println("Use \" IAM-CTL [command] --help\" or \" IAM-CTL [command] -h\" for more information about a command.")
+		fmt.Println("Use \" iamctl [command] --help\" or \" iamctl [command] -h\" for more information about a command.")
 	}
 }

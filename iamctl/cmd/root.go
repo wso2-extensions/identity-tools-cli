@@ -19,18 +19,13 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
 	"os"
 
-	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/internal"
-	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
-var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -45,37 +40,5 @@ func Execute() {
 	if err := RootCmd.Execute(); err != nil {
 		log.Fatalln(err)
 		os.Exit(1)
-	}
-}
-
-func init() {
-
-	utils.CreateFile()
-	utils.CreateSampleSPFile()
-
-	cobra.OnInitialize(initConfig)
-}
-
-func initConfig() {
-
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		// Search config in home directory with name ".iamctl" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".iamctl")
-	}
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 }

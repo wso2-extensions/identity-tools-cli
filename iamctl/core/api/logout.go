@@ -14,18 +14,9 @@ func Logout() error {
 		}
 		return err
 	}
-	if err := utils.DeletefromKeyring(internal.CLIENT_ID_KEY); err != nil {
-		return err
-	}
 	if err := utils.DeletefromKeyring(internal.CLIENT_SECRET_KEY); err != nil {
 		return err
 	}
-	if err := utils.DeletefromKeyring(internal.ORG_NAME_KEY); err != nil {
-		return err
-	}
-	if err := utils.DeletefromKeyring(internal.SERVER_URL_KEY); err != nil {
-		return err
-	}
-	return nil
+	return utils.ClearConfigOnLogout()
 
 }
