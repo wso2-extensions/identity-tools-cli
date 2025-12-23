@@ -89,7 +89,10 @@ We recommend using flags for non-interactive usage (Automation) and secure promp
 		}
 
 		loginFunc := func() {
-			api.Login(serverType, clientID, clientSecret, orgName, identityServerURL)
+			err := api.Login(serverType, clientID, clientSecret, orgName, identityServerURL)
+			if err != nil {
+				log.Printf(components.StylizeErrorMessage("Error while Logging in: %s"), err.Error())
+			}
 
 		}
 		err := components.GetSpinner("logging in...").Style(styles.GetSpinnerStyle()).Action(loginFunc).Run()
