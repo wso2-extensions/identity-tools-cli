@@ -21,6 +21,8 @@ type AuthResponse struct {
 	Scope       string `json:"scope"`
 }
 
+var UrlPrefix string = ""
+
 func buildTokenRequest(serverUrl, clientID, clientSecret string, body url.Values) (*http.Request, error) {
 	req, err := http.NewRequest("POST", serverUrl, strings.NewReader(body.Encode()))
 	if err != nil {
@@ -73,20 +75,27 @@ func loginAndGetToken(serverUrl string, clientID string, clientSecret string, or
 
 	log.Println(components.StylizeSuccessMessage("Logged in Successfully!"))
 	utils.StoretoKeyring(internal.ACCESS_TOKEN_KEY, authResponse.AccessToken)
-	utils.StoretoKeyring(internal.ORG_NAME_KEY, orgName)
-	utils.StoretoKeyring(internal.CLIENT_ID_KEY, clientID)
-	utils.StoretoKeyring(internal.SERVER_URL_KEY, serverUrl)
 	utils.StoretoKeyring(internal.CLIENT_SECRET_KEY, clientSecret)
+
+	data := map[string]string{
+		internal.ORG_NAME_KEY:   orgName,
+		internal.CLIENT_ID_KEY:  clientID,
+		internal.SERVER_URL_KEY: UrlPrefix,
+	}
+	utils.WriteConfigJSONFile(data)
+
 	return nil
 
 }
 func loginToAsgardeo(clientID string, clientSecret string, orgName string) error {
 	serverUrl := internal.ASGARDEO_URL_PREFIX + orgName + internal.AUTH_TOKEN_ENDPOINT
+	UrlPrefix = internal.ASGARDEO_URL_PREFIX + orgName + "/"
 	return loginAndGetToken(serverUrl, clientID, clientSecret, orgName)
 }
 
 func loginToIS(clientID string, clientSecret string, orgName string, serverUrl string) error {
 	fullURL := serverUrl + internal.AUTH_TOKEN_ENDPOINT
+	UrlPrefix = serverUrl + "/" + "t/" + orgName + "/"
 	return loginAndGetToken(fullURL, clientID, clientSecret, orgName)
 }
 
