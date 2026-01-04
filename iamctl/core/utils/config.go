@@ -136,3 +136,30 @@ func ClearConfigOnLogout() error {
 	}
 	return nil
 }
+
+func isLoggedIn() (bool, error) {
+	_, err := GetfromKeyring(internal.ACCESS_TOKEN_KEY)
+	if err != nil {
+		if err.Error() == internal.KEYRING_ITEM_NOT_FOUND_ERROR {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+func GetLoginDetails() (string, string, string, error) {
+	status, err := isLoggedIn()
+	if err != nil || !status {
+		return "Not Logged In", "", "", err
+	}
+	orgName, err := GetConfigValue(internal.ORG_NAME_KEY)
+	if err != nil {
+		return "", "", "", err
+	}
+	prefixURL, err := GetConfigValue(internal.PREFIX_URL_KEY)
+	if err != nil {
+		return "", "", "", err
+	}
+	return "Logged In", orgName, prefixURL, nil
+}
