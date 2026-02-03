@@ -31,12 +31,12 @@ import (
 
 var serverConfigTemplate = map[string]string{
 
-	utils.SERVER_URL_CONFIG:    "",
-	utils.CLIENT_ID_CONFIG:     "",
-	utils.CLIENT_SECRET_CONFIG: "",
-	utils.TENANT_DOMAIN_CONFIG: "",
-	utils.ORGANIZATION_CONFIG:  "",
-	utils.VERSION_CONFIG:       "",
+	utils.SERVER_URL_CONFIG:         "",
+	utils.CLIENT_ID_CONFIG:          "",
+	utils.CLIENT_SECRET_CONFIG:      "",
+	utils.TENANT_DOMAIN_CONFIG:      "",
+	utils.ORGANIZATION_CONFIG:       "",
+	utils.SERVER_VERSION_CONFIG:     "",
 }
 
 var setupCmd = &cobra.Command{
