@@ -43,9 +43,13 @@ func TestCompareVersions(t *testing.T) {
 		{"double digit major", "10.0.0", "9.0.0", 1, false},
 		{"double digit minor", "7.10.0", "7.9.0", 1, false},
 		{"double digit patch", "7.0.20", "7.0.19", 1, false},
+		{"2-digit equal to 3-digit", "7.2", "7.2.0", 0, false},
+		{"2-digit vs 3-digit greater", "7.2", "7.1.5", 1, false},
+		{"2-digit vs 3-digit less", "7.1", "7.2.0", -1, false},
+		{"both 2-digit", "7.0", "7.0", 0, false},
 
 		// Invalid formats
-		{"missing patch", "7.0", "7.0.0", 0, true},
+		{"missing minor", "7", "7.0.0", 0, true},
 		{"too many components", "7.0.0.1", "7.0.0", 0, true},
 		{"non-integer major", "abc.0.0", "7.0.0", 0, true},
 		{"non-integer minor", "7.abc.0", "7.0.0", 0, true},
@@ -88,8 +92,11 @@ func TestParseVersion(t *testing.T) {
 		{"double digit major", "10.5.3", [3]int{10, 5, 3}, false},
 		{"version with spaces", " 7.0.0 ", [3]int{7, 0, 0}, false},
 		{"component spaces", "7. 0 .0", [3]int{7, 0, 0}, false},
+		{"2-digit version", "7.2", [3]int{7, 2, 0}, false},
+		{"2-digit with zeros", "5.0", [3]int{5, 0, 0}, false},
+		{"2-digit with spaces", " 7.2 ", [3]int{7, 2, 0}, false},
 
-		{"missing component", "7.0", [3]int{0, 0, 0}, true},
+		{"missing minor", "7", [3]int{0, 0, 0}, true},
 		{"extra component", "7.0.0.1", [3]int{0, 0, 0}, true},
 		{"non-integer", "7.x.0", [3]int{0, 0, 0}, true},
 		{"negative", "7.-1.0", [3]int{0, 0, 0}, true},
