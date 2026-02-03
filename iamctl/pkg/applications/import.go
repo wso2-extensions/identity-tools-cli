@@ -34,6 +34,9 @@ func ImportAll(inputDirPath string) {
 
 	log.Println("Importing applications...")
 	importFilePath := filepath.Join(inputDirPath, utils.APPLICATIONS.String())
+	if !utils.IsEntitySupportedInVersion(utils.APPLICATIONS) {
+		return
+	}
 
 	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
 		return
