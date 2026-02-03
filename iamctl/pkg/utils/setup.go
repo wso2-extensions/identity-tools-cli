@@ -40,13 +40,13 @@ type oAuthResponse struct {
 }
 
 type ServerConfigs struct {
-	ServerUrl    string `json:"SERVER_URL"`
-	ClientId     string `json:"CLIENT_ID"`
-	ClientSecret string `json:"CLIENT_SECRET"`
-	TenantDomain string `json:"TENANT_DOMAIN"`
-	Organization string `json:"ORGANIZATION"`
-	Token        string `json:"TOKEN"`
-	Version      string `json:"VERSION"`
+	ServerUrl     string `json:"SERVER_URL"`
+	ClientId      string `json:"CLIENT_ID"`
+	ClientSecret  string `json:"CLIENT_SECRET"`
+	TenantDomain  string `json:"TENANT_DOMAIN"`
+	Organization  string `json:"ORGANIZATION"`
+	Token         string `json:"TOKEN"`
+	ServerVersion string `json:"SERVER_VERSION"`
 }
 
 type ToolConfigs struct {
@@ -123,7 +123,7 @@ func loadConfigsFromEnvVar() (toolConfigPath string, keywordConfigPath string) {
 	SERVER_CONFIGS.ClientSecret = os.Getenv(CLIENT_SECRET_CONFIG)
 	SERVER_CONFIGS.TenantDomain = os.Getenv(TENANT_DOMAIN_CONFIG)
 	SERVER_CONFIGS.Organization = os.Getenv(ORGANIZATION_CONFIG)
-	SERVER_CONFIGS.Version = os.Getenv(VERSION_CONFIG)
+	SERVER_CONFIGS.ServerVersion = os.Getenv(SERVER_VERSION_CONFIG)
 
 	// Load tool config file path from environment variables.
 	toolConfigPath = os.Getenv(TOOL_CONFIG_PATH)
