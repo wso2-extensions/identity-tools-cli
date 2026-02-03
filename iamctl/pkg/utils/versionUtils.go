@@ -90,8 +90,8 @@ func ParseVersion(version string) ([3]int, error) {
 
 	var parts [3]int
 	components := strings.Split(strings.TrimSpace(version), ".")
-	if len(components) != 3 {
-		return parts, fmt.Errorf("version must have format MAJOR.MINOR.PATCH, got: %s", version)
+	if len(components) < 2 || len(components) > 3 {
+		return parts, fmt.Errorf("version must have format MAJOR.MINOR or MAJOR.MINOR.PATCH, got: %s", version)
 	}
 
 	for i, component := range components {
