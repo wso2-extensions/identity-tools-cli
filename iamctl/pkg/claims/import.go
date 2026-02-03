@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/configs"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 	"gopkg.in/yaml.v2"
 )
@@ -33,13 +34,16 @@ import (
 func ImportAll(inputDirPath string) {
 
 	log.Println("Importing claims...")
+	if !utils.IsEntitySupportedInVersion(configs.CLAIMS) {
+		return
+	}
 	if utils.IsSubOrganization() {
 		log.Println("Importing claims for sub organization not supported.")
 		return
 	}
-	importFilePath := filepath.Join(inputDirPath, utils.CLAIMS)
+	importFilePath := filepath.Join(inputDirPath, configs.CLAIMS)
 
-	if utils.IsResourceTypeExcluded(utils.CLAIMS) {
+	if utils.IsResourceTypeExcluded(configs.CLAIMS) {
 		return
 	}
 	var files []os.FileInfo
@@ -110,12 +114,12 @@ func importClaimDialect(dialectId string, importFilePath string) error {
 func importDialect(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
 
 	log.Println("Creating new claim dialect: " + fileInfo.ResourceName)
-	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.CLAIMS)
+	err := utils.SendImportRequest(importFilePath, modifiedFileData, configs.CLAIMS)
 	if err != nil {
-		utils.UpdateFailureSummary(utils.CLAIMS, fileInfo.ResourceName)
+		utils.UpdateFailureSummary(configs.CLAIMS, fileInfo.ResourceName)
 		return fmt.Errorf("error when importing claim dialect: %s", err)
 	}
-	utils.UpdateSuccessSummary(utils.CLAIMS, utils.IMPORT)
+	utils.UpdateSuccessSummary(configs.CLAIMS, utils.IMPORT)
 	log.Println("Claim dialect imported successfully.")
 	return nil
 }
@@ -123,12 +127,12 @@ func importDialect(importFilePath string, modifiedFileData string, fileInfo util
 func updateDialect(dialectId string, importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
 
 	log.Println("Updating claim dialect: " + fileInfo.ResourceName)
-	err := utils.SendUpdateRequest(dialectId, importFilePath, modifiedFileData, utils.CLAIMS)
+	err := utils.SendUpdateRequest(dialectId, importFilePath, modifiedFileData, configs.CLAIMS)
 	if err != nil {
-		utils.UpdateFailureSummary(utils.CLAIMS, fileInfo.ResourceName)
+		utils.UpdateFailureSummary(configs.CLAIMS, fileInfo.ResourceName)
 		return fmt.Errorf("error when updating claim dialect: %s", err)
 	}
-	utils.UpdateSuccessSummary(utils.CLAIMS, utils.UPDATE)
+	utils.UpdateSuccessSummary(configs.CLAIMS, utils.UPDATE)
 	log.Println("Claim dialect updated successfully.")
 	return nil
 }
@@ -168,7 +172,7 @@ deployedResourcess:
 			continue
 		}
 		log.Println("Claim dialect not found locally. Deleting claim dialect: ", claimDialect.DialectURI)
-		err := utils.SendDeleteRequest(claimDialect.Id, utils.CLAIMS)
+		err := utils.SendDeleteRequest(claimDialect.Id, configs.CLAIMS)
 		if err != nil {
 			log.Println("Error deleting claim dialect: ", err)
 		}

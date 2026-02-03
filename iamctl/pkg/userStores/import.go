@@ -26,15 +26,19 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/configs"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 func ImportAll(inputDirPath string) {
 
 	log.Println("Importing user stores...")
-	importFilePath := filepath.Join(inputDirPath, utils.USERSTORES)
+	importFilePath := filepath.Join(inputDirPath, configs.USERSTORES)
+	if !utils.IsEntitySupportedInVersion(configs.USERSTORES) {
+		return
+	}
 
-	if utils.IsResourceTypeExcluded(utils.USERSTORES) {
+	if utils.IsResourceTypeExcluded(configs.USERSTORES) {
 		return
 	}
 	var files []os.FileInfo
@@ -89,12 +93,12 @@ func importUserStore(userStoreId string, importFilePath string) error {
 func importUserStoreOperation(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
 
 	log.Println("Creating new user store: " + fileInfo.ResourceName)
-	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.USERSTORES)
+	err := utils.SendImportRequest(importFilePath, modifiedFileData, configs.USERSTORES)
 	if err != nil {
-		utils.UpdateFailureSummary(utils.USERSTORES, fileInfo.ResourceName)
+		utils.UpdateFailureSummary(configs.USERSTORES, fileInfo.ResourceName)
 		return fmt.Errorf("error when importing user store: %s", err)
 	}
-	utils.UpdateSuccessSummary(utils.USERSTORES, utils.IMPORT)
+	utils.UpdateSuccessSummary(configs.USERSTORES, utils.IMPORT)
 	log.Println("User store imported successfully.")
 	return nil
 }
@@ -102,12 +106,12 @@ func importUserStoreOperation(importFilePath string, modifiedFileData string, fi
 func updateUserStoreOperation(userStoreId string, importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
 
 	log.Println("Updating user store: " + fileInfo.ResourceName)
-	err := utils.SendUpdateRequest(userStoreId, importFilePath, modifiedFileData, utils.USERSTORES)
+	err := utils.SendUpdateRequest(userStoreId, importFilePath, modifiedFileData, configs.USERSTORES)
 	if err != nil {
-		utils.UpdateFailureSummary(utils.USERSTORES, fileInfo.ResourceName)
+		utils.UpdateFailureSummary(configs.USERSTORES, fileInfo.ResourceName)
 		return fmt.Errorf("error when updating user store: %s", err)
 	}
-	utils.UpdateSuccessSummary(utils.USERSTORES, utils.UPDATE)
+	utils.UpdateSuccessSummary(configs.USERSTORES, utils.UPDATE)
 	log.Println("User store updated successfully.")
 	return nil
 }
@@ -132,11 +136,11 @@ deployedResourcess:
 			continue
 		}
 		log.Println("User store not found locally. Deleting userstore: ", userstore.Name)
-		err := utils.SendDeleteRequest(userstore.Id, utils.USERSTORES)
+		err := utils.SendDeleteRequest(userstore.Id, configs.USERSTORES)
 		if err != nil {
-			utils.UpdateFailureSummary(utils.USERSTORES, userstore.Name)
+			utils.UpdateFailureSummary(configs.USERSTORES, userstore.Name)
 			log.Println("Error deleting user store: ", err)
 		}
-		utils.UpdateSuccessSummary(utils.USERSTORES, utils.DELETE)
+		utils.UpdateSuccessSummary(configs.USERSTORES, utils.DELETE)
 	}
 }

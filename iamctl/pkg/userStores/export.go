@@ -27,6 +27,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/configs"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
@@ -34,9 +35,12 @@ func ExportAll(exportFilePath string, format string) {
 
 	// Export all userstores to the UserStores folder.
 	log.Println("Exporting user stores...")
-	exportFilePath = filepath.Join(exportFilePath, utils.USERSTORES)
+	exportFilePath = filepath.Join(exportFilePath, configs.USERSTORES)
+	if !utils.IsEntitySupportedInVersion(configs.USERSTORES) {
+		return
+	}
 
-	if utils.IsResourceTypeExcluded(utils.USERSTORES) {
+	if utils.IsResourceTypeExcluded(configs.USERSTORES) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
@@ -60,10 +64,10 @@ func ExportAll(exportFilePath string, format string) {
 
 				err := exportUserStore(userstore.Id, exportFilePath, format)
 				if err != nil {
-					utils.UpdateFailureSummary(utils.USERSTORES, userstore.Name)
+					utils.UpdateFailureSummary(configs.USERSTORES, userstore.Name)
 					log.Printf("Error while exporting user store: %s. %s", userstore.Name, err)
 				} else {
-					utils.UpdateSuccessSummary(utils.USERSTORES, utils.EXPORT)
+					utils.UpdateSuccessSummary(configs.USERSTORES, utils.EXPORT)
 					log.Println("User store exported successfully: ", userstore.Name)
 				}
 			}
@@ -84,7 +88,7 @@ func exportUserStore(userStoreId string, outputDirPath string, format string) er
 		fileType = utils.MEDIA_TYPE_YAML
 	}
 
-	resp, err := utils.SendExportRequest(userStoreId, fileType, utils.USERSTORES, true)
+	resp, err := utils.SendExportRequest(userStoreId, fileType, configs.USERSTORES, true)
 	if err != nil {
 		return fmt.Errorf("error while exporting the identity provider: %s", err)
 	}
@@ -108,7 +112,7 @@ func exportUserStore(userStoreId string, outputDirPath string, format string) er
 	modifiedBody := []byte(strings.ReplaceAll(string(body), USERSTORE_SECRET_MASK, utils.SENSITIVE_FIELD_MASK))
 
 	userStoreKeywordMapping := getUserStoreKeywordMapping(fileInfo.ResourceName)
-	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, modifiedBody, userStoreKeywordMapping, utils.USERSTORES)
+	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, modifiedBody, userStoreKeywordMapping, configs.USERSTORES)
 	if err != nil {
 		return fmt.Errorf("error while processing the exported content: %s", err)
 	}

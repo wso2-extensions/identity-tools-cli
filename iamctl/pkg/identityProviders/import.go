@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/configs"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 	"gopkg.in/yaml.v2"
 )
@@ -33,9 +34,12 @@ import (
 func ImportAll(inputDirPath string) {
 
 	log.Println("Importing identity providers...")
-	importFilePath := filepath.Join(inputDirPath, utils.IDENTITY_PROVIDERS)
+	importFilePath := filepath.Join(inputDirPath, configs.IDENTITY_PROVIDERS)
+	if !utils.IsEntitySupportedInVersion(configs.IDENTITY_PROVIDERS) {
+		return
+	}
 
-	if utils.IsResourceTypeExcluded(utils.IDENTITY_PROVIDERS) {
+	if utils.IsResourceTypeExcluded(configs.IDENTITY_PROVIDERS) {
 		return
 	}
 	var files []os.FileInfo
@@ -98,12 +102,12 @@ func importIdp(idpId string, importFilePath string) error {
 func importIdentityProvider(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
 
 	log.Println("Creating new identity provider: " + fileInfo.ResourceName)
-	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.IDENTITY_PROVIDERS)
+	err := utils.SendImportRequest(importFilePath, modifiedFileData, configs.IDENTITY_PROVIDERS)
 	if err != nil {
-		utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, fileInfo.ResourceName)
+		utils.UpdateFailureSummary(configs.IDENTITY_PROVIDERS, fileInfo.ResourceName)
 		return fmt.Errorf("error when importing identity provider: %s", err)
 	}
-	utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.IMPORT)
+	utils.UpdateSuccessSummary(configs.IDENTITY_PROVIDERS, utils.IMPORT)
 	log.Println("Identity provider imported successfully.")
 	return nil
 }
@@ -111,12 +115,12 @@ func importIdentityProvider(importFilePath string, modifiedFileData string, file
 func updateIdentityProvider(idpId string, importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
 
 	log.Println("Updating identity provider: " + fileInfo.ResourceName)
-	err := utils.SendUpdateRequest(idpId, importFilePath, modifiedFileData, utils.IDENTITY_PROVIDERS)
+	err := utils.SendUpdateRequest(idpId, importFilePath, modifiedFileData, configs.IDENTITY_PROVIDERS)
 	if err != nil {
-		utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, fileInfo.ResourceName)
+		utils.UpdateFailureSummary(configs.IDENTITY_PROVIDERS, fileInfo.ResourceName)
 		return fmt.Errorf("error when updating identity provider: %s", err)
 	}
-	utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.UPDATE)
+	utils.UpdateSuccessSummary(configs.IDENTITY_PROVIDERS, utils.UPDATE)
 	log.Println("Identity provider updated successfully.")
 	return nil
 }
@@ -165,11 +169,11 @@ deployedResourcess:
 			continue
 		}
 		log.Printf("Identity provider: %s not found locally. Deleting idp.\n", idp.Name)
-		err := utils.SendDeleteRequest(idp.Id, utils.IDENTITY_PROVIDERS)
+		err := utils.SendDeleteRequest(idp.Id, configs.IDENTITY_PROVIDERS)
 		if err != nil {
-			utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, idp.Name)
+			utils.UpdateFailureSummary(configs.IDENTITY_PROVIDERS, idp.Name)
 			log.Println("Error deleting idp: ", idp.Name, err)
 		}
-		utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.DELETE)
+		utils.UpdateSuccessSummary(configs.IDENTITY_PROVIDERS, utils.DELETE)
 	}
 }

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/configs"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 	"gopkg.in/yaml.v2"
 )
@@ -42,7 +43,7 @@ type UserStoreConfigurations struct {
 func getUserStoreList() ([]userStore, error) {
 
 	var list []userStore
-	resp, err := utils.SendGetListRequest(utils.USERSTORES, -1)
+	resp, err := utils.SendGetListRequest(configs.USERSTORES, -1)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving userstore list. %w", err)
 	}

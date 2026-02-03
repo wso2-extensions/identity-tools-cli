@@ -31,6 +31,8 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/configs"
 )
 
 const EXPORT = "export"
@@ -51,10 +53,10 @@ func SendExportRequest(resourceId, fileType, resourceType string, excludeSecrets
 	req.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
 
 	query := req.URL.Query()
-	if resourceType == APPLICATIONS {
+	if resourceType == configs.APPLICATIONS {
 		query.Add("exportSecrets", strconv.FormatBool(!excludeSecrets))
 		req.URL.RawQuery = query.Encode()
-	} else if resourceType == IDENTITY_PROVIDERS {
+	} else if resourceType == configs.IDENTITY_PROVIDERS {
 		query.Add("excludeSecrets", strconv.FormatBool(excludeSecrets))
 		req.URL.RawQuery = query.Encode()
 	}
@@ -207,7 +209,7 @@ func SendUpdateRequest(resourceId, importFilePath, fileData, resourceType string
 
 	if statusCode == 200 {
 		return nil
-	} else if statusCode == 400 && resourceType == CLAIMS {
+	} else if statusCode == 400 && resourceType == configs.CLAIMS {
 		return handleClaimImportErrorResponse(resp)
 	} else if error, ok := ErrorCodes[statusCode]; ok {
 		return fmt.Errorf("error response for the import request: %s", error)
@@ -275,13 +277,13 @@ func SendGetListRequest(resourceType string, resourceLimit int) (*http.Response,
 func getResourcePath(resourceType string) string {
 
 	switch resourceType {
-	case APPLICATIONS:
+	case configs.APPLICATIONS:
 		return "applications"
-	case IDENTITY_PROVIDERS:
+	case configs.IDENTITY_PROVIDERS:
 		return "identity-providers"
-	case USERSTORES:
+	case configs.USERSTORES:
 		return "userstores"
-	case CLAIMS:
+	case configs.CLAIMS:
 		return "claim-dialects"
 	}
 	return ""
@@ -301,7 +303,7 @@ func buildRequestUrl(requestType, resourceType, resourceId string) (reqUrl strin
 
 	switch requestType {
 	case EXPORT:
-		if resourceType == APPLICATIONS {
+		if resourceType == configs.APPLICATIONS {
 			reqUrl = getResourceBaseUrl(resourceType) + resourceId + "/exportFile"
 		} else {
 			reqUrl = getResourceBaseUrl(resourceType) + resourceId + "/" + EXPORT
@@ -309,7 +311,7 @@ func buildRequestUrl(requestType, resourceType, resourceId string) (reqUrl strin
 	case IMPORT:
 		reqUrl = getResourceBaseUrl(resourceType) + IMPORT
 	case UPDATE:
-		if resourceType == APPLICATIONS || resourceType == CLAIMS {
+		if resourceType == configs.APPLICATIONS || resourceType == configs.CLAIMS {
 			reqUrl = getResourceBaseUrl(resourceType) + IMPORT
 		} else {
 			reqUrl = getResourceBaseUrl(resourceType) + resourceId + "/" + IMPORT
@@ -333,8 +335,8 @@ func addQueryParams(reqURL, resourceType string) string {
 	queryParams := url.Query()
 
 	switch resourceType {
-	case CLAIMS:
-		if resourceType == CLAIMS && TOOL_CONFIGS.AllowDelete {
+	case configs.CLAIMS:
+		if resourceType == configs.CLAIMS && TOOL_CONFIGS.AllowDelete {
 			queryParams.Set("preserveClaims", "true")
 		}
 	}

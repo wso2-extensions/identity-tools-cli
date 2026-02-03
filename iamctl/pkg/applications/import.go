@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/configs"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 	"gopkg.in/yaml.v2"
 )
@@ -33,9 +34,12 @@ import (
 func ImportAll(inputDirPath string) {
 
 	log.Println("Importing applications...")
-	importFilePath := filepath.Join(inputDirPath, utils.APPLICATIONS)
+	importFilePath := filepath.Join(inputDirPath, configs.APPLICATIONS)
+	if !utils.IsEntitySupportedInVersion(configs.APPLICATIONS) {
+		return
+	}
 
-	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
+	if utils.IsResourceTypeExcluded(configs.APPLICATIONS) {
 		return
 	}
 	var files []os.FileInfo
@@ -115,12 +119,12 @@ func importApp(importFilePath string, isUpdate bool) error {
 func updateApplication(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
 
 	log.Println("Updating application: " + fileInfo.ResourceName)
-	err := utils.SendUpdateRequest("", importFilePath, modifiedFileData, utils.APPLICATIONS)
+	err := utils.SendUpdateRequest("", importFilePath, modifiedFileData, configs.APPLICATIONS)
 	if err != nil {
-		utils.UpdateFailureSummary(utils.APPLICATIONS, fileInfo.ResourceName)
+		utils.UpdateFailureSummary(configs.APPLICATIONS, fileInfo.ResourceName)
 		return fmt.Errorf("error when updating application: %s", err)
 	}
-	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.UPDATE)
+	utils.UpdateSuccessSummary(configs.APPLICATIONS, utils.UPDATE)
 	log.Println("Application updated successfully.")
 	return nil
 }
@@ -128,9 +132,9 @@ func updateApplication(importFilePath string, modifiedFileData string, fileInfo 
 func importApplication(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
 
 	log.Println("Creating new application: " + fileInfo.ResourceName)
-	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.APPLICATIONS)
+	err := utils.SendImportRequest(importFilePath, modifiedFileData, configs.APPLICATIONS)
 	if err != nil {
-		utils.UpdateFailureSummary(utils.APPLICATIONS, fileInfo.ResourceName)
+		utils.UpdateFailureSummary(configs.APPLICATIONS, fileInfo.ResourceName)
 		return fmt.Errorf("error when importing application: %s", err)
 	}
 
@@ -142,7 +146,7 @@ func importApplication(importFilePath string, modifiedFileData string, fileInfo 
 		// Check if oauthConsumerSecret is given or else add an indicator to the summary informing a new secret is generated.
 		utils.AddNewSecretIndicatorToSummary(fileInfo.ResourceName)
 	}
-	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.IMPORT)
+	utils.UpdateSuccessSummary(configs.APPLICATIONS, utils.IMPORT)
 	log.Println("Application imported successfully.")
 	return nil
 }
@@ -169,11 +173,11 @@ deployedResources:
 			continue
 		}
 		log.Println("Application not found locally. Deleting app: ", app.Name)
-		err := utils.SendDeleteRequest(app.Id, utils.APPLICATIONS)
+		err := utils.SendDeleteRequest(app.Id, configs.APPLICATIONS)
 		if err != nil {
-			utils.UpdateFailureSummary(utils.APPLICATIONS, app.Name)
+			utils.UpdateFailureSummary(configs.APPLICATIONS, app.Name)
 			log.Println("Error deleting application: ", app.Name, err)
 		}
-		utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.DELETE)
+		utils.UpdateSuccessSummary(configs.APPLICATIONS, utils.DELETE)
 	}
 }

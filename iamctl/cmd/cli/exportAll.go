@@ -21,6 +21,7 @@ package cli
 import (
 	"github.com/spf13/cobra"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/configs"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/applications"
 	claims "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/claims"
 	identityproviders "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/identityProviders"
@@ -42,10 +43,18 @@ var exportAllCmd = &cobra.Command{
 			outputDirPath = baseDir
 		}
 
-		claims.ExportAll(outputDirPath, format)
-		identityproviders.ExportAll(outputDirPath, format)
-		applications.ExportAll(outputDirPath, format)
-		userstores.ExportAll(outputDirPath, format)
+		exportFunctions := map[string]func(string, string){
+			configs.CLAIMS:             claims.ExportAll,
+			configs.IDENTITY_PROVIDERS: identityproviders.ExportAll,
+			configs.APPLICATIONS:       applications.ExportAll,
+			configs.USERSTORES:         userstores.ExportAll,
+		}
+
+		for _, resourceType := range configs.ResourceOrder {
+			if exportFunc, exists := exportFunctions[resourceType]; exists {
+				exportFunc(outputDirPath, format)
+			}
+		}
 
 		utils.PrintSummary(utils.EXPORT)
 	},

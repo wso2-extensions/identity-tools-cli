@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"regexp"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/configs"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 	"gopkg.in/yaml.v2"
 )
@@ -41,7 +42,7 @@ type ClaimDialectConfigurations struct {
 func getClaimDialectsList() ([]claimDialect, error) {
 
 	var list []claimDialect
-	resp, err := utils.SendGetListRequest(utils.CLAIMS, -1)
+	resp, err := utils.SendGetListRequest(configs.CLAIMS, -1)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving claim dialect list. %w", err)
 	}

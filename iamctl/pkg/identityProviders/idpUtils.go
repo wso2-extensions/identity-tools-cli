@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"log"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/configs"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
@@ -49,7 +50,7 @@ func getIdpList() ([]identityProvider, error) {
 		log.Println("Error: when retrieving IDP count. Retrieving only the default count.", err)
 	}
 	var list idpList
-	resp, err := utils.SendGetListRequest(utils.IDENTITY_PROVIDERS, idpCount)
+	resp, err := utils.SendGetListRequest(configs.IDENTITY_PROVIDERS, idpCount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve available IDP list. %w", err)
 	}
@@ -78,7 +79,7 @@ func getIdpList() ([]identityProvider, error) {
 func getTotalIdpCount() (count int, err error) {
 
 	var list idpList
-	resp, err := utils.SendGetListRequest(utils.IDENTITY_PROVIDERS, -1)
+	resp, err := utils.SendGetListRequest(configs.IDENTITY_PROVIDERS, -1)
 	if err != nil {
 		return -1, fmt.Errorf("failed to retrieve available IDP list. %w", err)
 	}

@@ -15,7 +15,7 @@
 * specific language governing permissions and limitations
 * under the License.
  */
- 
+
 package utils
 
 // Resource type configs
@@ -39,15 +39,10 @@ const CLIENT_ID_CONFIG = "CLIENT_ID"
 const CLIENT_SECRET_CONFIG = "CLIENT_SECRET"
 const TENANT_DOMAIN_CONFIG = "TENANT_DOMAIN"
 const ORGANIZATION_CONFIG = "ORGANIZATION"
+const SERVER_VERSION_CONFIG = "SERVER_VERSION"
 const TOOL_CONFIG_PATH = "TOOL_CONFIG_PATH"
 const KEYWORD_CONFIG_PATH = "KEYWORD_CONFIG_PATH"
 const TOKEN_CONFIG = "TOKEN"
-
-// Resource types
-const APPLICATIONS = "Applications"
-const IDENTITY_PROVIDERS = "IdentityProviders"
-const CLAIMS = "Claims"
-const USERSTORES = "UserStores"
 
 // Config file names
 const SERVER_CONFIG_FILE = "serverConfig.json"

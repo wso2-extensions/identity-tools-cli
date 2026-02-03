@@ -29,6 +29,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/configs"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 	"gopkg.in/yaml.v2"
 )
@@ -76,7 +77,7 @@ func getAppList() (spIdList []Application) {
 		log.Println("Error while retrieving application count. Retrieving only the default count.", err)
 	}
 	var list AppList
-	resp, err := utils.SendGetListRequest(utils.APPLICATIONS, totalAppCount)
+	resp, err := utils.SendGetListRequest(configs.APPLICATIONS, totalAppCount)
 	if err != nil {
 		log.Println("Error while retrieving application list", err)
 	}
@@ -110,7 +111,7 @@ func getAppList() (spIdList []Application) {
 func getTotalAppCount() (count int, err error) {
 
 	var list AppList
-	resp, err := utils.SendGetListRequest(utils.APPLICATIONS, -1)
+	resp, err := utils.SendGetListRequest(configs.APPLICATIONS, -1)
 	if err != nil {
 		return -1, fmt.Errorf("failed to retrieve available app list. %w", err)
 	}

@@ -88,7 +88,8 @@ Example configurations:
    "SERVER_URL" : "https://localhost:9443",
    "CLIENT_ID" : "********",
    "CLIENT_SECRET" : "********",
-   "TENANT_DOMAIN" : "carbon.super"
+   "TENANT_DOMAIN" : "carbon.super",
+   "SERVER_VERSION" : "7.2.0"
 }
 ```
 > **Note:** The CLI tool uses management rest apis of the IS to export and import resources. In order to perform these API requests, the client ID and client secret of a management application is required.
@@ -111,6 +112,7 @@ If the ```--config``` flag is not used when running the exportAll/importAll comm
 * CLIENT_ID
 * CLIENT_SECRET
 * TENANT_DOMAIN
+* SERVER_VERSION
 * TOOL_CONFIG_PATH
 * KEYWORD_CONFIG_PATH
 
@@ -130,6 +132,9 @@ export CLIENT_SECRET="********"
 export TENANT_DOMAIN="carbon.super"
 ```
 ```
+export SERVER_VERSION="7.2.0"
+```
+```
 export TOOL_CONFIG_PATH="<path to the configs folder>/dev/toolConfig.json"
 ```
 ```
@@ -146,7 +151,8 @@ You can also explicitly specify the use of environment variables for certain con
   "CLIENT_ID": "${DEV_CLIENT_ID}",
   "CLIENT_SECRET": "${DEV_CLIENT_SECRET}",
   "SERVER_URL": "https://localhost:9443",
-  "TENANT_DOMAIN": "carbon.super"
+  "TENANT_DOMAIN": "carbon.super",
+  "SERVER_VERSION" : "7.2.0"
 }
 ```
 The tool will search for the keyword with the name given inside the placeholder in the environment and use its value instead.

@@ -29,6 +29,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/configs"
 	"gopkg.in/yaml.v2"
 )
 
@@ -143,13 +144,13 @@ func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map
 func GetArrayIdentifiers(resourceType string) map[string]string {
 
 	switch resourceType {
-	case APPLICATIONS:
+	case configs.APPLICATIONS:
 		return applicationArrayIdentifiers
-	case IDENTITY_PROVIDERS:
+	case configs.IDENTITY_PROVIDERS:
 		return idpArrayIdentifiers
-	case USERSTORES:
+	case configs.USERSTORES:
 		return userStoreArrayIdentifiers
-	case CLAIMS:
+	case configs.CLAIMS:
 		return claimArrayIdentifiers
 	}
 	return make(map[string]string)

@@ -26,6 +26,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/configs"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
@@ -33,13 +34,16 @@ func ExportAll(exportFilePath string, format string) {
 
 	// Export all claim dialects with related claims.
 	log.Println("Exporting claims...")
+	if !utils.IsEntitySupportedInVersion(configs.CLAIMS) {
+		return
+	}
 	if utils.IsSubOrganization() {
 		log.Println("Exporting claims for sub organization not supported.")
 		return
 	}
-	exportFilePath = filepath.Join(exportFilePath, utils.CLAIMS)
+	exportFilePath = filepath.Join(exportFilePath, configs.CLAIMS)
 
-	if utils.IsResourceTypeExcluded(utils.CLAIMS) {
+	if utils.IsResourceTypeExcluded(configs.CLAIMS) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
@@ -60,10 +64,10 @@ func ExportAll(exportFilePath string, format string) {
 
 				err := exportClaimDialect(dialect.Id, exportFilePath, format)
 				if err != nil {
-					utils.UpdateFailureSummary(utils.CLAIMS, dialect.DialectURI)
+					utils.UpdateFailureSummary(configs.CLAIMS, dialect.DialectURI)
 					log.Printf("Error while exporting Claim Dialect: %s. %s", dialect.DialectURI, err)
 				} else {
-					utils.UpdateSuccessSummary(utils.CLAIMS, dialect.DialectURI)
+					utils.UpdateSuccessSummary(configs.CLAIMS, dialect.DialectURI)
 					log.Println("Claim Dialect exported successfully: ", dialect.DialectURI)
 				}
 			}
@@ -84,7 +88,7 @@ func exportClaimDialect(dialectId string, outputDirPath string, format string) e
 		fileType = utils.MEDIA_TYPE_YAML
 	}
 
-	resp, err := utils.SendExportRequest(dialectId, fileType, utils.CLAIMS, true)
+	resp, err := utils.SendExportRequest(dialectId, fileType, configs.CLAIMS, true)
 	if err != nil {
 		return fmt.Errorf("error while exporting the claim dialect: %s", err)
 	}
@@ -105,7 +109,7 @@ func exportClaimDialect(dialectId string, outputDirPath string, format string) e
 	}
 
 	claimDialectKeywordMapping := getClaimKeywordMapping(fileInfo.ResourceName)
-	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, claimDialectKeywordMapping, utils.CLAIMS)
+	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, claimDialectKeywordMapping, configs.CLAIMS)
 	if err != nil {
 		return fmt.Errorf("error while processing the exported content: %s", err)
 	}

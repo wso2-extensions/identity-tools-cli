@@ -20,6 +20,8 @@ package utils
 
 import (
 	"fmt"
+
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/configs"
 )
 
 type Summary struct {
@@ -89,7 +91,7 @@ func PrintImportSummary() {
 		if summary.Failed > 0 {
 			PrintFailedResources(summary)
 		}
-		if summary.ResourceType == APPLICATIONS {
+		if summary.ResourceType == configs.APPLICATIONS {
 			printNewSecretApplications(summary)
 		}
 	}
@@ -132,14 +134,14 @@ func AddNewSecretIndicatorToSummary(appName string) {
 
 	InitializeResourceSummary()
 
-	summary, ok := ResourceSummaries[APPLICATIONS]
+	summary, ok := ResourceSummaries[configs.APPLICATIONS]
 	if !ok {
 		summary = ResourceSummary{
-			ResourceType: APPLICATIONS,
+			ResourceType: configs.APPLICATIONS,
 		}
 	}
 	summary.SecretGeneratedApplications = append(summary.SecretGeneratedApplications, appName)
-	ResourceSummaries[APPLICATIONS] = summary
+	ResourceSummaries[configs.APPLICATIONS] = summary
 }
 
 func UpdateSuccessSummary(resourceType string, operation string) {
