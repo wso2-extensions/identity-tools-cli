@@ -46,6 +46,7 @@ type ServerConfigs struct {
 	TenantDomain string `json:"TENANT_DOMAIN"`
 	Organization string `json:"ORGANIZATION"`
 	Token        string `json:"TOKEN"`
+	Version      string `json:"VERSION"`
 }
 
 type ToolConfigs struct {
@@ -122,6 +123,7 @@ func loadConfigsFromEnvVar() (toolConfigPath string, keywordConfigPath string) {
 	SERVER_CONFIGS.ClientSecret = os.Getenv(CLIENT_SECRET_CONFIG)
 	SERVER_CONFIGS.TenantDomain = os.Getenv(TENANT_DOMAIN_CONFIG)
 	SERVER_CONFIGS.Organization = os.Getenv(ORGANIZATION_CONFIG)
+	SERVER_CONFIGS.Version = os.Getenv(VERSION_CONFIG)
 
 	// Load tool config file path from environment variables.
 	toolConfigPath = os.Getenv(TOOL_CONFIG_PATH)

@@ -35,6 +35,9 @@ func ExportAll(exportFilePath string, format string) {
 	log.Println("Exporting applications...")
 	exportFilePath = filepath.Join(exportFilePath, utils.APPLICATIONS.String())
 
+	if !utils.IsEntitySupportedInVersion(utils.APPLICATIONS) {
+		return
+	}
 	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
 		return
 	}
