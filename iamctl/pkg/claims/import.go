@@ -19,8 +19,10 @@
 package claims
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -30,7 +32,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func ImportAll(inputDirPath string) {
+func ImportAll(inputDirPath string, fileType string) {
 
 	log.Println("Importing claims...")
 	if utils.IsSubOrganization() {
@@ -42,13 +44,24 @@ func ImportAll(inputDirPath string) {
 	if utils.IsResourceTypeExcluded(utils.CLAIMS) {
 		return
 	}
+	var entries []os.DirEntry
 	var files []os.FileInfo
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
 		log.Println("No claim dialects to import.")
 	} else {
-		files, err = ioutil.ReadDir(importFilePath)
+		entries, err = os.ReadDir(importFilePath)
 		if err != nil {
-			log.Println("Error importing claim dialects: ", err)
+			log.Println("Error importing claims: ", err)
+		}
+
+		files = make([]os.FileInfo, 0, len(entries))
+		for _, entry := range entries {
+			info, err := entry.Info()
+			if err != nil {
+				log.Println("Error getting file info: ", err)
+				continue
+			}
+			files = append(files, info)
 		}
 		if utils.TOOL_CONFIGS.AllowDelete {
 			removeDeletedDeployedClaimdialect(files, importFilePath)
@@ -65,6 +78,10 @@ func ImportAll(inputDirPath string) {
 
 	for _, file := range files {
 		claimFilePath := filepath.Join(importFilePath, file.Name())
+		typeOfFile := filepath.Ext(file.Name())
+		if typeOfFile != "."+fileType {
+			continue
+		}
 		dialectName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 
 		if !utils.IsResourceExcluded(dialectName, utils.TOOL_CONFIGS.ClaimConfigs) {
@@ -83,7 +100,7 @@ func ImportAll(inputDirPath string) {
 
 func importClaimDialect(dialectId string, importFilePath string) error {
 
-	fileBytes, err := ioutil.ReadFile(importFilePath)
+	fileBytes, err := os.ReadFile(importFilePath)
 	if err != nil {
 		return fmt.Errorf("error when reading the file for claim dialect: %s", err)
 	}
@@ -93,12 +110,27 @@ func importClaimDialect(dialectId string, importFilePath string) error {
 	claimKeywordMapping := getClaimKeywordMapping(fileInfo.ResourceName)
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), claimKeywordMapping)
 
+	fileType := filepath.Ext(importFilePath)
 	// Unmarshal the file data to get the dialect URI as the resource name.
 	var claimDialectConfigurations ClaimDialectConfigurations
-	error := yaml.Unmarshal([]byte(modifiedFileData), &claimDialectConfigurations)
-	if error != nil {
-		return fmt.Errorf("error when unmarshalling the file for claim dialect: %s", err)
+	switch fileType {
+	case ".yml", ".yaml":
+		err1 := yaml.Unmarshal([]byte(modifiedFileData), &claimDialectConfigurations)
+		if err1 != nil {
+			return fmt.Errorf("error when unmarshalling the file for claim dialect: %s", err1)
+		}
+	case ".json":
+		err1 := json.Unmarshal([]byte(modifiedFileData), &claimDialectConfigurations)
+		if err1 != nil {
+			return fmt.Errorf("error when unmarshalling the file for claim dialect: %s", err1)
+		}
+	case ".xml":
+		err1 := xml.Unmarshal([]byte(modifiedFileData), &claimDialectConfigurations)
+		if err1 != nil {
+			return fmt.Errorf("error when unmarshalling the file for claim dialect: %s", err1)
+		}
 	}
+
 	fileInfo.ResourceName = claimDialectConfigurations.URI
 
 	if dialectId == "" {
@@ -149,13 +181,27 @@ deployedResourcess:
 			claimFilePath := filepath.Join(importFilePath, file.Name())
 
 			content, err := readFileContent(claimFilePath)
+
 			if err != nil {
 				log.Println("error when reading file content: ", err)
 			}
-
-			err = yaml.Unmarshal(content, &claimDialectConfigurations)
-			if err != nil {
-				log.Println("error when unmarshalling the file for claim dialect: ", err)
+			claimFileType := filepath.Ext(claimFilePath)
+			switch claimFileType {
+			case ".yml", ".yaml":
+				err = yaml.Unmarshal(content, &claimDialectConfigurations)
+				if err != nil {
+					log.Println("error when unmarshalling the file for claim dialect: ", err)
+				}
+			case ".json":
+				err = json.Unmarshal(content, &claimDialectConfigurations)
+				if err != nil {
+					log.Println("error when unmarshalling the file for claim dialect: ", err)
+				}
+			case ".xml":
+				err = xml.Unmarshal(content, &claimDialectConfigurations)
+				if err != nil {
+					log.Println("error when unmarshalling the file for claim dialect: ", err)
+				}
 			}
 
 			localResourceName := claimDialectConfigurations.URI
@@ -183,7 +229,7 @@ func readFileContent(filename string) ([]byte, error) {
 	}
 	defer file.Close()
 
-	content, err := ioutil.ReadAll(file)
+	content, err := io.ReadAll(file)
 	if err != nil {
 		return nil, err
 	}

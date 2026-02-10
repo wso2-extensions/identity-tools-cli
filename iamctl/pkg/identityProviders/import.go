@@ -19,8 +19,9 @@
 package identityproviders
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -30,7 +31,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func ImportAll(inputDirPath string) {
+func ImportAll(inputDirPath string, fileType string) {
 
 	log.Println("Importing identity providers...")
 	importFilePath := filepath.Join(inputDirPath, utils.IDENTITY_PROVIDERS)
@@ -38,13 +39,24 @@ func ImportAll(inputDirPath string) {
 	if utils.IsResourceTypeExcluded(utils.IDENTITY_PROVIDERS) {
 		return
 	}
+	var entries []os.DirEntry
 	var files []os.FileInfo
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
 		log.Println("No identity providers to import.")
 	} else {
-		files, err = ioutil.ReadDir(importFilePath)
+		entries, err = os.ReadDir(importFilePath)
 		if err != nil {
 			log.Println("Error importing identity providers: ", err)
+		}
+
+		files = make([]os.FileInfo, 0, len(entries))
+		for _, entry := range entries {
+			info, err := entry.Info()
+			if err != nil {
+				log.Println("Error getting file info: ", err)
+				continue
+			}
+			files = append(files, info)
 		}
 		if utils.TOOL_CONFIGS.AllowDelete {
 			removeDeletedDeployedIdps(files)
@@ -53,7 +65,12 @@ func ImportAll(inputDirPath string) {
 	}
 
 	for _, file := range files {
+
 		idpFilePath := filepath.Join(importFilePath, file.Name())
+		typeOfFile := filepath.Ext(file.Name())
+		if typeOfFile != "."+fileType {
+			continue
+		}
 		idpName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 
 		if !utils.IsResourceExcluded(idpName, utils.TOOL_CONFIGS.IdpConfigs) {
@@ -79,7 +96,7 @@ func ImportAll(inputDirPath string) {
 
 func importIdp(idpId string, importFilePath string) error {
 
-	fileBytes, err := ioutil.ReadFile(importFilePath)
+	fileBytes, err := os.ReadFile(importFilePath)
 	if err != nil {
 		return fmt.Errorf("error when reading the file for identity provider: %s", err)
 	}
@@ -123,15 +140,31 @@ func updateIdentityProvider(idpId string, importFilePath string, modifiedFileDat
 
 func getIdpId(idpFilePath string, idpName string) (string, error) {
 
-	fileContent, err := ioutil.ReadFile(idpFilePath)
+	fileContent, err := os.ReadFile(idpFilePath)
 	if err != nil {
 		return "", fmt.Errorf("error when reading the file for idp: %s. %s", idpName, err)
 	}
 	var idpConfig idpConfig
-	err = yaml.Unmarshal(fileContent, &idpConfig)
-	if err != nil {
-		return "", fmt.Errorf("invalid file content for idp: %s. %s", idpName, err)
+	fileType := filepath.Ext(idpFilePath)
+
+	switch fileType {
+	case ".yml", ".yaml":
+		err = yaml.Unmarshal(fileContent, &idpConfig)
+		if err != nil {
+			return "", fmt.Errorf("invalid file content for idp: %s. %s", idpName, err)
+		}
+	case ".json":
+		err = json.Unmarshal(fileContent, &idpConfig)
+		if err != nil {
+			return "", fmt.Errorf("invalid file content for idp: %s. %s", idpName, err)
+		}
+	case ".xml":
+		err = xml.Unmarshal(fileContent, &idpConfig)
+		if err != nil {
+			return "", fmt.Errorf("invalid file content for idp: %s. %s", idpName, err)
+		}
 	}
+
 	existingIdpList, err := getIdpList()
 	if err != nil {
 		return "", fmt.Errorf("error when retrieving the deployed idp list: %s", err)

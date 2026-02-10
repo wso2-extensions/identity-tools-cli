@@ -20,7 +20,6 @@ package cli
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -35,7 +34,7 @@ var serverConfigTemplate = map[string]string{
 	utils.CLIENT_ID_CONFIG:     "",
 	utils.CLIENT_SECRET_CONFIG: "",
 	utils.TENANT_DOMAIN_CONFIG: "",
-	utils.ORGANIZATION_CONFIG: "",
+	utils.ORGANIZATION_CONFIG:  "",
 }
 
 var setupCmd = &cobra.Command{
@@ -78,7 +77,7 @@ func createConfigFolder(baseDirPath string) {
 	if err != nil {
 		log.Println("Error in creating the server config template", err)
 	}
-	ioutil.WriteFile(envConfigDir+utils.SERVER_CONFIG_FILE, serverConfigs, 0644)
+	os.WriteFile(envConfigDir+utils.SERVER_CONFIG_FILE, serverConfigs, 0644)
 
 	// Create tool config directory.
 	file, err := os.OpenFile(envConfigDir+utils.TOOL_CONFIG_FILE, os.O_CREATE, 0644)
@@ -88,7 +87,7 @@ func createConfigFolder(baseDirPath string) {
 	defer file.Close()
 
 	// Create keyword config directory.
-	file, err = os.OpenFile(envConfigDir + utils.KEYWORD_CONFIG_FILE, os.O_CREATE, 0644)
+	file, err = os.OpenFile(envConfigDir+utils.KEYWORD_CONFIG_FILE, os.O_CREATE, 0644)
 	if err != nil {
 		log.Println("Error in creating the keyword config file", err)
 	}

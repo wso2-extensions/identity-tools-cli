@@ -20,8 +20,12 @@ package userstores
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"io"
+	"os"
+
+	"path/filepath"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 	"gopkg.in/yaml.v2"
@@ -35,8 +39,8 @@ type userStore struct {
 }
 
 type UserStoreConfigurations struct {
-	Name string `yaml:"name"`
-	ID   string `yaml:"id"`
+	Name string `yaml:"name" json:"name" xml:"name"`
+	ID   string `yaml:"id" json:"id" xml:"id"`
 }
 
 func getUserStoreList() ([]userStore, error) {
@@ -50,7 +54,7 @@ func getUserStoreList() ([]userStore, error) {
 
 	statusCode := resp.StatusCode
 	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("error when reading the retrived userstore list. %w", err)
 		}
@@ -82,7 +86,7 @@ func getDeployedUserstoreNames() []string {
 	return userstoreNames
 }
 
-func getUserStoreKeywordMapping(userStoreName string) map[string]interface{} {
+func getUserStoreKeywordMapping(userStoreName string) map[string]any {
 
 	if utils.KEYWORD_CONFIGS.UserStoreConfigs != nil {
 		return utils.ResolveAdvancedKeywordMapping(userStoreName, utils.KEYWORD_CONFIGS.UserStoreConfigs)
@@ -92,14 +96,28 @@ func getUserStoreKeywordMapping(userStoreName string) map[string]interface{} {
 
 func getUserStoreId(userStoreFilePath string) (string, error) {
 
-	fileContent, err := ioutil.ReadFile(userStoreFilePath)
+	fileContent, err := os.ReadFile(userStoreFilePath)
 	if err != nil {
 		return "", fmt.Errorf("error when reading the file: %s. %s", userStoreFilePath, err)
 	}
 	var userStoreConfig UserStoreConfigurations
-	err = yaml.Unmarshal(fileContent, &userStoreConfig)
-	if err != nil {
-		return "", fmt.Errorf("invalid file content at: %s. %s", userStoreFilePath, err)
+	fileType := filepath.Ext(userStoreFilePath)
+	switch fileType {
+	case ".yml", ".yaml":
+		err = yaml.Unmarshal(fileContent, &userStoreConfig)
+		if err != nil {
+			return "", fmt.Errorf("invalid file content at: %s. %s", userStoreFilePath, err)
+		}
+	case ".json":
+		err = json.Unmarshal(fileContent, &userStoreConfig)
+		if err != nil {
+			return "", fmt.Errorf("invalid file content at: %s. %s", userStoreFilePath, err)
+		}
+	case ".xml":
+		err = xml.Unmarshal(fileContent, &userStoreConfig)
+		if err != nil {
+			return "", fmt.Errorf("invalid file content at: %s. %s", userStoreFilePath, err)
+		}
 	}
 
 	existingUserStoreList, err := getUserStoreList()

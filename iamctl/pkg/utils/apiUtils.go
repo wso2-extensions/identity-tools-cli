@@ -42,6 +42,7 @@ const LIST = "list"
 func SendExportRequest(resourceId, fileType, resourceType string, excludeSecrets bool) (resp *http.Response, err error) {
 
 	reqUrl := buildRequestUrl(EXPORT, resourceType, resourceId)
+	fmt.Printf("Exporting url: %s\n", reqUrl)
 	req, err := http.NewRequest("GET", reqUrl, strings.NewReader(""))
 	if err != nil {
 		return resp, fmt.Errorf("error while creating the export request: %s", err)
@@ -51,10 +52,11 @@ func SendExportRequest(resourceId, fileType, resourceType string, excludeSecrets
 	req.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
 
 	query := req.URL.Query()
-	if resourceType == APPLICATIONS {
+	switch resourceType {
+	case APPLICATIONS:
 		query.Add("exportSecrets", strconv.FormatBool(!excludeSecrets))
 		req.URL.RawQuery = query.Encode()
-	} else if resourceType == IDENTITY_PROVIDERS {
+	case IDENTITY_PROVIDERS:
 		query.Add("excludeSecrets", strconv.FormatBool(excludeSecrets))
 		req.URL.RawQuery = query.Encode()
 	}
@@ -151,7 +153,6 @@ func SendUpdateRequest(resourceId, importFilePath, fileData, resourceType string
 
 	reqUrl := buildRequestUrl(UPDATE, resourceType, resourceId)
 	formattedReqUrl := addQueryParams(reqUrl, resourceType)
-
 	var buf bytes.Buffer
 	var err error
 	_, err = io.WriteString(&buf, fileData)
@@ -210,6 +211,7 @@ func SendUpdateRequest(resourceId, importFilePath, fileData, resourceType string
 	} else if statusCode == 400 && resourceType == CLAIMS {
 		return handleClaimImportErrorResponse(resp)
 	} else if error, ok := ErrorCodes[statusCode]; ok {
+		log.Println("Failed with Status Code:", statusCode)
 		return fmt.Errorf("error response for the import request: %s", error)
 	}
 	return fmt.Errorf("unexpected error when importing resource: %s", resp.Status)

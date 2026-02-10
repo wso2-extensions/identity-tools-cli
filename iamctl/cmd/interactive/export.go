@@ -21,7 +21,9 @@ package interactive
 import (
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
+	"io"
+	"os"
+
 	"log"
 	"mime"
 	"net/http"
@@ -135,13 +137,13 @@ func exportApplication(serviceProviderID string, exportlocation string, fileType
 
 	var fileName = params["filename"]
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	var exportedFilePath = exportlocation + "/" + fileName
-	err = ioutil.WriteFile(exportedFilePath, body, 0644)
+	err = os.WriteFile(exportedFilePath, body, 0644)
 	if err != nil {
 		log.Fatalln(err)
 	}

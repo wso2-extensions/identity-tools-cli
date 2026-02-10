@@ -21,7 +21,7 @@ package applications
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -44,7 +44,7 @@ type AppList struct {
 }
 
 type AppConfig struct {
-	ApplicationName string `yaml:"applicationName"`
+	ApplicationName string `yaml:"applicationName" json:"applicationName" xml:"ApplicationName"`
 }
 
 type AuthConfig struct {
@@ -84,7 +84,7 @@ func getAppList() (spIdList []Application) {
 
 	statusCode := resp.StatusCode
 	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -118,7 +118,7 @@ func getTotalAppCount() (count int, err error) {
 
 	statusCode := resp.StatusCode
 	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return -1, fmt.Errorf("error when reading the retrived app list. %w", err)
 		}
@@ -136,7 +136,7 @@ func getTotalAppCount() (count int, err error) {
 	return -1, fmt.Errorf("error while retrieving application count")
 }
 
-func getAppKeywordMapping(appName string) map[string]interface{} {
+func getAppKeywordMapping(appName string) map[string]any {
 
 	if utils.KEYWORD_CONFIGS.ApplicationConfigs != nil {
 		return utils.ResolveAdvancedKeywordMapping(appName, utils.KEYWORD_CONFIGS.ApplicationConfigs)
@@ -181,14 +181,14 @@ func maskOAuthConsumerSecret(fileContent []byte) []byte {
 func isToolMgtApp(file os.FileInfo, importFilePath string) (bool, error) {
 
 	appFilePath := filepath.Join(importFilePath, file.Name())
-	fileData, err := ioutil.ReadFile(appFilePath)
+	fileData, err := os.ReadFile(appFilePath)
 	if err != nil {
 		return false, fmt.Errorf("failed to read file: %s", err.Error())
 	}
 
 	config, err := unmarshalAuthConfig(fileData)
 	if err != nil {
-		return false, fmt.Errorf(err.Error())
+		return false, fmt.Errorf("%s", err.Error())
 	}
 
 	for _, requestConfig := range config.InboundAuthenticationConfig.InboundAuthenticationRequestConfigs {
@@ -205,7 +205,7 @@ func isOauthSecretGiven(modifiedFileData string) (bool, error) {
 
 	config, err := unmarshalAuthConfig([]byte(modifiedFileData))
 	if err != nil {
-		return false, fmt.Errorf(err.Error())
+		return false, fmt.Errorf("%s", err.Error())
 	}
 
 	for _, requestConfig := range config.InboundAuthenticationConfig.InboundAuthenticationRequestConfigs {
