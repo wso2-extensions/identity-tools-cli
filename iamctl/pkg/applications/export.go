@@ -20,7 +20,8 @@ package applications
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
+
 	"log"
 	"mime"
 	"os"
@@ -75,7 +76,6 @@ func exportApp(appId string, outputDirPath string, format string, excludeSecrets
 	default:
 		fileType = utils.MEDIA_TYPE_YAML
 	}
-
 	resp, err := utils.SendExportRequest(appId, fileType, utils.APPLICATIONS, excludeSecrets)
 	if err != nil {
 		return fmt.Errorf("error while exporting the application: %s", err)
@@ -85,12 +85,11 @@ func exportApp(appId string, outputDirPath string, format string, excludeSecrets
 	if err != nil {
 		return fmt.Errorf("error while parsing the content disposition header: %s", err)
 	}
-
 	fileName := params["filename"]
 	exportedFileName := filepath.Join(outputDirPath, fileName)
 	fileInfo := utils.GetFileInfo(exportedFileName)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("error while reading the response body when exporting app: %s. %s", fileName, err)
 	}
@@ -103,8 +102,7 @@ func exportApp(appId string, outputDirPath string, format string, excludeSecrets
 	if err != nil {
 		return fmt.Errorf("error while processing exported data: %s", err)
 	}
-
-	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
+	err = os.WriteFile(exportedFileName, modifiedFile, 0644)
 	if err != nil {
 		return fmt.Errorf("error when writing the exported content to file: %w", err)
 	}

@@ -19,6 +19,8 @@
 package cli
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/applications"
@@ -28,6 +30,12 @@ import (
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
+var sourceDirs = []string{
+	"Applications",
+	"IdentityProviders",
+	"Claims",
+	"UserStores",
+}
 var exportAllCmd = &cobra.Command{
 	Use:   "exportAll",
 	Short: "Export all applications",
@@ -36,10 +44,18 @@ var exportAllCmd = &cobra.Command{
 		outputDirPath, _ := cmd.Flags().GetString("outputDir")
 		format, _ := cmd.Flags().GetString("format")
 		configFile, _ := cmd.Flags().GetString("config")
+		isZip, _ := cmd.Flags().GetBool("zip")
 
 		baseDir := utils.LoadConfigs(configFile)
 		if outputDirPath == "" {
 			outputDirPath = baseDir
+		}
+
+		if isZip {
+			err := utils.ZipAndDeleteExports(outputDirPath, sourceDirs)
+			if err != nil {
+				fmt.Printf("Error creating zip archive: %s\n", err)
+			}
 		}
 
 		claims.ExportAll(outputDirPath, format)
@@ -57,4 +73,6 @@ func init() {
 	exportAllCmd.Flags().StringP("outputDir", "o", "", "Path to the output directory")
 	exportAllCmd.Flags().StringP("format", "f", "yaml", "Format of the exported files")
 	exportAllCmd.Flags().StringP("config", "c", "", "Path to the environment specific config folder")
+	exportAllCmd.MarkFlagRequired("config")
+	exportAllCmd.Flags().BoolP("zip", "z", false, "whether to create a zip archive of older exports and delete the folders")
 }

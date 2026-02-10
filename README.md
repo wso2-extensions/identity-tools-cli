@@ -146,7 +146,32 @@ Run the following command to export all supported resource configurations from t
 
 A new set of folders are created, which are named after each resource type, with exported yaml files for each available resource in WSO2 IS.
 
+Note: You can choose the export file format with the `-f, --format` flag. Supported formats are YAML (default), JSON, and XML. Resulting files will use the corresponding extensions: `.yml`, `.json`, `.xml`.
 
+Note: You can optionally archive the existing exports into a zip file while performing a new export.
+use the `-z` flag to enable the archiving feature in the output directory.
+
+
+- linux/mac examples:
+
+    ```
+    iamctl exportAll -c ./configs/env -f yml
+    iamctl exportAll -c ./configs/env -f json
+    iamctl exportAll -c ./configs/env -f xml
+    ```
+
+- windows (Command Prompt) examples:
+
+    ```
+    iamctl exportAll -c .\configs\env -f yml
+    iamctl exportAll -c .\configs\env -f json
+    iamctl exportAll -c .\configs\env -f xml
+    ```
+
+- Archiving examples:
+    ```
+    iamctl exportall -c ./configs/env -o ./exports -z 
+    ```
 #### Import
 Run the following command to import all supported resource configurations from the current directory to the target environment.
 
@@ -163,6 +188,26 @@ Run the following command to import all supported resource configurations from t
    ```
   
 All resources available inside each resource type folder in the current directory will be imported to WSO2 IS.
+
+Note: Note: You can choose the import file format with the `-f, --format` flag. Supported formats are YAML (default), JSON, and XML. Resulting files will use the corresponding extensions: `.yml`, `.json`, `.xml`.
+
+- linux/mac examples:
+
+    ```
+    iamctl importAll -c ./configs/env -f yml
+    iamctl importAll -c ./configs/env -f json
+    iamctl importAll -c ./configs/env -f xml
+    ```
+
+- windows (Command Prompt) examples:
+
+    ```
+    iamctl importAll -c .\configs\env -f yml
+    iamctl importAll -c .\configs\env -f json
+    iamctl importAll -c .\configs\env -f xml
+    ```
+
+    `iamctl importAll -c .\configs\env` will default to `.yml` extension
 
 ## Documentation
 

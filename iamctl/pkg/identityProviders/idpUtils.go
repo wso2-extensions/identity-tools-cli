@@ -21,7 +21,8 @@ package identityproviders
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
+
 	"log"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
@@ -38,7 +39,7 @@ type idpList struct {
 }
 
 type idpConfig struct {
-	IdentityProviderName string `yaml:"identityProviderName"`
+	IdentityProviderName string `yaml:"identityProviderName" json:"identityProviderName" xml:"IdentityProviderName"`
 	IdentityProviderId   string
 }
 
@@ -57,7 +58,7 @@ func getIdpList() ([]identityProvider, error) {
 
 	statusCode := resp.StatusCode
 	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("error when reading the retrived IDP list. %w", err)
 		}
@@ -86,7 +87,7 @@ func getTotalIdpCount() (count int, err error) {
 
 	statusCode := resp.StatusCode
 	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return -1, fmt.Errorf("error when reading the retrived IDP list. %w", err)
 		}
@@ -118,7 +119,7 @@ func getDeployedIdpNames() []string {
 	return idpNames
 }
 
-func getIdpKeywordMapping(idpName string) map[string]interface{} {
+func getIdpKeywordMapping(idpName string) map[string]any {
 
 	if utils.KEYWORD_CONFIGS.IdpConfigs != nil {
 		return utils.ResolveAdvancedKeywordMapping(idpName, utils.KEYWORD_CONFIGS.IdpConfigs)

@@ -20,8 +20,12 @@ package claims
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
-	"io/ioutil"
+	"io"
+
+	"os"
+	"path/filepath"
 	"regexp"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
@@ -34,8 +38,8 @@ type claimDialect struct {
 }
 
 type ClaimDialectConfigurations struct {
-	URI string `yaml:"dialectURI"`
-	ID  string `yaml:"id"`
+	URI string `yaml:"dialectURI" json:"dialectURI" xml:"dialectURI"`
+	ID  string `yaml:"id" json:"id" xml:"id"`
 }
 
 func getClaimDialectsList() ([]claimDialect, error) {
@@ -49,7 +53,7 @@ func getClaimDialectsList() ([]claimDialect, error) {
 
 	statusCode := resp.StatusCode
 	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("error when reading the retrived claim dialect list. %w", err)
 		}
@@ -67,7 +71,7 @@ func getClaimDialectsList() ([]claimDialect, error) {
 	return nil, fmt.Errorf("unexpected error while retrieving claim dialect list")
 }
 
-func getClaimKeywordMapping(claimDialectName string) map[string]interface{} {
+func getClaimKeywordMapping(claimDialectName string) map[string]any {
 
 	if utils.KEYWORD_CONFIGS.ClaimConfigs != nil {
 		return utils.ResolveAdvancedKeywordMapping(claimDialectName, utils.KEYWORD_CONFIGS.ClaimConfigs)
@@ -101,15 +105,30 @@ func formatFileName(fileName string) string {
 
 func getClaimDialectId(claimDialectFilePath string) (string, error) {
 
-	fileContent, err := ioutil.ReadFile(claimDialectFilePath)
+	fileContent, err := os.ReadFile(claimDialectFilePath)
 	if err != nil {
 		return "", fmt.Errorf("error when reading the file: %s. %s", claimDialectFilePath, err)
 	}
 
 	var claimDialectConfig ClaimDialectConfigurations
-	err = yaml.Unmarshal(fileContent, &claimDialectConfig)
-	if err != nil {
-		return "", fmt.Errorf("invalid file content at: %s. %s", claimDialectFilePath, err)
+	fileType := filepath.Ext(claimDialectFilePath)
+
+	switch fileType {
+	case ".yml", ".yaml":
+		err = yaml.Unmarshal(fileContent, &claimDialectConfig)
+		if err != nil {
+			return "", fmt.Errorf("invalid file content at: %s. %s", claimDialectFilePath, err)
+		}
+	case ".json":
+		err = json.Unmarshal(fileContent, &claimDialectConfig)
+		if err != nil {
+			return "", fmt.Errorf("invalid file content at: %s. %s", claimDialectFilePath, err)
+		}
+	case ".xml":
+		err = xml.Unmarshal(fileContent, &claimDialectConfig)
+		if err != nil {
+			return "", fmt.Errorf("invalid file content at: %s. %s", claimDialectFilePath, err)
+		}
 	}
 
 	existingClaimDialectList, err := getClaimDialectsList()
