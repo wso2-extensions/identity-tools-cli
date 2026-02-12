@@ -21,7 +21,6 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/clbanning/mxj/v2"
@@ -135,33 +134,19 @@ func FixXmlStructure(data []byte) []byte {
 	xmlStr := string(data)
 
 	xmlStr = strings.ReplaceAll(xmlStr, " xsi=", " xmlns:xsi=")
-	xmlStr = strings.ReplaceAll(xmlStr, " type=\"oAuthAppDO\"", " xsi:type=\"oAuthAppDO\"")
-	xmlStr = strings.ReplaceAll(xmlStr, " nil=\"true\"", " xsi:nil=\"true\"")
+	if !strings.Contains(xmlStr, "xsi:type=") {
+		xmlStr = strings.ReplaceAll(xmlStr, " type=", " xsi:type=")
+	}
+	if !strings.Contains(xmlStr, "xsi:nil=") {
+		xmlStr = strings.ReplaceAll(xmlStr, " nil=", " xsi:nil=")
+	}
 
-	re := regexp.MustCompile(`(?s)<value>(.*?)</value>`)
-
-	fixedXml := re.ReplaceAllStringFunc(xmlStr, func(match string) string {
-		content := strings.TrimPrefix(match, "<value>")
-		content = strings.TrimSuffix(content, "</value>")
-
-		if strings.ContainsAny(content, "<>&") || strings.Contains(content, "&lt;") || strings.Contains(content, "&amp;") {
-			content = strings.ReplaceAll(content, "&lt;", "<")
-			content = strings.ReplaceAll(content, "&gt;", ">")
-			content = strings.ReplaceAll(content, "&amp;", "&")
-			content = strings.ReplaceAll(content, "&quot;", "\"")
-			content = strings.ReplaceAll(content, "&apos;", "'")
-
-			return "<value><![CDATA[" + content + "]]></value>"
-		}
-		return match
-	})
-
-	return []byte(fixedXml)
+	return []byte(xmlStr)
 }
 
 func XMLToMap(data []byte) (map[string]interface{}, error) {
-
 	mxj.SetAttrPrefix("-")
+	mxj.XMLEscapeChars(true)
 	m, err := mxj.NewMapXml(data)
 	if err != nil {
 		return nil, err

@@ -65,7 +65,7 @@ func ProcessExportedFileContent(exportedFileName string, exportedFileContent []b
 
 	format, err := FormatFromExtension(filepath.Ext(exportedFileName))
 	if err != nil {
-		return nil, fmt.Errorf("unsupported file format for OIDC scope: %w", err)
+		return nil, fmt.Errorf("unsupported file format: %w", err)
 	}
 	if format == FormatYAML {
 		// To preserve type tags in YAML files, replace the type tags with a placeholder.
@@ -260,7 +260,7 @@ func GetValue(data interface{}, key string) string {
 	if finalArray, ok := data.([]interface{}); ok {
 		strArray := make([]string, len(finalArray))
 		for i, v := range finalArray {
-			strArray[i] = v.(string)
+			strArray[i] = fmt.Sprintf("%v", v)
 		}
 		data = strings.Join(strArray, ",")
 	}

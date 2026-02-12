@@ -49,13 +49,12 @@ func PrepareJSONRequestBody(data []byte, format Format, resourceType string, exc
 		return nil, fmt.Errorf("error deserializing data: %w", err)
 	}
 
+	if interfaceMap, ok := parsed.(map[interface{}]interface{}); ok {
+		parsed = ConvertToStringKeyMap(interfaceMap)
+	}
+
 	if len(excludeFields) > 0 {
 		if dataMap, ok := parsed.(map[string]interface{}); ok {
-			for _, field := range excludeFields {
-				delete(dataMap, field)
-			}
-			parsed = dataMap
-		} else if dataMap, ok := parsed.(map[interface{}]interface{}); ok {
 			for _, field := range excludeFields {
 				delete(dataMap, field)
 			}

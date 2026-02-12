@@ -19,6 +19,7 @@
 package utils
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 )
@@ -51,4 +52,33 @@ func Contains(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+func ConvertToStringKeyMap(input interface{}) interface{} {
+
+	switch v := input.(type) {
+	case map[interface{}]interface{}:
+		result := make(map[string]interface{})
+		for key, value := range v {
+			keyStr, ok := key.(string)
+			if !ok {
+				keyStr = fmt.Sprintf("%v", key)
+			}
+			result[keyStr] = ConvertToStringKeyMap(value)
+		}
+		return result
+	case map[string]interface{}:
+		result := make(map[string]interface{})
+		for key, value := range v {
+			result[key] = ConvertToStringKeyMap(value)
+		}
+		return result
+	case []interface{}:
+		for i, item := range v {
+			v[i] = ConvertToStringKeyMap(item)
+		}
+		return v
+	default:
+		return v
+	}
 }
