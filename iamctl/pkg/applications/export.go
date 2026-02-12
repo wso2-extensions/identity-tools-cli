@@ -99,7 +99,7 @@ func exportApp(appId string, outputDirPath string, format string, excludeSecrets
 		body = maskOAuthConsumerSecret(body)
 	}
 	appKeywordMapping := getAppKeywordMapping(fileInfo.ResourceName)
-	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, appKeywordMapping, utils.APPLICATIONS)
+	modifiedFile, err := utils.ProcessExportedFileContent(exportedFileName, body, appKeywordMapping, utils.APPLICATIONS)
 	if err != nil {
 		return fmt.Errorf("error while processing exported data: %s", err)
 	}

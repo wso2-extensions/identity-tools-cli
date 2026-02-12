@@ -558,7 +558,7 @@ func TestAddKeywords(t *testing.T) {
 		},
 	}
 
-	localFileData := []byte(`
+	localFileContent := []byte(`
         key1: A sample string in the {{ENV}} environment with the {{KEYWORD}}
         key2: A string with a {{KEYWORD}} that is changed
         key3: A string with a the placeholder {{syntax}} that should not be changed
@@ -603,7 +603,7 @@ func TestAddKeywords(t *testing.T) {
 		"ENV":     "dev",
 		"KEYWORD": "keyword value",
 	}
-	result, err := utils.AddKeywords(exportedFileData, localFileData, keywordMapping, utils.APPLICATIONS)
+	result, err := utils.AddKeywords(exportedFileData, utils.FormatYAML, localFileContent, keywordMapping, utils.APPLICATIONS)
 	if err != nil {
 		log.Println("Error when adding keywords: ", err)
 	}

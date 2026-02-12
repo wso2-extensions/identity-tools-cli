@@ -298,6 +298,6 @@ func sanitizeServerConfigs() {
 }
 
 func IsSubOrganization() bool {
-	
+
 	return SERVER_CONFIGS.Organization != ""
 }
