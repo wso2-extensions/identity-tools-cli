@@ -20,11 +20,9 @@ package oidcScopes
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -37,33 +35,37 @@ func ImportAll(inputDirPath string) {
 	if utils.IsResourceTypeExcluded(utils.OIDC_SCOPES) {
 		return
 	}
-	var files []os.FileInfo
+	var files []os.DirEntry
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
 		log.Println("No OIDC scopes to import.")
-	} else {
-		files, err = ioutil.ReadDir(importFilePath)
-		if err != nil {
-			log.Println("Error importing OIDC scopes: ", err)
-		}
-		if utils.TOOL_CONFIGS.AllowDelete {
-			removeDeletedDeployedScopes(files)
-		}
+		return
+	}
 
+	existingScopeList, err := getOidcScopeList()
+	if err != nil {
+		log.Println("Error retrieving the deployed OIDC scope lists: ", err)
+		return
+	}
+
+	files, err = os.ReadDir(importFilePath)
+	if err != nil {
+		log.Println("Error importing OIDC scopes: ", err)
+	}
+	if utils.TOOL_CONFIGS.AllowDelete {
+		removeDeletedDeployedScopes(files, existingScopeList)
 	}
 
 	for _, file := range files {
 		scopeFilePath := filepath.Join(importFilePath, file.Name())
-		scopeName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
+		fileInfo := utils.GetFileInfo(scopeFilePath)
+		scopeName := fileInfo.ResourceName
 
 		if !utils.IsResourceExcluded(scopeName, utils.TOOL_CONFIGS.OidcScopeConfigs) {
-			scopeExists, err := isScopeExists(scopeFilePath, scopeName)
+			scopeExists := isScopeExists(scopeName, existingScopeList)
+			err := importOidcScope(scopeName, scopeExists, scopeFilePath)
 			if err != nil {
-				log.Printf("Invalid file configurations for OIDC scope: %s. %s", scopeName, err)
-			} else {
-				err := importOidcScope(scopeName, scopeExists, scopeFilePath)
-				if err != nil {
-					log.Println("Error importing OIDC scope: ", err)
-				}
+				log.Println("Error importing OIDC scope: ", err)
+				utils.UpdateFailureSummary(utils.OIDC_SCOPES, scopeName)
 			}
 		}
 	}
@@ -71,73 +73,91 @@ func ImportAll(inputDirPath string) {
 
 func importOidcScope(scopeName string, scopeExists bool, importFilePath string) error {
 
-	fileBytes, err := ioutil.ReadFile(importFilePath)
+	format, err := utils.FormatFromExtension(filepath.Ext(importFilePath))
 	if err != nil {
-		return fmt.Errorf("error when reading the file for OIDC scope: %s", err)
+		return fmt.Errorf("unsupported file format for OIDC scope: %w", err)
 	}
 
-	// Replace keyword placeholders in the local file according to the keyword mappings added in configs.
-	fileInfo := utils.GetFileInfo(importFilePath)
-	scopeKeywordMapping := getOidcScopeKeywordMapping(fileInfo.ResourceName)
+	fileBytes, err := os.ReadFile(importFilePath)
+	if err != nil {
+		return fmt.Errorf("error when reading the file for OIDC scope: %w", err)
+	}
+
+	scopeKeywordMapping := getOidcScopeKeywordMapping(scopeName)
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), scopeKeywordMapping)
 
 	if !scopeExists {
-		return importScope(importFilePath, modifiedFileData, fileInfo)
+		return importScope([]byte(modifiedFileData), format, scopeName)
 	}
-	return updateScope(scopeName, importFilePath, modifiedFileData, fileInfo)
+	return updateScope(scopeName, []byte(modifiedFileData), format, scopeName)
 }
 
-func importScope(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+func importScope(requestBody []byte, format utils.Format, scopeName string) error {
 
-	log.Println("Creating new OIDC scope: " + fileInfo.ResourceName)
-	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.OIDC_SCOPES)
+	log.Println("Creating new OIDC scope: " + scopeName)
+
+	jsonBody, err := utils.PrepareJSONRequestBody(requestBody, format, utils.OIDC_SCOPES)
 	if err != nil {
-		utils.UpdateFailureSummary(utils.OIDC_SCOPES, fileInfo.ResourceName)
-		return fmt.Errorf("error when importing OIDC scope: %s", err)
+		return err
 	}
+
+	resp, err := utils.SendPostRequest(utils.OIDC_SCOPES, jsonBody)
+	if err != nil {
+		return fmt.Errorf("error when importing OIDC scope: %w", err)
+	}
+	defer resp.Body.Close()
+
 	utils.UpdateSuccessSummary(utils.OIDC_SCOPES, utils.IMPORT)
 	log.Println("OIDC scope imported successfully.")
 	return nil
 }
 
-func updateScope(scopeId string, importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+func updateScope(scopeId string, requestBody []byte, format utils.Format, scopeName string) error {
 
-	log.Println("Updating OIDC scope: " + fileInfo.ResourceName)
-	err := utils.SendUpdateRequest(scopeId, importFilePath, modifiedFileData, utils.OIDC_SCOPES)
+	log.Println("Updating OIDC scope: " + scopeName)
+
+	updateBody, err := utils.PrepareJSONRequestBody(requestBody, format, utils.OIDC_SCOPES, "name")
 	if err != nil {
-		utils.UpdateFailureSummary(utils.OIDC_SCOPES, fileInfo.ResourceName)
-		return fmt.Errorf("error when updating OIDC scope: %s", err)
+		return err
 	}
+
+	resp, err := utils.SendPutRequest(utils.OIDC_SCOPES, scopeId, updateBody)
+	if err != nil {
+		return fmt.Errorf("error when updating OIDC scope: %w", err)
+	}
+	defer resp.Body.Close()
+
 	utils.UpdateSuccessSummary(utils.OIDC_SCOPES, utils.UPDATE)
 	log.Println("OIDC scope updated successfully.")
 	return nil
 }
 
-func removeDeletedDeployedScopes(localFiles []os.FileInfo) {
-
-	// Remove deployed OIDC scopes that do not exist locally.
-	deployedScopes, err := getOidcScopeList()
-	if err != nil {
-		log.Println("Error retrieving deployed OIDC scopes: ", err)
+func removeDeletedDeployedScopes(localFiles []os.DirEntry, deployedScopes []oidcScope) {
+	if len(deployedScopes) == 0 {
 		return
 	}
-deployedScopes:
+
+	localResourceNames := make(map[string]struct{})
+	for _, file := range localFiles {
+		resourceName := utils.GetFileInfo(file.Name()).ResourceName
+		localResourceNames[resourceName] = struct{}{}
+	}
+
 	for _, scope := range deployedScopes {
-		for _, file := range localFiles {
-			if scope.Name == utils.GetFileInfo(file.Name()).ResourceName {
-				continue deployedScopes
-			}
-		}
-		if utils.IsResourceExcluded(scope.Name, utils.TOOL_CONFIGS.OidcScopeConfigs) {
-			log.Println("OIDC scope is excluded from deletion: ", scope.Name)
+		if _, existsLocally := localResourceNames[scope.Name]; existsLocally {
 			continue
 		}
-		log.Printf("OIDC scope: %s not found locally. Deleting scope.\n", scope.Name)
-		err := utils.SendDeleteRequest(scope.Name, utils.OIDC_SCOPES)
-		if err != nil {
-			utils.UpdateFailureSummary(utils.OIDC_SCOPES, scope.Name)
-			log.Println("Error deleting OIDC scope: ", scope.Name, err)
+		if utils.IsResourceExcluded(scope.Name, utils.TOOL_CONFIGS.OidcScopeConfigs) {
+			log.Println("OIDC scope is excluded from deletion:", scope.Name)
+			continue
 		}
-		utils.UpdateSuccessSummary(utils.OIDC_SCOPES, utils.DELETE)
+
+		log.Printf("OIDC scope: %s not found locally. Deleting scope.\n", scope.Name)
+		if err := utils.SendDeleteRequest(scope.Name, utils.OIDC_SCOPES); err != nil {
+			utils.UpdateFailureSummary(utils.OIDC_SCOPES, scope.Name)
+			log.Println("Error deleting OIDC scope:", scope.Name, err)
+		} else {
+			utils.UpdateSuccessSummary(utils.OIDC_SCOPES, utils.DELETE)
+		}
 	}
 }
