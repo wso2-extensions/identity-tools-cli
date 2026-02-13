@@ -20,9 +20,7 @@ package oidcScopes
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
-	"mime"
 	"os"
 	"path/filepath"
 
@@ -31,7 +29,6 @@ import (
 
 func ExportAll(exportFilePath string, format string) {
 
-	// Export all OIDC scopes to the OidcScopes folder.
 	log.Println("Exporting OIDC scopes...")
 	exportFilePath = filepath.Join(exportFilePath, utils.OIDC_SCOPES.String())
 
@@ -68,49 +65,31 @@ func ExportAll(exportFilePath string, format string) {
 	}
 }
 
-func exportOidcScope(scopeName string, outputDirPath string, format string) error {
+func exportOidcScope(scopeName string, outputDirPath string, formatString string) error {
 
-	var fileType string
-	switch format {
-	case "json":
-		fileType = utils.MEDIA_TYPE_JSON
-	case "xml":
-		fileType = utils.MEDIA_TYPE_XML
-	default:
-		fileType = utils.MEDIA_TYPE_YAML
-	}
-
-	resp, err := utils.SendExportRequest(scopeName, fileType, utils.OIDC_SCOPES, false)
+	scope, err := utils.SendGetRequest(utils.OIDC_SCOPES, scopeName)
 	if err != nil {
-		return fmt.Errorf("error while exporting the OIDC scope: %s", err)
+		return fmt.Errorf("error while getting OIDC scope: %w", err)
 	}
 
-	defer resp.Body.Close()
+	format := utils.FormatFromString(formatString)
+	exportedFileName := utils.GetExportedFilePath(outputDirPath, scopeName, format)
 
-	var attachmentDetail = resp.Header.Get("Content-Disposition")
-	_, params, err := mime.ParseMediaType(attachmentDetail)
+	scopeKeywordMapping := getOidcScopeKeywordMapping(scopeName)
+	modifiedScope, err := utils.ProcessExportedData(scope, exportedFileName, format, scopeKeywordMapping, utils.OIDC_SCOPES)
 	if err != nil {
-		return fmt.Errorf("error while parsing the content disposition header: %s", err)
+		return fmt.Errorf("error while processing exported content: %w", err)
 	}
 
-	fileName := params["filename"]
-	exportedFileName := filepath.Join(outputDirPath, fileName)
-	fileInfo := utils.GetFileInfo(exportedFileName)
-
-	body, err := ioutil.ReadAll(resp.Body)
+	modifiedFile, err := utils.Serialize(modifiedScope, format, utils.OIDC_SCOPES)
 	if err != nil {
-		return fmt.Errorf("error while reading the response body when exporting OIDC scope: %s. %s", fileName, err)
+		return fmt.Errorf("error while serializing scope: %w", err)
 	}
 
-	scopeKeywordMapping := getOidcScopeKeywordMapping(fileInfo.ResourceName)
-	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, scopeKeywordMapping, utils.OIDC_SCOPES)
+	err = os.WriteFile(exportedFileName, modifiedFile, 0644)
 	if err != nil {
-		return fmt.Errorf("error while processing the exported content: %s", err)
+		return fmt.Errorf("error when writing exported content to file: %w", err)
 	}
 
-	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
-	if err != nil {
-		return fmt.Errorf("error when writing the exported content to file: %w", err)
-	}
 	return nil
 }

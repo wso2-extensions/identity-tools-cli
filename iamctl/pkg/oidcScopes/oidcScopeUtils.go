@@ -21,21 +21,13 @@ package oidcScopes
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
-	"gopkg.in/yaml.v3"
 )
 
 type oidcScope struct {
-	Name        string   `json:"name"`
-	DisplayName string   `json:"displayName"`
-	Description string   `json:"description,omitempty"`
-	Claims      []string `json:"claims"`
-}
-
-type oidcScopeConfig struct {
-	Name string `yaml:"name"`
+	Name string `json:"name"`
 }
 
 func getOidcScopeList() ([]oidcScope, error) {
@@ -49,7 +41,7 @@ func getOidcScopeList() ([]oidcScope, error) {
 
 	statusCode := resp.StatusCode
 	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("error when reading the retrieved OIDC scope list. %w", err)
 		}
@@ -58,7 +50,6 @@ func getOidcScopeList() ([]oidcScope, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error when unmarshalling the retrieved OIDC scope list. %w", err)
 		}
-		resp.Body.Close()
 
 		return list, nil
 	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
@@ -89,26 +80,11 @@ func getOidcScopeKeywordMapping(scopeName string) map[string]interface{} {
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
 
-func isScopeExists(scopeFilePath string, scopeName string) (bool, error) {
-
-	fileContent, err := ioutil.ReadFile(scopeFilePath)
-	if err != nil {
-		return false, fmt.Errorf("error when reading the file for OIDC scope: %s. %s", scopeName, err)
-	}
-	var scopeConfig oidcScopeConfig
-	err = yaml.Unmarshal(fileContent, &scopeConfig)
-	if err != nil {
-		return false, fmt.Errorf("invalid file content for OIDC scope: %s. %s", scopeName, err)
-	}
-	existingScopeList, err := getOidcScopeList()
-	if err != nil {
-		return false, fmt.Errorf("error when retrieving the deployed OIDC scope list: %s", err)
-	}
-
+func isScopeExists(scopeName string, existingScopeList []oidcScope) bool {
 	for _, scope := range existingScopeList {
-		if scope.Name == scopeConfig.Name {
-			return true, nil
+		if scope.Name == scopeName {
+			return true
 		}
 	}
-	return false, nil
+	return false
 }

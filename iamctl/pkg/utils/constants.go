@@ -154,3 +154,13 @@ var RESOURCE_IDENTIFIER_METADATA = map[ResourceType]ResourceIdentifierMeta{}
 
 // Maps resource types to the resources they reference.
 var RESOURCE_REFERENCE_METADATA = map[ResourceType][]ResourceReferenceMeta{}
+
+// Array field paths for each resource type
+var oidcScopeArrayFields = []string{
+	"claims",
+}
+
+// XML root element tags for each resource type
+const (
+	XML_ROOT_OIDC_SCOPE = "Scope"
+)
