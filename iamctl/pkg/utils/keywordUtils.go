@@ -186,7 +186,7 @@ func resolvePathWithIdentifiers(arrayName string, element interface{}, identifie
 	if identifier == "" {
 		identifier = "name"
 	}
-	identifierValue := GetValue(elementMap, identifier)
+	identifierValue := GetValueAsString(elementMap, identifier)
 	if identifierValue == "" {
 		return identifierValue, fmt.Errorf("identifier not found for array %s", arrayName)
 	}
@@ -208,9 +208,9 @@ func ModifyFieldsWithKeywords(exportedFileData interface{}, localFileData interf
 
 	for _, location := range keywordLocations {
 
-		localValue := GetValue(localFileData, location)
+		localValue := GetValueAsString(localFileData, location)
 		localReplacedValue := ReplaceKeywords(localValue, keywordMap)
-		exportedValue := GetValue(exportedFileData, location)
+		exportedValue := GetValueAsString(exportedFileData, location)
 
 		if exportedValue != localReplacedValue {
 			if exportedValue == strings.ReplaceAll(SENSITIVE_FIELD_MASK, "'", "") {
@@ -229,9 +229,29 @@ func ModifyFieldsWithKeywords(exportedFileData interface{}, localFileData interf
 	return exportedFileData
 }
 
-func GetValue(data interface{}, key string) string {
+func GetValueAsString(data interface{}, key string) string {
 
-	parts := GetPathKeys(key)
+	value := getValue(data, key)
+
+	if value == nil {
+		return ""
+	}
+	if reflect.TypeOf(value).Kind() == reflect.Int {
+		return strconv.Itoa(value.(int))
+	}
+	if finalArray, ok := value.([]interface{}); ok {
+		strArray := make([]string, len(finalArray))
+		for i, v := range finalArray {
+			strArray[i] = fmt.Sprintf("%v", v)
+		}
+		return strings.Join(strArray, ",")
+	}
+	return fmt.Sprintf("%v", value)
+}
+
+func getValue(data interface{}, pathString string) interface{} {
+
+	parts := GetPathKeys(pathString)
 	for _, part := range parts {
 		switch v := data.(type) {
 		case map[interface{}]interface{}:
@@ -241,50 +261,38 @@ func GetValue(data interface{}, key string) string {
 		case []interface{}:
 			index, err := GetArrayIndex(v, part)
 			if err != nil {
-				return ""
+				return nil
 			}
 			if len(v) > index {
 				data = v[index]
+			} else {
+				return nil
 			}
-
 		default:
-			return ""
+			return nil
 		}
 	}
-	if data == nil {
-		return ""
-	}
-	if reflect.TypeOf(data).Kind() == reflect.Int {
-		return strconv.Itoa(data.(int))
-	}
-	if finalArray, ok := data.([]interface{}); ok {
-		strArray := make([]string, len(finalArray))
-		for i, v := range finalArray {
-			strArray[i] = fmt.Sprintf("%v", v)
-		}
-		data = strings.Join(strArray, ",")
-	}
-	return fmt.Sprintf("%v", data)
+	return data
 }
 
-func ReplaceValue(data interface{}, pathString string, replacement string) interface{} {
+func ReplaceValue(data interface{}, pathString string, replacement interface{}) interface{} {
 
 	path := GetPathKeys(pathString)
 	if len(path) == 1 {
-		switch data.(type) {
+		switch v := data.(type) {
 		case map[interface{}]interface{}:
-			data.(map[interface{}]interface{})[path[0]] = replacement
+			v[path[0]] = replacement
 		case map[string]interface{}:
-			data.(map[string]interface{})[path[0]] = replacement
+			v[path[0]] = replacement
 		}
 	} else {
 		switch v := data.(type) {
 		case map[interface{}]interface{}:
 			currentKey := path[0]
-			data.(map[interface{}]interface{})[currentKey] = ReplaceValue(v[currentKey], strings.Join(path[1:], "."), replacement)
+			v[currentKey] = ReplaceValue(v[currentKey], strings.Join(path[1:], "."), replacement)
 		case map[string]interface{}:
 			currentKey := path[0]
-			data.(map[string]interface{})[currentKey] = ReplaceValue(v[currentKey], strings.Join(path[1:], "."), replacement)
+			v[currentKey] = ReplaceValue(v[currentKey], strings.Join(path[1:], "."), replacement)
 		case []interface{}:
 			currentKey := path[0]
 			index, err := GetArrayIndex(v, currentKey)
@@ -293,7 +301,7 @@ func ReplaceValue(data interface{}, pathString string, replacement string) inter
 				return data
 			}
 			if len(v) > index {
-				data.([]interface{})[index] = ReplaceValue(v[index], strings.Join(path[1:], "."), replacement)
+				v[index] = ReplaceValue(v[index], strings.Join(path[1:], "."), replacement)
 			}
 		default:
 			return data
@@ -310,11 +318,11 @@ func GetArrayIndex(arrayMap []interface{}, elementIdentifier string) (int, error
 		for k, v := range arrayMap {
 			switch v := v.(type) {
 			case map[interface{}]interface{}:
-				if GetValue(v, parts[0]) == parts[1] {
+				if GetValueAsString(v, parts[0]) == parts[1] {
 					return k, nil
 				}
 			case map[string]interface{}:
-				if GetValue(v, parts[0]) == parts[1] {
+				if GetValueAsString(v, parts[0]) == parts[1] {
 					return k, nil
 				}
 			}

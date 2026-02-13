@@ -77,10 +77,8 @@ func Serialize(data interface{}, format Format, resourceType string) ([]byte, er
 		if !ok {
 			return nil, fmt.Errorf("XML serialization requires map[string]interface{}, got %T", data)
 		}
-		if xmlRootTag := GetXMLRootTag(resourceType); xmlRootTag != "" {
-			xmlMap = map[string]interface{}{xmlRootTag: xmlMap}
-		}
 
+		xmlMap = AddXMLRootTag(xmlMap, resourceType)
 		mv := mxj.Map(xmlMap)
 		mxj.SetAttrPrefix("-")
 
@@ -116,14 +114,14 @@ func Deserialize(data []byte, format Format, resourceType string) (interface{}, 
 		if err != nil {
 			return nil, fmt.Errorf("error when parsing data to XML: %w", err)
 		}
-		if xmlRootTag := GetXMLRootTag(resourceType); xmlRootTag != "" {
-			if rootValue, ok := xmlMap[xmlRootTag]; ok {
-				return rootValue, nil
-			}
-			return nil, fmt.Errorf("expected root element <%s> not found in XML", xmlRootTag)
+
+		xmlData, err := RemoveXMLRootTag(xmlMap, resourceType)
+		if err != nil {
+			return nil, err
 		}
 
-		return xmlMap, nil
+		result := FixArrayFields(xmlData, resourceType)
+		return result, nil
 	default:
 		return nil, fmt.Errorf("unsupported format: %s", format)
 	}
@@ -145,6 +143,7 @@ func FixXmlStructure(data []byte) []byte {
 }
 
 func XMLToMap(data []byte) (map[string]interface{}, error) {
+
 	mxj.SetAttrPrefix("-")
 	mxj.XMLEscapeChars(true)
 	m, err := mxj.NewMapXml(data)
@@ -158,4 +157,55 @@ func GetXMLRootTag(resourceType string) string {
 
 	xmlRootTags := map[string]string{}
 	return xmlRootTags[resourceType]
+}
+
+func AddXMLRootTag(data map[string]interface{}, resourceType string) map[string]interface{} {
+
+	xmlRootTag := GetXMLRootTag(resourceType)
+	if xmlRootTag != "" {
+		return map[string]interface{}{xmlRootTag: data}
+	}
+	return data
+}
+
+func RemoveXMLRootTag(xmlMap map[string]interface{}, resourceType string) (interface{}, error) {
+
+	xmlRootTag := GetXMLRootTag(resourceType)
+	if xmlRootTag == "" {
+		return xmlMap, nil
+	}
+
+	if rootValue, ok := xmlMap[xmlRootTag]; ok {
+		return rootValue, nil
+	}
+
+	return nil, fmt.Errorf("expected root element <%s> not found in XML", xmlRootTag)
+}
+
+func GetArrayFieldPaths(resourceType string) []string {
+
+	switch resourceType {
+	default:
+		return []string{}
+	}
+}
+
+func FixArrayFields(data interface{}, resourceType string) interface{} {
+
+	arrayPaths := GetArrayFieldPaths(resourceType)
+
+	for _, path := range arrayPaths {
+		value := getValue(data, path)
+
+		if value != nil {
+			if _, isArray := value.([]interface{}); !isArray {
+				if strValue, isString := value.(string); isString && strValue == "" {
+					data = ReplaceValue(data, path, []interface{}{})
+				} else {
+					data = ReplaceValue(data, path, []interface{}{value})
+				}
+			}
+		}
+	}
+	return data
 }

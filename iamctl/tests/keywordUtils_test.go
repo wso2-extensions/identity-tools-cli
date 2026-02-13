@@ -244,7 +244,7 @@ func TestGetKeywordLocations(t *testing.T) {
 	}
 }
 
-func TestGetValue(t *testing.T) {
+func TestGetValueAsString(t *testing.T) {
 
 	data := map[interface{}]interface{}{
 		"description": "A sample description",
@@ -321,7 +321,7 @@ func TestGetValue(t *testing.T) {
 
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("Test case %d", i+1), func(t *testing.T) {
-			result := utils.GetValue(data, tc.path)
+			result := utils.GetValueAsString(data, tc.path)
 			if result != tc.expectedResult {
 				t.Errorf("Unexpected result: expected %v, but got %v", tc.expectedResult, result)
 			}
