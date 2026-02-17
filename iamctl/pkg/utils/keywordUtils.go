@@ -396,3 +396,10 @@ func ReplacePlaceholders(configFile []byte) []byte {
 	}
 	return []byte(configStr)
 }
+
+func extendPath(base, segment string) string {
+	if base == "" {
+		return segment
+	}
+	return base + "." + segment
+}
