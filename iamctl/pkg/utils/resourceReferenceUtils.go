@@ -142,7 +142,7 @@ func ReplaceArrayReferences(arrayVal []interface{}, identifierMap map[string]str
 
 		newValue, exists := identifierMap[strElem]
 		if !exists {
-			return nil, fmt.Errorf("referenced resource with identifier '%s' has not been exported'", strElem)
+			return nil, fmt.Errorf("referenced resource with identifier '%s' has not been exported", strElem)
 		}
 		newArray[i] = newValue
 	}
