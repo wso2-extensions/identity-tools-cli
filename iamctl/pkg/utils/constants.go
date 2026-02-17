@@ -78,6 +78,7 @@ const RESIDENT_IDP_NAME = "LOCAL"
 const CONSOLE = "Console"
 const MY_ACCOUNT = "My Account"
 const OAUTH2 = "oauth2"
+const ALL_ITEMS = "all_items" // Wildcard to match all elements in an array
 
 // Error codes
 var ErrorCodes = map[int]string{
@@ -135,3 +136,19 @@ var claimArrayIdentifiers = map[string]string{
 	"attributeMapping": "mappedAttribute",
 	"claims":           "id",
 }
+
+type ResourceIdentifierMeta struct {
+	IdentifierPath  string // Path to the ID field in the resource object
+	UniqueValuePath string // Path to the unique identifier field
+}
+
+type ResourceReferenceMeta struct {
+	ReferencedResourceType ResourceType // The resource type being referenced
+	ReferencePaths         []string     // Paths to where the referenced resource's ID appears
+}
+
+// Maps resource types to their identifier metadata.
+var RESOURCE_IDENTIFIER_METADATA = map[ResourceType]ResourceIdentifierMeta{}
+
+// Maps resource types to the resources they reference.
+var RESOURCE_REFERENCE_METADATA = map[ResourceType][]ResourceReferenceMeta{}
