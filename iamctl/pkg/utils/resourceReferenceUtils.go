@@ -219,3 +219,13 @@ func containsAllItemsWildcard(pathString string) bool {
 
 	return strings.Contains(pathString, "="+ALL_ITEMS+"]")
 }
+
+func ResetResourceIdentifierMap() {
+
+	resourceIdentifierMap = make(ResourceIdentifierMap)
+}
+
+func GetResourceIdentifierMap(resourceType ResourceType) map[string]string {
+
+	return resourceIdentifierMap[resourceType]
+}
