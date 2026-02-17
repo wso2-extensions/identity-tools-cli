@@ -34,7 +34,7 @@ func ExportAll(exportFilePath string, format string) {
 
 	// Export all userstores to the UserStores folder.
 	log.Println("Exporting user stores...")
-	exportFilePath = filepath.Join(exportFilePath, utils.USERSTORES)
+	exportFilePath = filepath.Join(exportFilePath, utils.USERSTORES.String())
 
 	if utils.IsResourceTypeExcluded(utils.USERSTORES) {
 		return

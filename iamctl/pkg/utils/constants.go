@@ -44,10 +44,14 @@ const KEYWORD_CONFIG_PATH = "KEYWORD_CONFIG_PATH"
 const TOKEN_CONFIG = "TOKEN"
 
 // Resource types
-const APPLICATIONS = "Applications"
-const IDENTITY_PROVIDERS = "IdentityProviders"
-const CLAIMS = "Claims"
-const USERSTORES = "UserStores"
+type ResourceType string
+
+const (
+	APPLICATIONS       ResourceType = "Applications"
+	IDENTITY_PROVIDERS ResourceType = "IdentityProviders"
+	CLAIMS             ResourceType = "Claims"
+	USERSTORES         ResourceType = "UserStores"
+)
 
 // Config file names
 const SERVER_CONFIG_FILE = "serverConfig.json"

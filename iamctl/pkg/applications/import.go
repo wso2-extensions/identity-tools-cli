@@ -33,7 +33,7 @@ import (
 func ImportAll(inputDirPath string) {
 
 	log.Println("Importing applications...")
-	importFilePath := filepath.Join(inputDirPath, utils.APPLICATIONS)
+	importFilePath := filepath.Join(inputDirPath, utils.APPLICATIONS.String())
 
 	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
 		return
