@@ -195,14 +195,14 @@ func FixArrayFields(data interface{}, resourceType string) interface{} {
 	arrayPaths := GetArrayFieldPaths(resourceType)
 
 	for _, path := range arrayPaths {
-		value := getValue(data, path)
+		value := getRawValue(data, path)
 
 		if value != nil {
 			if _, isArray := value.([]interface{}); !isArray {
 				if strValue, isString := value.(string); isString && strValue == "" {
-					data = ReplaceValue(data, path, []interface{}{})
+					data = ReplaceRawValue(data, path, []interface{}{})
 				} else {
-					data = ReplaceValue(data, path, []interface{}{value})
+					data = ReplaceRawValue(data, path, []interface{}{value})
 				}
 			}
 		}
