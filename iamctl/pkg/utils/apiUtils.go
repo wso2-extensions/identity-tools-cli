@@ -23,6 +23,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"mime"
 	"mime/multipart"
@@ -310,7 +311,7 @@ func SendGetRequest(resourceType, resourceId string) (interface{}, error) {
 		return nil, fmt.Errorf("unexpected error when sending GET request: %s", resp.Status)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error reading response body: %w", err)
 	}

@@ -21,6 +21,7 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -45,7 +46,7 @@ func ReplaceKeywords(fileContent string, keywordMapping map[string]interface{}) 
 
 func ProcessExportedData(exportedData interface{}, localFilePath string, format Format, keywordMapping map[string]interface{}, resourceType string) (interface{}, error) {
 
-	localFileContent, err := os.ReadFile(localFilePath)
+	localFileContent, err := ioutil.ReadFile(localFilePath)
 	if err != nil {
 		log.Printf("Local file not found at %s. Creating new file.", localFilePath)
 		return exportedData, nil
