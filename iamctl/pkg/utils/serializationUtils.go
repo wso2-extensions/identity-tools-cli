@@ -157,6 +157,7 @@ func GetXMLRootTag(resourceType ResourceType) string {
 
 	xmlRootTags := map[ResourceType]string{
 		OIDC_SCOPES: XML_ROOT_OIDC_SCOPE,
+		ROLES:       XML_ROOT_ROLE,
 	}
 	return xmlRootTags[resourceType]
 }
@@ -189,6 +190,8 @@ func GetArrayFieldPaths(resourceType ResourceType) []string {
 	switch resourceType {
 	case OIDC_SCOPES:
 		return oidcScopeArrayFields
+	case ROLES:
+		return rolesArrayFields
 	default:
 		return []string{}
 	}

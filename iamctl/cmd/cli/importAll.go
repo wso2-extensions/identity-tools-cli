@@ -25,6 +25,7 @@ import (
 	claims "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/claims"
 	identityproviders "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/identityProviders"
 	oidcScopes "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/oidcScopes"
+	roles "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/roles"
 	userstores "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/userStores"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -48,6 +49,7 @@ var importAllCmd = &cobra.Command{
 			utils.APPLICATIONS:       applications.ImportAll,
 			utils.USERSTORES:         userstores.ImportAll,
 			utils.OIDC_SCOPES:        oidcScopes.ImportAll,
+			utils.ROLES:              roles.ImportAll,
 		}
 
 		for _, resourceType := range utils.ResourceOrder {
