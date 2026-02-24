@@ -29,4 +29,5 @@ var ResourceOrder = []ResourceType{
 	IDENTITY_PROVIDERS,
 	USERSTORES,
 	APPLICATIONS,
+	OIDC_SCOPES,
 }
