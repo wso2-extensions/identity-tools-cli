@@ -24,6 +24,7 @@ const IDP_CONFIG = "IDENTITY_PROVIDERS"
 const CLAIM_CONFIG = "CLAIMS"
 const USERSTORES_CONFIG = "USERSTORES"
 const OIDC_SCOPES_CONFIG = "OIDC_SCOPES"
+const ROLES_CONFIG = "ROLES"
 
 // Tool configs
 const EXCLUDE_CONFIG = "EXCLUDE"
@@ -53,6 +54,7 @@ const (
 	CLAIMS             ResourceType = "Claims"
 	USERSTORES         ResourceType = "UserStores"
 	OIDC_SCOPES        ResourceType = "OidcScopes"
+	ROLES              ResourceType = "Roles"
 )
 
 // Config file names
@@ -160,7 +162,13 @@ var oidcScopeArrayFields = []string{
 	"claims",
 }
 
+var rolesArrayFields = []string{
+	"permissions",
+	"schemas",
+}
+
 // XML root element tags for each resource type
 const (
 	XML_ROOT_OIDC_SCOPE = "Scope"
+	XML_ROOT_ROLE       = "Role"
 )

@@ -173,10 +173,9 @@ func GetArrayIdentifiers(resourceType ResourceType) map[string]string {
 		return userStoreArrayIdentifiers
 	case CLAIMS:
 		return claimArrayIdentifiers
-	case OIDC_SCOPES:
+	default:
 		return make(map[string]string)
 	}
-	return make(map[string]string)
 }
 
 func resolvePathWithIdentifiers(arrayName string, element interface{}, identifiers map[string]string) (string, error) {
