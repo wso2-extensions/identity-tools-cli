@@ -152,7 +152,7 @@ func removeDeletedDeployedRoles(localFiles []os.DirEntry, deployedRoles []role) 
 		if _, existsLocally := localResourceNames[fileName]; existsLocally {
 			continue
 		}
-		if utils.IsResourceExcluded(r.DisplayName, utils.TOOL_CONFIGS.RoleConfigs) {
+		if utils.IsResourceExcluded(r.DisplayName, utils.TOOL_CONFIGS.RoleConfigs) || r.DisplayName == utils.ADMIN {
 			log.Println("Role is excluded from deletion:", r.DisplayName)
 			continue
 		}
