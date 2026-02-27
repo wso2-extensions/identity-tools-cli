@@ -159,6 +159,7 @@ func GetXMLRootTag(resourceType ResourceType) string {
 		OIDC_SCOPES:         XML_ROOT_OIDC_SCOPE,
 		ROLES:               XML_ROOT_ROLE,
 		CHALLENGE_QUESTIONS: XML_ROOT_CHALLENGE_QUESTION,
+		EMAIL_TEMPLATES:     XML_ROOT_EMAIL_TEMPLATE,
 	}
 	return xmlRootTags[resourceType]
 }

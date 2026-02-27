@@ -69,7 +69,7 @@ func ExportAll(exportFilePath string, format string) {
 
 func exportRole(r role, outputDirPath string, formatString string) error {
 
-	roleData, err := utils.SendGetRequest(utils.ROLES, r.Id)
+	roleData, err := utils.GetResourceData(utils.ROLES, r.Id)
 	if err != nil {
 		return fmt.Errorf("error while getting role: %w", err)
 	}

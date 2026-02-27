@@ -67,7 +67,7 @@ func ExportAll(exportFilePath string, format string) {
 
 func exportChallengeSet(setId string, outputDirPath string, formatString string) error {
 
-	set, err := utils.SendGetRequest(utils.CHALLENGE_QUESTIONS, setId)
+	set, err := utils.GetResourceData(utils.CHALLENGE_QUESTIONS, setId)
 	if err != nil {
 		return fmt.Errorf("error while getting challenge question set: %w", err)
 	}
