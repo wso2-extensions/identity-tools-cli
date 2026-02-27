@@ -31,4 +31,5 @@ var ResourceOrder = []ResourceType{
 	APPLICATIONS,
 	OIDC_SCOPES,
 	ROLES, // Dependency: Applications
+	CHALLENGE_QUESTIONS,
 }

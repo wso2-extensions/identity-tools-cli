@@ -25,6 +25,7 @@ const CLAIM_CONFIG = "CLAIMS"
 const USERSTORES_CONFIG = "USERSTORES"
 const OIDC_SCOPES_CONFIG = "OIDC_SCOPES"
 const ROLES_CONFIG = "ROLES"
+const CHALLENGE_QUESTIONS_CONFIG = "CHALLENGE_QUESTIONS"
 
 // Tool configs
 const EXCLUDE_CONFIG = "EXCLUDE"
@@ -49,12 +50,13 @@ const TOKEN_CONFIG = "TOKEN"
 type ResourceType string
 
 const (
-	APPLICATIONS       ResourceType = "Applications"
-	IDENTITY_PROVIDERS ResourceType = "IdentityProviders"
-	CLAIMS             ResourceType = "Claims"
-	USERSTORES         ResourceType = "UserStores"
-	OIDC_SCOPES        ResourceType = "OidcScopes"
-	ROLES              ResourceType = "Roles"
+	APPLICATIONS        ResourceType = "Applications"
+	IDENTITY_PROVIDERS  ResourceType = "IdentityProviders"
+	CLAIMS              ResourceType = "Claims"
+	USERSTORES          ResourceType = "UserStores"
+	OIDC_SCOPES         ResourceType = "OidcScopes"
+	ROLES               ResourceType = "Roles"
+	CHALLENGE_QUESTIONS ResourceType = "ChallengeQuestions"
 )
 
 // Config file names
@@ -142,6 +144,11 @@ var claimArrayIdentifiers = map[string]string{
 	"claims":           "id",
 }
 
+var challengeQuestionsArrayIdentifiers = map[string]string{
+
+	"questions": "questionId",
+}
+
 type ResourceIdentifierMeta struct {
 	IdentifierPath  string // Path to the ID field in the resource object
 	UniqueValuePath string // Path to the unique identifier field
@@ -168,8 +175,13 @@ var rolesArrayFields = []string{
 	"schemas",
 }
 
+var challengeQuestionsArrayFields = []string{
+	"questions",
+}
+
 // XML root element tags for each resource type
 const (
-	XML_ROOT_OIDC_SCOPE = "Scope"
-	XML_ROOT_ROLE       = "Role"
+	XML_ROOT_OIDC_SCOPE         = "Scope"
+	XML_ROOT_ROLE               = "Role"
+	XML_ROOT_CHALLENGE_QUESTION = "ChallengeSet"
 )

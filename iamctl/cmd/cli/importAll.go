@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/applications"
+	challengeQuestions "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/challengeQuestions"
 	claims "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/claims"
 	identityproviders "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/identityProviders"
 	oidcScopes "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/oidcScopes"
@@ -44,12 +45,13 @@ var importAllCmd = &cobra.Command{
 		}
 
 		importFunctions := map[utils.ResourceType]func(string){
-			utils.CLAIMS:             claims.ImportAll,
-			utils.IDENTITY_PROVIDERS: identityproviders.ImportAll,
-			utils.APPLICATIONS:       applications.ImportAll,
-			utils.USERSTORES:         userstores.ImportAll,
-			utils.OIDC_SCOPES:        oidcScopes.ImportAll,
-			utils.ROLES:              roles.ImportAll,
+			utils.CLAIMS:              claims.ImportAll,
+			utils.IDENTITY_PROVIDERS:  identityproviders.ImportAll,
+			utils.APPLICATIONS:        applications.ImportAll,
+			utils.USERSTORES:          userstores.ImportAll,
+			utils.OIDC_SCOPES:         oidcScopes.ImportAll,
+			utils.ROLES:               roles.ImportAll,
+			utils.CHALLENGE_QUESTIONS: challengeQuestions.ImportAll,
 		}
 
 		for _, resourceType := range utils.ResourceOrder {
