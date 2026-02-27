@@ -26,6 +26,7 @@ const USERSTORES_CONFIG = "USERSTORES"
 const OIDC_SCOPES_CONFIG = "OIDC_SCOPES"
 const ROLES_CONFIG = "ROLES"
 const CHALLENGE_QUESTIONS_CONFIG = "CHALLENGE_QUESTIONS"
+const EMAIL_TEMPLATES_CONFIG = "EMAIL_TEMPLATES"
 
 // Tool configs
 const EXCLUDE_CONFIG = "EXCLUDE"
@@ -57,6 +58,7 @@ const (
 	OIDC_SCOPES         ResourceType = "OidcScopes"
 	ROLES               ResourceType = "Roles"
 	CHALLENGE_QUESTIONS ResourceType = "ChallengeQuestions"
+	EMAIL_TEMPLATES     ResourceType = "EmailTemplates"
 )
 
 // Config file names
@@ -184,4 +186,5 @@ const (
 	XML_ROOT_OIDC_SCOPE         = "Scope"
 	XML_ROOT_ROLE               = "Role"
 	XML_ROOT_CHALLENGE_QUESTION = "ChallengeSet"
+	XML_ROOT_EMAIL_TEMPLATE     = "EmailTemplate"
 )

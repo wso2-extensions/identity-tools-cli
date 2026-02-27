@@ -60,6 +60,7 @@ type ToolConfigs struct {
 	OidcScopeConfigs         map[string]interface{} `json:"OIDC_SCOPES"`
 	RoleConfigs              map[string]interface{} `json:"ROLES"`
 	ChallengeQuestionConfigs map[string]interface{} `json:"CHALLENGE_QUESTIONS"`
+	EmailTemplateConfigs     map[string]interface{} `json:"EMAIL_TEMPLATES"`
 }
 
 type KeywordConfigs struct {
@@ -71,6 +72,7 @@ type KeywordConfigs struct {
 	OidcScopeConfigs         map[string]interface{} `json:"OIDC_SCOPES"`
 	RoleConfigs              map[string]interface{} `json:"ROLES"`
 	ChallengeQuestionConfigs map[string]interface{} `json:"CHALLENGE_QUESTIONS"`
+	EmailTemplateConfigs     map[string]interface{} `json:"EMAIL_TEMPLATES"`
 }
 
 var SERVER_CONFIGS ServerConfigs

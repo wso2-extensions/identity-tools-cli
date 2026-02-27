@@ -67,7 +67,7 @@ func ExportAll(exportFilePath string, format string) {
 
 func exportOidcScope(scopeName string, outputDirPath string, formatString string) error {
 
-	scope, err := utils.SendGetRequest(utils.OIDC_SCOPES, scopeName)
+	scope, err := utils.GetResourceData(utils.OIDC_SCOPES, scopeName)
 	if err != nil {
 		return fmt.Errorf("error while getting OIDC scope: %w", err)
 	}
