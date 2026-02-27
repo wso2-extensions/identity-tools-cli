@@ -156,8 +156,9 @@ func XMLToMap(data []byte) (map[string]interface{}, error) {
 func GetXMLRootTag(resourceType ResourceType) string {
 
 	xmlRootTags := map[ResourceType]string{
-		OIDC_SCOPES: XML_ROOT_OIDC_SCOPE,
-		ROLES:       XML_ROOT_ROLE,
+		OIDC_SCOPES:         XML_ROOT_OIDC_SCOPE,
+		ROLES:               XML_ROOT_ROLE,
+		CHALLENGE_QUESTIONS: XML_ROOT_CHALLENGE_QUESTION,
 	}
 	return xmlRootTags[resourceType]
 }
@@ -192,6 +193,8 @@ func GetArrayFieldPaths(resourceType ResourceType) []string {
 		return oidcScopeArrayFields
 	case ROLES:
 		return rolesArrayFields
+	case CHALLENGE_QUESTIONS:
+		return challengeQuestionsArrayFields
 	default:
 		return []string{}
 	}

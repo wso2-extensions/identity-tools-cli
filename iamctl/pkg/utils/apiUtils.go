@@ -480,6 +480,8 @@ func getResourcePath(resourceType ResourceType) string {
 		return "claim-dialects"
 	case OIDC_SCOPES:
 		return "oidc/scopes"
+	case CHALLENGE_QUESTIONS:
+		return "challenges"
 	}
 	return ""
 }
