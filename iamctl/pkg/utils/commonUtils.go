@@ -40,6 +40,7 @@ func GetFileInfo(filePath string) (fileInfo FileInfo) {
 }
 
 func GetExportedFilePath(outputDirPath string, resourceName string, format Format) string {
+
 	fileExt := format.Extension()
 	return filepath.Join(outputDirPath, resourceName+fileExt)
 }

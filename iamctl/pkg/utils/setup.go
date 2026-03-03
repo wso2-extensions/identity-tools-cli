@@ -57,6 +57,8 @@ type ToolConfigs struct {
 	IdpConfigs         map[string]interface{} `json:"IDENTITY_PROVIDERS"`
 	ClaimConfigs       map[string]interface{} `json:"CLAIMS"`
 	UserStoreConfigs   map[string]interface{} `json:"USERSTORES"`
+	OidcScopeConfigs   map[string]interface{} `json:"OIDC_SCOPES"`
+	RoleConfigs        map[string]interface{} `json:"ROLES"`
 }
 
 type KeywordConfigs struct {
@@ -65,6 +67,8 @@ type KeywordConfigs struct {
 	IdpConfigs         map[string]interface{} `json:"IDENTITY_PROVIDERS"`
 	ClaimConfigs       map[string]interface{} `json:"CLAIMS"`
 	UserStoreConfigs   map[string]interface{} `json:"USERSTORES"`
+	OidcScopeConfigs   map[string]interface{} `json:"OIDC_SCOPES"`
+	RoleConfigs        map[string]interface{} `json:"ROLES"`
 }
 
 var SERVER_CONFIGS ServerConfigs

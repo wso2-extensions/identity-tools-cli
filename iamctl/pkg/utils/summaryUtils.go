@@ -89,7 +89,7 @@ func PrintImportSummary() {
 		if summary.Failed > 0 {
 			PrintFailedResources(summary)
 		}
-		if summary.ResourceType == APPLICATIONS {
+		if summary.ResourceType == APPLICATIONS.String() {
 			printNewSecretApplications(summary)
 		}
 	}
@@ -132,27 +132,27 @@ func AddNewSecretIndicatorToSummary(appName string) {
 
 	InitializeResourceSummary()
 
-	summary, ok := ResourceSummaries[APPLICATIONS]
+	summary, ok := ResourceSummaries[APPLICATIONS.String()]
 	if !ok {
 		summary = ResourceSummary{
-			ResourceType: APPLICATIONS,
+			ResourceType: APPLICATIONS.String(),
 		}
 	}
 	summary.SecretGeneratedApplications = append(summary.SecretGeneratedApplications, appName)
-	ResourceSummaries[APPLICATIONS] = summary
+	ResourceSummaries[APPLICATIONS.String()] = summary
 }
 
-func UpdateSuccessSummary(resourceType string, operation string) {
+func UpdateSuccessSummary(resourceType ResourceType, operation string) {
 
 	InitializeResourceSummary()
 
 	SummaryData.TotalRequests++
 	SummaryData.SuccessfulOperations++
 
-	summary, ok := ResourceSummaries[resourceType]
+	summary, ok := ResourceSummaries[resourceType.String()]
 	if !ok {
 		summary = ResourceSummary{
-			ResourceType: resourceType,
+			ResourceType: resourceType.String(),
 		}
 	}
 	switch operation {
@@ -165,25 +165,25 @@ func UpdateSuccessSummary(resourceType string, operation string) {
 	case DELETE:
 		summary.Deleted++
 	}
-	ResourceSummaries[resourceType] = summary
+	ResourceSummaries[resourceType.String()] = summary
 }
 
-func UpdateFailureSummary(resourceType string, resourceName string) {
+func UpdateFailureSummary(resourceType ResourceType, resourceName string) {
 
 	InitializeResourceSummary()
 
 	SummaryData.TotalRequests++
 	SummaryData.FailedOperations++
 
-	summary, ok := ResourceSummaries[resourceType]
+	summary, ok := ResourceSummaries[resourceType.String()]
 	if !ok {
 		summary = ResourceSummary{
-			ResourceType: resourceType,
+			ResourceType: resourceType.String(),
 		}
 	}
 	summary.Failed++
 	summary.FailedResources = append(summary.FailedResources, resourceName)
-	ResourceSummaries[resourceType] = summary
+	ResourceSummaries[resourceType.String()] = summary
 }
 
 func InitializeResourceSummary() {
