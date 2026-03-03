@@ -49,6 +49,7 @@ Management --> Application Authentication Script Management API | Update Applica
 Management --> Claim Management API              | Create Claim, Update Claim, Delete Claim, View Claim
 Management --> Identity Provider Management API  | Create Identity Provider, Update Identity Provider, Delete Identity Provider, View Identity Provider
 Management --> Userstore Management API          | Create Userstore, Update Userstore, Delete Userstore, View Userstore
+Management --> OIDC Scope Management API          | Create OIDC Scopes, Update OIDC Scopes, Delete OIDC Scopes, View OIDC Scopes
 
 6. Take note of the client ID and client secret of this application.
 
@@ -84,6 +85,7 @@ The supported resource types to transfer resources between root organizations ar
 * Identity Providers
 * Claims
 * User Stores
+* OIDC Scopes
 
 The supported resource types to transfer resources between sub organizations are:
 * Applications

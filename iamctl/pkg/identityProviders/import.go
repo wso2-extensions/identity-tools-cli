@@ -33,7 +33,7 @@ import (
 func ImportAll(inputDirPath string) {
 
 	log.Println("Importing identity providers...")
-	importFilePath := filepath.Join(inputDirPath, utils.IDENTITY_PROVIDERS)
+	importFilePath := filepath.Join(inputDirPath, utils.IDENTITY_PROVIDERS.String())
 
 	if utils.IsResourceTypeExcluded(utils.IDENTITY_PROVIDERS) {
 		return

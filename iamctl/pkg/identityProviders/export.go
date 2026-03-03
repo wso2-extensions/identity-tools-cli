@@ -33,7 +33,7 @@ func ExportAll(exportFilePath string, format string) {
 
 	// Export all identity providers to the IdentityProviders folder.
 	log.Println("Exporting identity providers...")
-	exportFilePath = filepath.Join(exportFilePath, utils.IDENTITY_PROVIDERS)
+	exportFilePath = filepath.Join(exportFilePath, utils.IDENTITY_PROVIDERS.String())
 
 	if utils.IsResourceTypeExcluded(utils.IDENTITY_PROVIDERS) {
 		return

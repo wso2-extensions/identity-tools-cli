@@ -22,16 +22,19 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/applications"
+	challengeQuestions "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/challengeQuestions"
 	claims "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/claims"
 	identityproviders "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/identityProviders"
+	oidcScopes "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/oidcScopes"
+	roles "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/roles"
 	userstores "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/userStores"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 var exportAllCmd = &cobra.Command{
 	Use:   "exportAll",
-	Short: "Export all applications",
-	Long:  `You can export all applications available in the target environment`,
+	Short: "Export all resources",
+	Long:  `You can export all resources available in the target environment`,
 	Run: func(cmd *cobra.Command, args []string) {
 		outputDirPath, _ := cmd.Flags().GetString("outputDir")
 		format, _ := cmd.Flags().GetString("format")
@@ -42,10 +45,21 @@ var exportAllCmd = &cobra.Command{
 			outputDirPath = baseDir
 		}
 
-		claims.ExportAll(outputDirPath, format)
-		identityproviders.ExportAll(outputDirPath, format)
-		applications.ExportAll(outputDirPath, format)
-		userstores.ExportAll(outputDirPath, format)
+		exportFunctions := map[utils.ResourceType]func(string, string){
+			utils.CLAIMS:              claims.ExportAll,
+			utils.IDENTITY_PROVIDERS:  identityproviders.ExportAll,
+			utils.APPLICATIONS:        applications.ExportAll,
+			utils.USERSTORES:          userstores.ExportAll,
+			utils.OIDC_SCOPES:         oidcScopes.ExportAll,
+			utils.ROLES:               roles.ExportAll,
+			utils.CHALLENGE_QUESTIONS: challengeQuestions.ExportAll,
+		}
+
+		for _, resourceType := range utils.ResourceOrder {
+			if exportFunc, exists := exportFunctions[resourceType]; exists {
+				exportFunc(outputDirPath, format)
+			}
+		}
 
 		utils.PrintSummary(utils.EXPORT)
 	},
