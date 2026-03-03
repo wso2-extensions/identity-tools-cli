@@ -13,6 +13,7 @@ Currently, the supported resource types are:
 * Identity Providers
 * Claims
 * User Stores
+* OIDC Scopes
 
 ## Run the tool in CLI mode
 To run the tool in CLI mode, follow the steps given below.
@@ -158,7 +159,7 @@ Example configuration file:
 ```
 {
    "ALLOW_DELETE" : true,
-   "EXCLUDE" : ["Claims"]
+   "EXCLUDE" : ["Claims"],
    "APPLICATIONS" : {
        "EXCLUDE" : ["App1", "App2"]
    },
@@ -167,11 +168,14 @@ Example configuration file:
        "EXCLUDE_SECRETS" : false
    },
    "USERSTORES" : {
-       "EXCLUDE" : ["US1", "US2"],
+       "EXCLUDE" : ["US1", "US2"]
    },
    "CLAIMS" : {
-       "INCLUDE_ONLY" : ["local"],
+       "INCLUDE_ONLY" : ["local"]
    },
+   "OIDC_SCOPES" : {
+       "EXCLUDE" : ["Scope1"]
+   }
 }
 ```
 The following properties can be configured through the tool configs to manage your resources.

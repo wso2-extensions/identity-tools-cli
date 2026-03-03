@@ -65,7 +65,7 @@ func FormatFromString(format string) Format {
 	}
 }
 
-func Serialize(data interface{}, format Format, resourceType string) ([]byte, error) {
+func Serialize(data interface{}, format Format, resourceType ResourceType) ([]byte, error) {
 
 	switch format {
 	case FormatYAML:
@@ -92,7 +92,7 @@ func Serialize(data interface{}, format Format, resourceType string) ([]byte, er
 	}
 }
 
-func Deserialize(data []byte, format Format, resourceType string) (interface{}, error) {
+func Deserialize(data []byte, format Format, resourceType ResourceType) (interface{}, error) {
 
 	switch format {
 	case FormatYAML:
@@ -153,13 +153,18 @@ func XMLToMap(data []byte) (map[string]interface{}, error) {
 	return m, nil
 }
 
-func GetXMLRootTag(resourceType string) string {
+func GetXMLRootTag(resourceType ResourceType) string {
 
-	xmlRootTags := map[string]string{}
+	xmlRootTags := map[ResourceType]string{
+		OIDC_SCOPES:         XML_ROOT_OIDC_SCOPE,
+		ROLES:               XML_ROOT_ROLE,
+		CHALLENGE_QUESTIONS: XML_ROOT_CHALLENGE_QUESTION,
+		EMAIL_TEMPLATES:     XML_ROOT_EMAIL_TEMPLATE,
+	}
 	return xmlRootTags[resourceType]
 }
 
-func AddXMLRootTag(data map[string]interface{}, resourceType string) map[string]interface{} {
+func AddXMLRootTag(data map[string]interface{}, resourceType ResourceType) map[string]interface{} {
 
 	xmlRootTag := GetXMLRootTag(resourceType)
 	if xmlRootTag != "" {
@@ -168,7 +173,7 @@ func AddXMLRootTag(data map[string]interface{}, resourceType string) map[string]
 	return data
 }
 
-func RemoveXMLRootTag(xmlMap map[string]interface{}, resourceType string) (interface{}, error) {
+func RemoveXMLRootTag(xmlMap map[string]interface{}, resourceType ResourceType) (interface{}, error) {
 
 	xmlRootTag := GetXMLRootTag(resourceType)
 	if xmlRootTag == "" {
@@ -182,15 +187,21 @@ func RemoveXMLRootTag(xmlMap map[string]interface{}, resourceType string) (inter
 	return nil, fmt.Errorf("expected root element <%s> not found in XML", xmlRootTag)
 }
 
-func GetArrayFieldPaths(resourceType string) []string {
+func GetArrayFieldPaths(resourceType ResourceType) []string {
 
 	switch resourceType {
+	case OIDC_SCOPES:
+		return oidcScopeArrayFields
+	case ROLES:
+		return rolesArrayFields
+	case CHALLENGE_QUESTIONS:
+		return challengeQuestionsArrayFields
 	default:
 		return []string{}
 	}
 }
 
-func FixArrayFields(data interface{}, resourceType string) interface{} {
+func FixArrayFields(data interface{}, resourceType ResourceType) interface{} {
 
 	arrayPaths := GetArrayFieldPaths(resourceType)
 
