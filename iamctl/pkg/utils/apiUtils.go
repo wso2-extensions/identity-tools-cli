@@ -23,6 +23,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"mime"
 	"mime/multipart"
@@ -38,6 +39,36 @@ const IMPORT = "import"
 const UPDATE = "update"
 const DELETE = "delete"
 const LIST = "list"
+const GET = "get"
+const POST = "post"
+const PUT = "put"
+
+func PrepareJSONRequestBody(data []byte, format Format, resourceType string, excludeFields ...string) ([]byte, error) {
+
+	parsed, err := Deserialize(data, format, resourceType)
+	if err != nil {
+		return nil, fmt.Errorf("error deserializing data: %w", err)
+	}
+
+	if interfaceMap, ok := parsed.(map[interface{}]interface{}); ok {
+		parsed = ConvertToStringKeyMap(interfaceMap)
+	}
+
+	if len(excludeFields) > 0 {
+		if dataMap, ok := parsed.(map[string]interface{}); ok {
+			for _, field := range excludeFields {
+				delete(dataMap, field)
+			}
+			parsed = dataMap
+		}
+	}
+
+	jsonBody, err := Serialize(parsed, FormatJSON, resourceType)
+	if err != nil {
+		return nil, fmt.Errorf("error serializing to JSON for request body: %w", err)
+	}
+	return jsonBody, nil
+}
 
 func SendExportRequest(resourceId, fileType, resourceType string, excludeSecrets bool) (resp *http.Response, err error) {
 
@@ -248,6 +279,121 @@ func SendDeleteRequest(resourceId string, resourceType string) error {
 	return fmt.Errorf("unexpected error when deleting resource: %s", resp.Status)
 }
 
+func SendGetRequest(resourceType, resourceId string) (interface{}, error) {
+
+	reqUrl := buildRequestUrl(GET, resourceType, resourceId)
+	request, err := http.NewRequest("GET", reqUrl, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error creating GET request: %w", err)
+	}
+
+	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
+	request.Header.Set("Accept", MEDIA_TYPE_JSON)
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+
+	resp, err := client.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("error sending GET request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		if errMsg, ok := ErrorCodes[resp.StatusCode]; ok {
+			return nil, fmt.Errorf("error response for the GET request: %s", errMsg)
+		}
+		return nil, fmt.Errorf("unexpected error when sending GET request: %s", resp.Status)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response body: %w", err)
+	}
+
+	data, err := Deserialize(body, FormatJSON, resourceType)
+	if err != nil {
+		return nil, fmt.Errorf("error deserializing JSON response: %w", err)
+	}
+
+	return data, nil
+}
+
+func SendPostRequest(resourceType string, requestBody []byte) (*http.Response, error) {
+
+	reqUrl := buildRequestUrl(POST, resourceType, "")
+	request, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("error creating POST request: %w", err)
+	}
+
+	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
+	request.Header.Set("Content-Type", MEDIA_TYPE_JSON)
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+
+	resp, err := client.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("error sending POST request: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusCreated {
+		resp.Body.Close()
+		if errMsg, ok := ErrorCodes[resp.StatusCode]; ok {
+			return nil, fmt.Errorf("error response for the POST request: %s", errMsg)
+		}
+		return nil, fmt.Errorf("unexpected error when sending POST request: %s", resp.Status)
+	}
+
+	return resp, nil
+}
+
+func SendPutRequest(resourceType, resourceId string, requestBody []byte) (*http.Response, error) {
+
+	reqUrl := buildRequestUrl(PUT, resourceType, resourceId)
+	request, err := http.NewRequest("PUT", reqUrl, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("error creating PUT request: %w", err)
+	}
+
+	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
+	request.Header.Set("Content-Type", MEDIA_TYPE_JSON)
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+
+	resp, err := client.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("error sending PUT request: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		if errMsg, ok := ErrorCodes[resp.StatusCode]; ok {
+			return nil, fmt.Errorf("error response for the PUT request: %s", errMsg)
+		}
+		return nil, fmt.Errorf("unexpected error when sending PUT request: %s", resp.Status)
+	}
+
+	return resp, nil
+}
+
 func SendGetListRequest(resourceType string, resourceLimit int) (*http.Response, error) {
 
 	var reqUrl = buildRequestUrl(LIST, resourceType, "")
@@ -316,6 +462,12 @@ func buildRequestUrl(requestType, resourceType, resourceId string) (reqUrl strin
 		}
 	case LIST:
 		reqUrl = getResourceBaseUrl(resourceType)
+	case GET:
+		reqUrl = getResourceBaseUrl(resourceType) + resourceId
+	case POST:
+		reqUrl = getResourceBaseUrl(resourceType)
+	case PUT:
+		reqUrl = getResourceBaseUrl(resourceType) + resourceId
 	case DELETE:
 		reqUrl = getResourceBaseUrl(resourceType) + resourceId
 	}

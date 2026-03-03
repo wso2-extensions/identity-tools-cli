@@ -15,7 +15,7 @@
 * specific language governing permissions and limitations
 * under the License.
  */
- 
+
 package utils
 
 // Resource type configs
@@ -53,6 +53,14 @@ const USERSTORES = "UserStores"
 const SERVER_CONFIG_FILE = "serverConfig.json"
 const TOOL_CONFIG_FILE = "toolConfig.json"
 const KEYWORD_CONFIG_FILE = "keywordConfig.json"
+
+type Format string
+
+const (
+	FormatYAML Format = "yaml"
+	FormatJSON Format = "json"
+	FormatXML  Format = "xml"
+)
 
 // Media types
 const MEDIA_TYPE_JSON = "application/json"
