@@ -44,7 +44,7 @@ func ReplaceKeywords(fileContent string, keywordMapping map[string]interface{}) 
 	return fileContent
 }
 
-func ProcessExportedData(exportedData interface{}, localFilePath string, format Format, keywordMapping map[string]interface{}, resourceType string) (interface{}, error) {
+func ProcessExportedData(exportedData interface{}, localFilePath string, format Format, keywordMapping map[string]interface{}, resourceType ResourceType) (interface{}, error) {
 
 	localFileContent, err := ioutil.ReadFile(localFilePath)
 	if err != nil {
@@ -62,7 +62,7 @@ func ProcessExportedData(exportedData interface{}, localFilePath string, format 
 	return modifiedData, nil
 }
 
-func ProcessExportedContent(exportedFileName string, exportedFileContent []byte, keywordMapping map[string]interface{}, resourceType string) ([]byte, error) {
+func ProcessExportedContent(exportedFileName string, exportedFileContent []byte, keywordMapping map[string]interface{}, resourceType ResourceType) ([]byte, error) {
 
 	format, err := FormatFromExtension(filepath.Ext(exportedFileName))
 	if err != nil {
@@ -100,11 +100,11 @@ func ProcessExportedContent(exportedFileName string, exportedFileContent []byte,
 
 // Adds local keywords for exported content specifically in YAML format.
 // Use AddLocalKeywords for granular control over different formats.
-func AddKeywords(exportedYaml interface{}, localFileContent []byte, keywordMapping map[string]interface{}, resourceType string) (interface{}, error) {
+func AddKeywords(exportedYaml interface{}, localFileContent []byte, keywordMapping map[string]interface{}, resourceType ResourceType) (interface{}, error) {
 	return AddLocalKeywords(exportedYaml, FormatYAML, localFileContent, keywordMapping, resourceType)
 }
 
-func AddLocalKeywords(exportedData interface{}, format Format, localFileContent []byte, keywordMapping map[string]interface{}, resourceType string) (interface{}, error) {
+func AddLocalKeywords(exportedData interface{}, format Format, localFileContent []byte, keywordMapping map[string]interface{}, resourceType ResourceType) (interface{}, error) {
 
 	localData, err := Deserialize(localFileContent, format, resourceType)
 	if err != nil || localData == nil {
@@ -120,7 +120,7 @@ func AddLocalKeywords(exportedData interface{}, format Format, localFileContent 
 	return exportedData, nil
 }
 
-func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map[string]interface{}, resourceType string) []string {
+func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map[string]interface{}, resourceType ResourceType) []string {
 
 	var keys []string
 	switch v := fileData.(type) {
@@ -162,7 +162,7 @@ func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map
 	return keys
 }
 
-func GetArrayIdentifiers(resourceType string) map[string]string {
+func GetArrayIdentifiers(resourceType ResourceType) map[string]string {
 
 	switch resourceType {
 	case APPLICATIONS:
@@ -173,6 +173,8 @@ func GetArrayIdentifiers(resourceType string) map[string]string {
 		return userStoreArrayIdentifiers
 	case CLAIMS:
 		return claimArrayIdentifiers
+	case OIDC_SCOPES:
+		return make(map[string]string)
 	}
 	return make(map[string]string)
 }
@@ -395,4 +397,11 @@ func ReplacePlaceholders(configFile []byte) []byte {
 		configStr = strings.ReplaceAll(configStr, envVarName, envVarValue)
 	}
 	return []byte(configStr)
+}
+
+func extendPath(base, segment string) string {
+	if base == "" {
+		return segment
+	}
+	return base + "." + segment
 }

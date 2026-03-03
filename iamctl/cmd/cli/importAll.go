@@ -24,14 +24,15 @@ import (
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/applications"
 	claims "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/claims"
 	identityproviders "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/identityProviders"
+	oidcScopes "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/oidcScopes"
 	userstores "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/userStores"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 var importAllCmd = &cobra.Command{
 	Use:   "importAll",
-	Short: "Import all applications",
-	Long:  `You can import all applications to the target environment`,
+	Short: "Import all resources",
+	Long:  `You can import all resources to the target environment`,
 	Run: func(cmd *cobra.Command, args []string) {
 		inputDirPath, _ := cmd.Flags().GetString("inputDir")
 		configFile, _ := cmd.Flags().GetString("config")
@@ -41,10 +42,19 @@ var importAllCmd = &cobra.Command{
 			inputDirPath = baseDir
 		}
 
-		claims.ImportAll(inputDirPath)
-		identityproviders.ImportAll(inputDirPath)
-		applications.ImportAll(inputDirPath)
-		userstores.ImportAll(inputDirPath)
+		importFunctions := map[utils.ResourceType]func(string){
+			utils.CLAIMS:             claims.ImportAll,
+			utils.IDENTITY_PROVIDERS: identityproviders.ImportAll,
+			utils.APPLICATIONS:       applications.ImportAll,
+			utils.USERSTORES:         userstores.ImportAll,
+			utils.OIDC_SCOPES:        oidcScopes.ImportAll,
+		}
+
+		for _, resourceType := range utils.ResourceOrder {
+			if importFunc, exists := importFunctions[resourceType]; exists {
+				importFunc(inputDirPath)
+			}
+		}
 
 		utils.PrintSummary(utils.IMPORT)
 	},
