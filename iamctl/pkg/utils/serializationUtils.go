@@ -156,11 +156,12 @@ func XMLToMap(data []byte) (map[string]interface{}, error) {
 func GetXMLRootTag(resourceType ResourceType) string {
 
 	xmlRootTags := map[ResourceType]string{
-		OIDC_SCOPES:         XML_ROOT_OIDC_SCOPE,
-		ROLES:               XML_ROOT_ROLE,
-		CHALLENGE_QUESTIONS: XML_ROOT_CHALLENGE_QUESTION,
-		EMAIL_TEMPLATES:     XML_ROOT_EMAIL_TEMPLATE,
-		SCRIPT_LIBRARIES:    XML_ROOT_SCRIPT_LIBRARY,
+		OIDC_SCOPES:           XML_ROOT_OIDC_SCOPE,
+		ROLES:                 XML_ROOT_ROLE,
+		CHALLENGE_QUESTIONS:   XML_ROOT_CHALLENGE_QUESTION,
+		EMAIL_TEMPLATES:       XML_ROOT_EMAIL_TEMPLATE,
+		SCRIPT_LIBRARIES:      XML_ROOT_SCRIPT_LIBRARY,
+		GOVERNANCE_CONNECTORS: XML_ROOT_GOVERNANCE_CONNECTOR,
 	}
 	return xmlRootTags[resourceType]
 }
@@ -197,6 +198,8 @@ func GetArrayFieldPaths(resourceType ResourceType) []string {
 		return rolesArrayFields
 	case CHALLENGE_QUESTIONS:
 		return challengeQuestionsArrayFields
+	case GOVERNANCE_CONNECTORS:
+		return governanceConnectorArrayFields
 	default:
 		return []string{}
 	}
@@ -222,7 +225,7 @@ func FixArrayFields(data interface{}, resourceType ResourceType) interface{} {
 	return data
 }
 
-func deserializeToMap(data []byte, format Format, resourceType ResourceType, excludeFields ...string) (map[string]interface{}, error) {
+func DeserializeToMap(data []byte, format Format, resourceType ResourceType, excludeFields ...string) (map[string]interface{}, error) {
 
 	parsed, err := Deserialize(data, format, resourceType)
 	if err != nil {

@@ -28,6 +28,7 @@ const ROLES_CONFIG = "ROLES"
 const CHALLENGE_QUESTIONS_CONFIG = "CHALLENGE_QUESTIONS"
 const EMAIL_TEMPLATES_CONFIG = "EMAIL_TEMPLATES"
 const SCRIPT_LIBRARIES_CONFIG = "SCRIPT_LIBRARIES"
+const GOVERNANCE_CONNECTORS_CONFIG = "GOVERNANCE_CONNECTORS"
 
 // Tool configs
 const EXCLUDE_CONFIG = "EXCLUDE"
@@ -52,15 +53,16 @@ const TOKEN_CONFIG = "TOKEN"
 type ResourceType string
 
 const (
-	APPLICATIONS        ResourceType = "Applications"
-	IDENTITY_PROVIDERS  ResourceType = "IdentityProviders"
-	CLAIMS              ResourceType = "Claims"
-	USERSTORES          ResourceType = "UserStores"
-	OIDC_SCOPES         ResourceType = "OidcScopes"
-	ROLES               ResourceType = "Roles"
-	CHALLENGE_QUESTIONS ResourceType = "ChallengeQuestions"
-	EMAIL_TEMPLATES     ResourceType = "EmailTemplates"
-	SCRIPT_LIBRARIES    ResourceType = "ScriptLibraries"
+	APPLICATIONS          ResourceType = "Applications"
+	IDENTITY_PROVIDERS    ResourceType = "IdentityProviders"
+	CLAIMS                ResourceType = "Claims"
+	USERSTORES            ResourceType = "UserStores"
+	OIDC_SCOPES           ResourceType = "OidcScopes"
+	ROLES                 ResourceType = "Roles"
+	CHALLENGE_QUESTIONS   ResourceType = "ChallengeQuestions"
+	EMAIL_TEMPLATES       ResourceType = "EmailTemplates"
+	SCRIPT_LIBRARIES      ResourceType = "ScriptLibraries"
+	GOVERNANCE_CONNECTORS ResourceType = "GovernanceConnectors"
 )
 
 // Config file names
@@ -183,11 +185,16 @@ var challengeQuestionsArrayFields = []string{
 	"questions",
 }
 
+var governanceConnectorArrayFields = []string{
+	"properties",
+}
+
 // XML root element tags for each resource type
 const (
-	XML_ROOT_OIDC_SCOPE         = "Scope"
-	XML_ROOT_ROLE               = "Role"
-	XML_ROOT_CHALLENGE_QUESTION = "ChallengeSet"
-	XML_ROOT_EMAIL_TEMPLATE     = "EmailTemplate"
-	XML_ROOT_SCRIPT_LIBRARY     = "ScriptLibrary"
+	XML_ROOT_OIDC_SCOPE           = "Scope"
+	XML_ROOT_ROLE                 = "Role"
+	XML_ROOT_CHALLENGE_QUESTION   = "ChallengeSet"
+	XML_ROOT_EMAIL_TEMPLATE       = "EmailTemplate"
+	XML_ROOT_SCRIPT_LIBRARY       = "ScriptLibrary"
+	XML_ROOT_GOVERNANCE_CONNECTOR = "GovernanceConnector"
 )

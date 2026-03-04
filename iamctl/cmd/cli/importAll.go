@@ -25,6 +25,7 @@ import (
 	challengeQuestions "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/challengeQuestions"
 	claims "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/claims"
 	emailTemplates "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/emailTemplates"
+	governanceConnectors "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/governanceConnectors"
 	identityproviders "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/identityProviders"
 	oidcScopes "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/oidcScopes"
 	roles "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/roles"
@@ -47,15 +48,16 @@ var importAllCmd = &cobra.Command{
 		}
 
 		importFunctions := map[utils.ResourceType]func(string){
-			utils.CLAIMS:              claims.ImportAll,
-			utils.IDENTITY_PROVIDERS:  identityproviders.ImportAll,
-			utils.APPLICATIONS:        applications.ImportAll,
-			utils.USERSTORES:          userstores.ImportAll,
-			utils.OIDC_SCOPES:         oidcScopes.ImportAll,
-			utils.ROLES:               roles.ImportAll,
-			utils.CHALLENGE_QUESTIONS: challengeQuestions.ImportAll,
-			utils.EMAIL_TEMPLATES:     emailTemplates.ImportAll,
-			utils.SCRIPT_LIBRARIES:    scriptLibraries.ImportAll,
+			utils.CLAIMS:                claims.ImportAll,
+			utils.IDENTITY_PROVIDERS:    identityproviders.ImportAll,
+			utils.APPLICATIONS:          applications.ImportAll,
+			utils.USERSTORES:            userstores.ImportAll,
+			utils.OIDC_SCOPES:           oidcScopes.ImportAll,
+			utils.ROLES:                 roles.ImportAll,
+			utils.CHALLENGE_QUESTIONS:   challengeQuestions.ImportAll,
+			utils.EMAIL_TEMPLATES:       emailTemplates.ImportAll,
+			utils.SCRIPT_LIBRARIES:      scriptLibraries.ImportAll,
+			utils.GOVERNANCE_CONNECTORS: governanceConnectors.ImportAll,
 		}
 
 		for _, resourceType := range utils.ResourceOrder {

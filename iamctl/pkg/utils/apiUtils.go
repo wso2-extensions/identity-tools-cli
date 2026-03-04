@@ -53,7 +53,7 @@ type SendOption func(*sendConfig)
 
 func PrepareJSONRequestBody(data []byte, format Format, resourceType ResourceType, excludeFields ...string) ([]byte, error) {
 
-	dataMap, err := deserializeToMap(data, format, resourceType, excludeFields...)
+	dataMap, err := DeserializeToMap(data, format, resourceType, excludeFields...)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func PrepareJSONRequestBody(data []byte, format Format, resourceType ResourceTyp
 
 func PrepareMultipartFormBody(data []byte, format Format, resourceType ResourceType, excludeFields ...string) ([]byte, string, error) {
 
-	dataMap, err := deserializeToMap(data, format, resourceType, excludeFields...)
+	dataMap, err := DeserializeToMap(data, format, resourceType, excludeFields...)
 	if err != nil {
 		return nil, "", err
 	}
@@ -530,6 +530,8 @@ func getResourcePath(resourceType ResourceType) string {
 		return "email/template-types"
 	case SCRIPT_LIBRARIES:
 		return "script-libraries"
+	case GOVERNANCE_CONNECTORS:
+		return "identity-governance"
 	}
 	return ""
 }
