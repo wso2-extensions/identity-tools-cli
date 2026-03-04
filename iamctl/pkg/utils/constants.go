@@ -27,6 +27,7 @@ const OIDC_SCOPES_CONFIG = "OIDC_SCOPES"
 const ROLES_CONFIG = "ROLES"
 const CHALLENGE_QUESTIONS_CONFIG = "CHALLENGE_QUESTIONS"
 const EMAIL_TEMPLATES_CONFIG = "EMAIL_TEMPLATES"
+const SCRIPT_LIBRARIES_CONFIG = "SCRIPT_LIBRARIES"
 
 // Tool configs
 const EXCLUDE_CONFIG = "EXCLUDE"
@@ -59,6 +60,7 @@ const (
 	ROLES               ResourceType = "Roles"
 	CHALLENGE_QUESTIONS ResourceType = "ChallengeQuestions"
 	EMAIL_TEMPLATES     ResourceType = "EmailTemplates"
+	SCRIPT_LIBRARIES    ResourceType = "ScriptLibraries"
 )
 
 // Config file names
@@ -187,4 +189,5 @@ const (
 	XML_ROOT_ROLE               = "Role"
 	XML_ROOT_CHALLENGE_QUESTION = "ChallengeSet"
 	XML_ROOT_EMAIL_TEMPLATE     = "EmailTemplate"
+	XML_ROOT_SCRIPT_LIBRARY     = "ScriptLibrary"
 )

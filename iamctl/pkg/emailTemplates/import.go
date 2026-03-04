@@ -157,7 +157,7 @@ func createTemplate(typeId string, requestBody []byte, format utils.Format) erro
 		return err
 	}
 
-	resp, err := utils.SendPostRequest(utils.EMAIL_TEMPLATES, jsonBody, typeId)
+	resp, err := utils.SendPostRequest(utils.EMAIL_TEMPLATES, jsonBody, utils.WithPathSuffix(typeId))
 	if err != nil {
 		return fmt.Errorf("error when creating email template: %w", err)
 	}

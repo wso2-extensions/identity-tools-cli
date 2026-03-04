@@ -33,4 +33,5 @@ var ResourceOrder = []ResourceType{
 	ROLES, // Dependency: Applications
 	CHALLENGE_QUESTIONS,
 	EMAIL_TEMPLATES,
+	SCRIPT_LIBRARIES,
 }

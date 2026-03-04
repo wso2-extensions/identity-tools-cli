@@ -61,6 +61,7 @@ type ToolConfigs struct {
 	RoleConfigs              map[string]interface{} `json:"ROLES"`
 	ChallengeQuestionConfigs map[string]interface{} `json:"CHALLENGE_QUESTIONS"`
 	EmailTemplateConfigs     map[string]interface{} `json:"EMAIL_TEMPLATES"`
+	ScriptLibraryConfigs     map[string]interface{} `json:"SCRIPT_LIBRARIES"`
 }
 
 type KeywordConfigs struct {
@@ -73,6 +74,7 @@ type KeywordConfigs struct {
 	RoleConfigs              map[string]interface{} `json:"ROLES"`
 	ChallengeQuestionConfigs map[string]interface{} `json:"CHALLENGE_QUESTIONS"`
 	EmailTemplateConfigs     map[string]interface{} `json:"EMAIL_TEMPLATES"`
+	ScriptLibraryConfigs     map[string]interface{} `json:"SCRIPT_LIBRARIES"`
 }
 
 var SERVER_CONFIGS ServerConfigs

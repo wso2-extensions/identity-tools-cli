@@ -30,7 +30,6 @@ import (
 	"net/http"
 	"net/textproto"
 	"net/url"
-	"path"
 	"strconv"
 	"strings"
 )
@@ -45,31 +44,46 @@ const POST = "post"
 const PUT = "put"
 const PATCH = "patch"
 
+type sendConfig struct {
+	contentType string
+	pathSuffix  string
+}
+
+type SendOption func(*sendConfig)
+
 func PrepareJSONRequestBody(data []byte, format Format, resourceType ResourceType, excludeFields ...string) ([]byte, error) {
 
-	parsed, err := Deserialize(data, format, resourceType)
+	dataMap, err := deserializeToMap(data, format, resourceType, excludeFields...)
 	if err != nil {
-		return nil, fmt.Errorf("error deserializing data: %w", err)
+		return nil, err
 	}
 
-	if interfaceMap, ok := parsed.(map[interface{}]interface{}); ok {
-		parsed = ConvertToStringKeyMap(interfaceMap)
-	}
-
-	if len(excludeFields) > 0 {
-		if dataMap, ok := parsed.(map[string]interface{}); ok {
-			for _, field := range excludeFields {
-				delete(dataMap, field)
-			}
-			parsed = dataMap
-		}
-	}
-
-	jsonBody, err := Serialize(parsed, FormatJSON, resourceType)
+	jsonBody, err := Serialize(dataMap, FormatJSON, resourceType)
 	if err != nil {
 		return nil, fmt.Errorf("error serializing to JSON for request body: %w", err)
 	}
 	return jsonBody, nil
+}
+
+func PrepareMultipartFormBody(data []byte, format Format, resourceType ResourceType, excludeFields ...string) ([]byte, string, error) {
+
+	dataMap, err := deserializeToMap(data, format, resourceType, excludeFields...)
+	if err != nil {
+		return nil, "", err
+	}
+
+	body := new(bytes.Buffer)
+	writer := multipart.NewWriter(body)
+	for key, value := range dataMap {
+		if err := writer.WriteField(key, fmt.Sprintf("%v", value)); err != nil {
+			return nil, "", fmt.Errorf("error writing field %s: %w", key, err)
+		}
+	}
+	if err := writer.Close(); err != nil {
+		return nil, "", fmt.Errorf("error closing multipart writer: %w", err)
+	}
+
+	return body.Bytes(), writer.FormDataContentType(), nil
 }
 
 func RemoveResponseFields(response interface{}, fieldsToRemove ...string) (interface{}, error) {
@@ -348,10 +362,26 @@ func SendGetRequest(resourceType ResourceType, resourceId string) ([]byte, error
 	return body, nil
 }
 
-func SendPostRequest(resourceType ResourceType, requestBody []byte, pathSuffix ...string) (*http.Response, error) {
+func WithContentType(ct string) SendOption {
+	return func(c *sendConfig) { c.contentType = ct }
+}
 
-	combinedSuffix := path.Join(pathSuffix...)
-	reqUrl := buildRequestUrl(POST, resourceType, combinedSuffix)
+func WithPathSuffix(suffix string) SendOption {
+	return func(c *sendConfig) { c.pathSuffix = suffix }
+}
+
+func applySendOptions(opts []SendOption) *sendConfig {
+	cfg := &sendConfig{contentType: MEDIA_TYPE_JSON}
+	for _, opt := range opts {
+		opt(cfg)
+	}
+	return cfg
+}
+
+func SendPostRequest(resourceType ResourceType, requestBody []byte, opts ...SendOption) (*http.Response, error) {
+
+	cfg := applySendOptions(opts)
+	reqUrl := buildRequestUrl(POST, resourceType, cfg.pathSuffix)
 
 	request, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(requestBody))
 	if err != nil {
@@ -359,7 +389,7 @@ func SendPostRequest(resourceType ResourceType, requestBody []byte, pathSuffix .
 	}
 
 	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
-	request.Header.Set("Content-Type", MEDIA_TYPE_JSON)
+	request.Header.Set("Content-Type", cfg.contentType)
 
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -385,16 +415,18 @@ func SendPostRequest(resourceType ResourceType, requestBody []byte, pathSuffix .
 	return resp, nil
 }
 
-func SendPutRequest(resourceType ResourceType, resourceId string, requestBody []byte) (*http.Response, error) {
+func SendPutRequest(resourceType ResourceType, resourceId string, requestBody []byte, opts ...SendOption) (*http.Response, error) {
 
+	cfg := applySendOptions(opts)
 	reqUrl := buildRequestUrl(PUT, resourceType, resourceId)
+
 	request, err := http.NewRequest("PUT", reqUrl, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, fmt.Errorf("error creating PUT request: %w", err)
 	}
 
 	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
-	request.Header.Set("Content-Type", MEDIA_TYPE_JSON)
+	request.Header.Set("Content-Type", cfg.contentType)
 
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -496,6 +528,8 @@ func getResourcePath(resourceType ResourceType) string {
 		return "challenges"
 	case EMAIL_TEMPLATES:
 		return "email/template-types"
+	case SCRIPT_LIBRARIES:
+		return "script-libraries"
 	}
 	return ""
 }

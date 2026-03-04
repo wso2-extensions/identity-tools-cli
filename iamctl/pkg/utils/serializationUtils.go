@@ -160,6 +160,7 @@ func GetXMLRootTag(resourceType ResourceType) string {
 		ROLES:               XML_ROOT_ROLE,
 		CHALLENGE_QUESTIONS: XML_ROOT_CHALLENGE_QUESTION,
 		EMAIL_TEMPLATES:     XML_ROOT_EMAIL_TEMPLATE,
+		SCRIPT_LIBRARIES:    XML_ROOT_SCRIPT_LIBRARY,
 	}
 	return xmlRootTags[resourceType]
 }
@@ -219,4 +220,27 @@ func FixArrayFields(data interface{}, resourceType ResourceType) interface{} {
 		}
 	}
 	return data
+}
+
+func deserializeToMap(data []byte, format Format, resourceType ResourceType, excludeFields ...string) (map[string]interface{}, error) {
+
+	parsed, err := Deserialize(data, format, resourceType)
+	if err != nil {
+		return nil, fmt.Errorf("error deserializing data: %w", err)
+	}
+
+	if interfaceMap, ok := parsed.(map[interface{}]interface{}); ok {
+		parsed = ConvertToStringKeyMap(interfaceMap)
+	}
+
+	dataMap, ok := parsed.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("data is not in expected map format")
+	}
+
+	for _, field := range excludeFields {
+		delete(dataMap, field)
+	}
+
+	return dataMap, nil
 }
