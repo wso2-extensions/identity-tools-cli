@@ -52,12 +52,12 @@ func getUserStoreList() ([]userStore, error) {
 	if statusCode == 200 {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return nil, fmt.Errorf("error when reading the retrived userstore list. %w", err)
+			return nil, fmt.Errorf("error when reading the retrieved userstore list. %w", err)
 		}
 
 		err = json.Unmarshal(body, &list)
 		if err != nil {
-			return nil, fmt.Errorf("error when unmarshalling the retrived userstore list. %w", err)
+			return nil, fmt.Errorf("error when unmarshalling the retrieved userstore list. %w", err)
 		}
 		resp.Body.Close()
 

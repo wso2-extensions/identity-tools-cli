@@ -23,6 +23,11 @@ const APPLICATIONS_CONFIG = "APPLICATIONS"
 const IDP_CONFIG = "IDENTITY_PROVIDERS"
 const CLAIM_CONFIG = "CLAIMS"
 const USERSTORES_CONFIG = "USERSTORES"
+const OIDC_SCOPES_CONFIG = "OIDC_SCOPES"
+const ROLES_CONFIG = "ROLES"
+const CHALLENGE_QUESTIONS_CONFIG = "CHALLENGE_QUESTIONS"
+const EMAIL_TEMPLATES_CONFIG = "EMAIL_TEMPLATES"
+const SCRIPT_LIBRARIES_CONFIG = "SCRIPT_LIBRARIES"
 
 // Tool configs
 const EXCLUDE_CONFIG = "EXCLUDE"
@@ -44,10 +49,19 @@ const KEYWORD_CONFIG_PATH = "KEYWORD_CONFIG_PATH"
 const TOKEN_CONFIG = "TOKEN"
 
 // Resource types
-const APPLICATIONS = "Applications"
-const IDENTITY_PROVIDERS = "IdentityProviders"
-const CLAIMS = "Claims"
-const USERSTORES = "UserStores"
+type ResourceType string
+
+const (
+	APPLICATIONS        ResourceType = "Applications"
+	IDENTITY_PROVIDERS  ResourceType = "IdentityProviders"
+	CLAIMS              ResourceType = "Claims"
+	USERSTORES          ResourceType = "UserStores"
+	OIDC_SCOPES         ResourceType = "OidcScopes"
+	ROLES               ResourceType = "Roles"
+	CHALLENGE_QUESTIONS ResourceType = "ChallengeQuestions"
+	EMAIL_TEMPLATES     ResourceType = "EmailTemplates"
+	SCRIPT_LIBRARIES    ResourceType = "ScriptLibraries"
+)
 
 // Config file names
 const SERVER_CONFIG_FILE = "serverConfig.json"
@@ -73,7 +87,9 @@ const SENSITIVE_FIELD_MASK = "'********'"
 const RESIDENT_IDP_NAME = "LOCAL"
 const CONSOLE = "Console"
 const MY_ACCOUNT = "My Account"
+const ADMIN = "admin"
 const OAUTH2 = "oauth2"
+const ALL_ITEMS = "all_items" // Wildcard to match all elements in an array
 
 // Error codes
 var ErrorCodes = map[int]string{
@@ -131,3 +147,47 @@ var claimArrayIdentifiers = map[string]string{
 	"attributeMapping": "mappedAttribute",
 	"claims":           "id",
 }
+
+var challengeQuestionsArrayIdentifiers = map[string]string{
+
+	"questions": "questionId",
+}
+
+type ResourceIdentifierMeta struct {
+	IdentifierPath  string // Path to the ID field in the resource object
+	UniqueValuePath string // Path to the unique identifier field
+}
+
+type ResourceReferenceMeta struct {
+	ReferencedResourceType ResourceType // The resource type being referenced
+	ReferencePaths         []string     // Paths to where the referenced resource's ID appears
+}
+
+// Maps resource types to their identifier metadata.
+var RESOURCE_IDENTIFIER_METADATA = map[ResourceType]ResourceIdentifierMeta{}
+
+// Maps resource types to the resources they reference.
+var RESOURCE_REFERENCE_METADATA = map[ResourceType][]ResourceReferenceMeta{}
+
+// Array field paths for each resource type
+var oidcScopeArrayFields = []string{
+	"claims",
+}
+
+var rolesArrayFields = []string{
+	"permissions",
+	"schemas",
+}
+
+var challengeQuestionsArrayFields = []string{
+	"questions",
+}
+
+// XML root element tags for each resource type
+const (
+	XML_ROOT_OIDC_SCOPE         = "Scope"
+	XML_ROOT_ROLE               = "Role"
+	XML_ROOT_CHALLENGE_QUESTION = "ChallengeSet"
+	XML_ROOT_EMAIL_TEMPLATE     = "EmailTemplate"
+	XML_ROOT_SCRIPT_LIBRARY     = "ScriptLibrary"
+)

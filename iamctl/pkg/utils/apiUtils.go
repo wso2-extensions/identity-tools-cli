@@ -42,35 +42,63 @@ const LIST = "list"
 const GET = "get"
 const POST = "post"
 const PUT = "put"
+const PATCH = "patch"
 
-func PrepareJSONRequestBody(data []byte, format Format, resourceType string, excludeFields ...string) ([]byte, error) {
+type sendConfig struct {
+	contentType string
+	pathSuffix  string
+}
 
-	parsed, err := Deserialize(data, format, resourceType)
+type SendOption func(*sendConfig)
+
+func PrepareJSONRequestBody(data []byte, format Format, resourceType ResourceType, excludeFields ...string) ([]byte, error) {
+
+	dataMap, err := deserializeToMap(data, format, resourceType, excludeFields...)
 	if err != nil {
-		return nil, fmt.Errorf("error deserializing data: %w", err)
+		return nil, err
 	}
 
-	if interfaceMap, ok := parsed.(map[interface{}]interface{}); ok {
-		parsed = ConvertToStringKeyMap(interfaceMap)
-	}
-
-	if len(excludeFields) > 0 {
-		if dataMap, ok := parsed.(map[string]interface{}); ok {
-			for _, field := range excludeFields {
-				delete(dataMap, field)
-			}
-			parsed = dataMap
-		}
-	}
-
-	jsonBody, err := Serialize(parsed, FormatJSON, resourceType)
+	jsonBody, err := Serialize(dataMap, FormatJSON, resourceType)
 	if err != nil {
 		return nil, fmt.Errorf("error serializing to JSON for request body: %w", err)
 	}
 	return jsonBody, nil
 }
 
-func SendExportRequest(resourceId, fileType, resourceType string, excludeSecrets bool) (resp *http.Response, err error) {
+func PrepareMultipartFormBody(data []byte, format Format, resourceType ResourceType, excludeFields ...string) ([]byte, string, error) {
+
+	dataMap, err := deserializeToMap(data, format, resourceType, excludeFields...)
+	if err != nil {
+		return nil, "", err
+	}
+
+	body := new(bytes.Buffer)
+	writer := multipart.NewWriter(body)
+	for key, value := range dataMap {
+		if err := writer.WriteField(key, fmt.Sprintf("%v", value)); err != nil {
+			return nil, "", fmt.Errorf("error writing field %s: %w", key, err)
+		}
+	}
+	if err := writer.Close(); err != nil {
+		return nil, "", fmt.Errorf("error closing multipart writer: %w", err)
+	}
+
+	return body.Bytes(), writer.FormDataContentType(), nil
+}
+
+func RemoveResponseFields(response interface{}, fieldsToRemove ...string) (interface{}, error) {
+
+	responseMap, ok := response.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("response is not in expected format")
+	}
+	for _, field := range fieldsToRemove {
+		delete(responseMap, field)
+	}
+	return responseMap, nil
+}
+
+func SendExportRequest(resourceId, fileType string, resourceType ResourceType, excludeSecrets bool) (resp *http.Response, err error) {
 
 	reqUrl := buildRequestUrl(EXPORT, resourceType, resourceId)
 	req, err := http.NewRequest("GET", reqUrl, strings.NewReader(""))
@@ -114,7 +142,7 @@ func SendExportRequest(resourceId, fileType, resourceType string, excludeSecrets
 	return resp, fmt.Errorf("unexpected error while exporting the resource with status code: %s", strconv.FormatInt(int64(statusCode), 10))
 }
 
-func SendImportRequest(importFilePath, fileData, resourceType string) error {
+func SendImportRequest(importFilePath, fileData string, resourceType ResourceType) error {
 
 	reqUrl := buildRequestUrl(IMPORT, resourceType, "")
 
@@ -178,10 +206,10 @@ func SendImportRequest(importFilePath, fileData, resourceType string) error {
 	return fmt.Errorf("unexpected error when importing resource: %s", resp.Status)
 }
 
-func SendUpdateRequest(resourceId, importFilePath, fileData, resourceType string) error {
+func SendUpdateRequest(resourceId, importFilePath, fileData string, resourceType ResourceType) error {
 
 	reqUrl := buildRequestUrl(UPDATE, resourceType, resourceId)
-	formattedReqUrl := addQueryParams(reqUrl, resourceType)
+	formattedReqUrl := addQueryParams(reqUrl, resourceType, UPDATE)
 
 	var buf bytes.Buffer
 	var err error
@@ -246,7 +274,7 @@ func SendUpdateRequest(resourceId, importFilePath, fileData, resourceType string
 	return fmt.Errorf("unexpected error when importing resource: %s", resp.Status)
 }
 
-func SendDeleteRequest(resourceId string, resourceType string) error {
+func SendDeleteRequest(resourceId string, resourceType ResourceType) error {
 
 	reqUrl := buildRequestUrl(DELETE, resourceType, resourceId)
 	request, err := http.NewRequest("DELETE", reqUrl, bytes.NewBuffer(nil))
@@ -279,10 +307,25 @@ func SendDeleteRequest(resourceId string, resourceType string) error {
 	return fmt.Errorf("unexpected error when deleting resource: %s", resp.Status)
 }
 
-func SendGetRequest(resourceType, resourceId string) (interface{}, error) {
+func GetResourceData(resourceType ResourceType, resourceId string) (interface{}, error) {
+
+	body, err := SendGetRequest(resourceType, resourceId)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := Deserialize(body, FormatJSON, resourceType)
+	if err != nil {
+		return nil, fmt.Errorf("error deserializing JSON response: %w", err)
+	}
+	return data, nil
+}
+
+func SendGetRequest(resourceType ResourceType, resourceId string) ([]byte, error) {
 
 	reqUrl := buildRequestUrl(GET, resourceType, resourceId)
-	request, err := http.NewRequest("GET", reqUrl, nil)
+	formattedReqUrl := addQueryParams(reqUrl, resourceType, GET)
+	request, err := http.NewRequest("GET", formattedReqUrl, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error creating GET request: %w", err)
 	}
@@ -316,24 +359,37 @@ func SendGetRequest(resourceType, resourceId string) (interface{}, error) {
 		return nil, fmt.Errorf("error reading response body: %w", err)
 	}
 
-	data, err := Deserialize(body, FormatJSON, resourceType)
-	if err != nil {
-		return nil, fmt.Errorf("error deserializing JSON response: %w", err)
-	}
-
-	return data, nil
+	return body, nil
 }
 
-func SendPostRequest(resourceType string, requestBody []byte) (*http.Response, error) {
+func WithContentType(ct string) SendOption {
+	return func(c *sendConfig) { c.contentType = ct }
+}
 
-	reqUrl := buildRequestUrl(POST, resourceType, "")
+func WithPathSuffix(suffix string) SendOption {
+	return func(c *sendConfig) { c.pathSuffix = suffix }
+}
+
+func applySendOptions(opts []SendOption) *sendConfig {
+	cfg := &sendConfig{contentType: MEDIA_TYPE_JSON}
+	for _, opt := range opts {
+		opt(cfg)
+	}
+	return cfg
+}
+
+func SendPostRequest(resourceType ResourceType, requestBody []byte, opts ...SendOption) (*http.Response, error) {
+
+	cfg := applySendOptions(opts)
+	reqUrl := buildRequestUrl(POST, resourceType, cfg.pathSuffix)
+
 	request, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, fmt.Errorf("error creating POST request: %w", err)
 	}
 
 	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
-	request.Header.Set("Content-Type", MEDIA_TYPE_JSON)
+	request.Header.Set("Content-Type", cfg.contentType)
 
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -359,16 +415,18 @@ func SendPostRequest(resourceType string, requestBody []byte) (*http.Response, e
 	return resp, nil
 }
 
-func SendPutRequest(resourceType, resourceId string, requestBody []byte) (*http.Response, error) {
+func SendPutRequest(resourceType ResourceType, resourceId string, requestBody []byte, opts ...SendOption) (*http.Response, error) {
 
+	cfg := applySendOptions(opts)
 	reqUrl := buildRequestUrl(PUT, resourceType, resourceId)
+
 	request, err := http.NewRequest("PUT", reqUrl, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, fmt.Errorf("error creating PUT request: %w", err)
 	}
 
 	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
-	request.Header.Set("Content-Type", MEDIA_TYPE_JSON)
+	request.Header.Set("Content-Type", cfg.contentType)
 
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -394,7 +452,42 @@ func SendPutRequest(resourceType, resourceId string, requestBody []byte) (*http.
 	return resp, nil
 }
 
-func SendGetListRequest(resourceType string, resourceLimit int) (*http.Response, error) {
+func SendPatchRequest(resourceType ResourceType, resourceId string, requestBody []byte) (*http.Response, error) {
+
+	reqUrl := buildRequestUrl(PATCH, resourceType, resourceId)
+	request, err := http.NewRequest("PATCH", reqUrl, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("error creating PATCH request: %w", err)
+	}
+
+	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
+	request.Header.Set("Content-Type", MEDIA_TYPE_JSON)
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+
+	resp, err := client.Do(request)
+	if err != nil {
+		return nil, fmt.Errorf("error sending PATCH request: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		if errMsg, ok := ErrorCodes[resp.StatusCode]; ok {
+			return nil, fmt.Errorf("error response for the PATCH request: %s", errMsg)
+		}
+		return nil, fmt.Errorf("unexpected error when sending PATCH request: %s", resp.Status)
+	}
+
+	return resp, nil
+}
+
+func SendGetListRequest(resourceType ResourceType, resourceLimit int) (*http.Response, error) {
 
 	var reqUrl = buildRequestUrl(LIST, resourceType, "")
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
@@ -418,7 +511,7 @@ func SendGetListRequest(resourceType string, resourceLimit int) (*http.Response,
 	return resp, nil
 }
 
-func getResourcePath(resourceType string) string {
+func getResourcePath(resourceType ResourceType) string {
 
 	switch resourceType {
 	case APPLICATIONS:
@@ -429,21 +522,33 @@ func getResourcePath(resourceType string) string {
 		return "userstores"
 	case CLAIMS:
 		return "claim-dialects"
+	case OIDC_SCOPES:
+		return "oidc/scopes"
+	case CHALLENGE_QUESTIONS:
+		return "challenges"
+	case EMAIL_TEMPLATES:
+		return "email/template-types"
+	case SCRIPT_LIBRARIES:
+		return "script-libraries"
 	}
 	return ""
 }
 
-func getResourceBaseUrl(resourceType string) string {
+func getResourceBaseUrl(resourceType ResourceType) string {
 
 	basePath := "/t/" + SERVER_CONFIGS.TenantDomain
 	if IsSubOrganization() {
 		basePath += "/o"
 	}
-	basePath += "/api/server/v1/" + getResourcePath(resourceType) + "/"
+	if resourceType == ROLES {
+		basePath += "/scim2/Roles/"
+	} else {
+		basePath += "/api/server/v1/" + getResourcePath(resourceType) + "/"
+	}
 	return SERVER_CONFIGS.ServerUrl + basePath
 }
 
-func buildRequestUrl(requestType, resourceType, resourceId string) (reqUrl string) {
+func buildRequestUrl(requestType string, resourceType ResourceType, resourceId string) (reqUrl string) {
 
 	switch requestType {
 	case EXPORT:
@@ -465,8 +570,10 @@ func buildRequestUrl(requestType, resourceType, resourceId string) (reqUrl strin
 	case GET:
 		reqUrl = getResourceBaseUrl(resourceType) + resourceId
 	case POST:
-		reqUrl = getResourceBaseUrl(resourceType)
+		reqUrl = getResourceBaseUrl(resourceType) + resourceId
 	case PUT:
+		reqUrl = getResourceBaseUrl(resourceType) + resourceId
+	case PATCH:
 		reqUrl = getResourceBaseUrl(resourceType) + resourceId
 	case DELETE:
 		reqUrl = getResourceBaseUrl(resourceType) + resourceId
@@ -474,7 +581,7 @@ func buildRequestUrl(requestType, resourceType, resourceId string) (reqUrl strin
 	return reqUrl
 }
 
-func addQueryParams(reqURL, resourceType string) string {
+func addQueryParams(reqURL string, resourceType ResourceType, operation string) string {
 
 	url, err := url.Parse(reqURL)
 	if err != nil {
@@ -486,8 +593,12 @@ func addQueryParams(reqURL, resourceType string) string {
 
 	switch resourceType {
 	case CLAIMS:
-		if resourceType == CLAIMS && TOOL_CONFIGS.AllowDelete {
+		if operation == UPDATE && TOOL_CONFIGS.AllowDelete {
 			queryParams.Set("preserveClaims", "true")
+		}
+	case ROLES:
+		if operation == GET {
+			queryParams.Set("excludedAttributes", "meta,users,groups")
 		}
 	}
 
