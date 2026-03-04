@@ -26,6 +26,10 @@ import (
 	"strings"
 )
 
+func (rt ResourceType) String() string {
+	return string(rt)
+}
+
 func IsResourceExcluded(resourceName string, resourceConfigs map[string]interface{}) bool {
 
 	// Include only the resources added to INCLUDE_ONLY config. Note: INCLUDE_ONLY config overrides the EXCLUDE config.
@@ -53,12 +57,12 @@ func IsResourceExcluded(resourceName string, resourceConfigs map[string]interfac
 	}
 }
 
-func IsResourceTypeExcluded(resourceType string) bool {
+func IsResourceTypeExcluded(resourceType ResourceType) bool {
 
 	// Include only the resource types added to INCLUDE_ONLY config. Note: INCLUDE_ONLY config overrides the EXCLUDE config.
 	if len(TOOL_CONFIGS.IncludeOnly) > 0 {
 		for _, resource := range TOOL_CONFIGS.IncludeOnly {
-			if resource == resourceType {
+			if resource == resourceType.String() {
 				return false
 			}
 		}
@@ -67,7 +71,7 @@ func IsResourceTypeExcluded(resourceType string) bool {
 	} else if len(TOOL_CONFIGS.Exclude) > 0 {
 		// Exclude resource types added to EXCLUDE config.
 		for _, resource := range TOOL_CONFIGS.Exclude {
-			if resource == resourceType {
+			if resource == resourceType.String() {
 				log.Println("Skipping Excluded resource: " + resourceType)
 				return true
 			}
@@ -108,6 +112,34 @@ func AreSecretsExcluded(resourceConfigs map[string]interface{}) bool {
 
 	// Check if secrets are excluded for all resources. Note: global config will be overridden by resource level config.
 	return TOOL_CONFIGS.ExcludeSecrets
+}
+
+func RemoveDeletedLocalDirectories(parentDir string, deployedDirNames []string) {
+
+	deployedNames := make(map[string]struct{})
+	for _, name := range deployedDirNames {
+		deployedNames[name] = struct{}{}
+	}
+
+	localEntries, err := os.ReadDir(parentDir)
+	if err != nil {
+		log.Println("Error loading directory:", err)
+		return
+	}
+
+	for _, entry := range localEntries {
+		if !entry.IsDir() {
+			continue
+		}
+		if _, exists := deployedNames[entry.Name()]; !exists {
+			dirPath := filepath.Join(parentDir, entry.Name())
+			if err := os.RemoveAll(dirPath); err != nil {
+				log.Printf("Error when removing the directory %s: %s", entry.Name(), err)
+			} else {
+				log.Println("Removed the directory:", entry.Name())
+			}
+		}
+	}
 }
 
 func RemoveDeletedLocalResources(filePath string, deployedResourceNames []string) {

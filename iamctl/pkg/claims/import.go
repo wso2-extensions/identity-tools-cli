@@ -37,7 +37,7 @@ func ImportAll(inputDirPath string) {
 		log.Println("Importing claims for sub organization not supported.")
 		return
 	}
-	importFilePath := filepath.Join(inputDirPath, utils.CLAIMS)
+	importFilePath := filepath.Join(inputDirPath, utils.CLAIMS.String())
 
 	if utils.IsResourceTypeExcluded(utils.CLAIMS) {
 		return
