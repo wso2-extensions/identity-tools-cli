@@ -40,7 +40,7 @@ func ExportAll(exportFilePath string, format string) {
 	} else {
 		if utils.TOOL_CONFIGS.AllowDelete {
 			deployedTypeNames := getDeployedEmailTemplateTypeNames()
-			removeDeletedLocalTypeDirectories(exportFilePath, deployedTypeNames)
+			utils.RemoveDeletedLocalDirectories(exportFilePath, deployedTypeNames)
 		}
 	}
 

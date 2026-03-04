@@ -49,32 +49,34 @@ type ServerConfigs struct {
 }
 
 type ToolConfigs struct {
-	AllowDelete              bool                   `json:"ALLOW_DELETE"`
-	Exclude                  []string               `json:"EXCLUDE"`
-	IncludeOnly              []string               `json:"INCLUDE_ONLY"`
-	ExcludeSecrets           bool                   `json:"EXCLUDE_SECRETS"`
-	ApplicationConfigs       map[string]interface{} `json:"APPLICATIONS"`
-	IdpConfigs               map[string]interface{} `json:"IDENTITY_PROVIDERS"`
-	ClaimConfigs             map[string]interface{} `json:"CLAIMS"`
-	UserStoreConfigs         map[string]interface{} `json:"USERSTORES"`
-	OidcScopeConfigs         map[string]interface{} `json:"OIDC_SCOPES"`
-	RoleConfigs              map[string]interface{} `json:"ROLES"`
-	ChallengeQuestionConfigs map[string]interface{} `json:"CHALLENGE_QUESTIONS"`
-	EmailTemplateConfigs     map[string]interface{} `json:"EMAIL_TEMPLATES"`
-	ScriptLibraryConfigs     map[string]interface{} `json:"SCRIPT_LIBRARIES"`
+	AllowDelete                bool                   `json:"ALLOW_DELETE"`
+	Exclude                    []string               `json:"EXCLUDE"`
+	IncludeOnly                []string               `json:"INCLUDE_ONLY"`
+	ExcludeSecrets             bool                   `json:"EXCLUDE_SECRETS"`
+	ApplicationConfigs         map[string]interface{} `json:"APPLICATIONS"`
+	IdpConfigs                 map[string]interface{} `json:"IDENTITY_PROVIDERS"`
+	ClaimConfigs               map[string]interface{} `json:"CLAIMS"`
+	UserStoreConfigs           map[string]interface{} `json:"USERSTORES"`
+	OidcScopeConfigs           map[string]interface{} `json:"OIDC_SCOPES"`
+	RoleConfigs                map[string]interface{} `json:"ROLES"`
+	ChallengeQuestionConfigs   map[string]interface{} `json:"CHALLENGE_QUESTIONS"`
+	EmailTemplateConfigs       map[string]interface{} `json:"EMAIL_TEMPLATES"`
+	ScriptLibraryConfigs       map[string]interface{} `json:"SCRIPT_LIBRARIES"`
+	GovernanceConnectorConfigs map[string]interface{} `json:"GOVERNANCE_CONNECTORS"`
 }
 
 type KeywordConfigs struct {
-	KeywordMappings          map[string]interface{} `json:"KEYWORD_MAPPINGS"`
-	ApplicationConfigs       map[string]interface{} `json:"APPLICATIONS"`
-	IdpConfigs               map[string]interface{} `json:"IDENTITY_PROVIDERS"`
-	ClaimConfigs             map[string]interface{} `json:"CLAIMS"`
-	UserStoreConfigs         map[string]interface{} `json:"USERSTORES"`
-	OidcScopeConfigs         map[string]interface{} `json:"OIDC_SCOPES"`
-	RoleConfigs              map[string]interface{} `json:"ROLES"`
-	ChallengeQuestionConfigs map[string]interface{} `json:"CHALLENGE_QUESTIONS"`
-	EmailTemplateConfigs     map[string]interface{} `json:"EMAIL_TEMPLATES"`
-	ScriptLibraryConfigs     map[string]interface{} `json:"SCRIPT_LIBRARIES"`
+	KeywordMappings            map[string]interface{} `json:"KEYWORD_MAPPINGS"`
+	ApplicationConfigs         map[string]interface{} `json:"APPLICATIONS"`
+	IdpConfigs                 map[string]interface{} `json:"IDENTITY_PROVIDERS"`
+	ClaimConfigs               map[string]interface{} `json:"CLAIMS"`
+	UserStoreConfigs           map[string]interface{} `json:"USERSTORES"`
+	OidcScopeConfigs           map[string]interface{} `json:"OIDC_SCOPES"`
+	RoleConfigs                map[string]interface{} `json:"ROLES"`
+	ChallengeQuestionConfigs   map[string]interface{} `json:"CHALLENGE_QUESTIONS"`
+	EmailTemplateConfigs       map[string]interface{} `json:"EMAIL_TEMPLATES"`
+	ScriptLibraryConfigs       map[string]interface{} `json:"SCRIPT_LIBRARIES"`
+	GovernanceConnectorConfigs map[string]interface{} `json:"GOVERNANCE_CONNECTORS"`
 }
 
 var SERVER_CONFIGS ServerConfigs
