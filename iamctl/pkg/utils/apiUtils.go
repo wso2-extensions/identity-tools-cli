@@ -43,7 +43,7 @@ const GET = "get"
 const POST = "post"
 const PUT = "put"
 
-func PrepareJSONRequestBody(data []byte, format Format, resourceType string, excludeFields ...string) ([]byte, error) {
+func PrepareJSONRequestBody(data []byte, format Format, resourceType ResourceType, excludeFields ...string) ([]byte, error) {
 
 	parsed, err := Deserialize(data, format, resourceType)
 	if err != nil {
@@ -70,7 +70,7 @@ func PrepareJSONRequestBody(data []byte, format Format, resourceType string, exc
 	return jsonBody, nil
 }
 
-func SendExportRequest(resourceId, fileType, resourceType string, excludeSecrets bool) (resp *http.Response, err error) {
+func SendExportRequest(resourceId, fileType string, resourceType ResourceType, excludeSecrets bool) (resp *http.Response, err error) {
 
 	reqUrl := buildRequestUrl(EXPORT, resourceType, resourceId)
 	req, err := http.NewRequest("GET", reqUrl, strings.NewReader(""))
@@ -114,7 +114,7 @@ func SendExportRequest(resourceId, fileType, resourceType string, excludeSecrets
 	return resp, fmt.Errorf("unexpected error while exporting the resource with status code: %s", strconv.FormatInt(int64(statusCode), 10))
 }
 
-func SendImportRequest(importFilePath, fileData, resourceType string) error {
+func SendImportRequest(importFilePath, fileData string, resourceType ResourceType) error {
 
 	reqUrl := buildRequestUrl(IMPORT, resourceType, "")
 
@@ -178,7 +178,7 @@ func SendImportRequest(importFilePath, fileData, resourceType string) error {
 	return fmt.Errorf("unexpected error when importing resource: %s", resp.Status)
 }
 
-func SendUpdateRequest(resourceId, importFilePath, fileData, resourceType string) error {
+func SendUpdateRequest(resourceId, importFilePath, fileData string, resourceType ResourceType) error {
 
 	reqUrl := buildRequestUrl(UPDATE, resourceType, resourceId)
 	formattedReqUrl := addQueryParams(reqUrl, resourceType)
@@ -246,7 +246,7 @@ func SendUpdateRequest(resourceId, importFilePath, fileData, resourceType string
 	return fmt.Errorf("unexpected error when importing resource: %s", resp.Status)
 }
 
-func SendDeleteRequest(resourceId string, resourceType string) error {
+func SendDeleteRequest(resourceId string, resourceType ResourceType) error {
 
 	reqUrl := buildRequestUrl(DELETE, resourceType, resourceId)
 	request, err := http.NewRequest("DELETE", reqUrl, bytes.NewBuffer(nil))
@@ -279,7 +279,7 @@ func SendDeleteRequest(resourceId string, resourceType string) error {
 	return fmt.Errorf("unexpected error when deleting resource: %s", resp.Status)
 }
 
-func SendGetRequest(resourceType, resourceId string) (interface{}, error) {
+func SendGetRequest(resourceType ResourceType, resourceId string) (interface{}, error) {
 
 	reqUrl := buildRequestUrl(GET, resourceType, resourceId)
 	request, err := http.NewRequest("GET", reqUrl, nil)
@@ -324,7 +324,7 @@ func SendGetRequest(resourceType, resourceId string) (interface{}, error) {
 	return data, nil
 }
 
-func SendPostRequest(resourceType string, requestBody []byte) (*http.Response, error) {
+func SendPostRequest(resourceType ResourceType, requestBody []byte) (*http.Response, error) {
 
 	reqUrl := buildRequestUrl(POST, resourceType, "")
 	request, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(requestBody))
@@ -359,7 +359,7 @@ func SendPostRequest(resourceType string, requestBody []byte) (*http.Response, e
 	return resp, nil
 }
 
-func SendPutRequest(resourceType, resourceId string, requestBody []byte) (*http.Response, error) {
+func SendPutRequest(resourceType ResourceType, resourceId string, requestBody []byte) (*http.Response, error) {
 
 	reqUrl := buildRequestUrl(PUT, resourceType, resourceId)
 	request, err := http.NewRequest("PUT", reqUrl, bytes.NewBuffer(requestBody))
@@ -394,7 +394,7 @@ func SendPutRequest(resourceType, resourceId string, requestBody []byte) (*http.
 	return resp, nil
 }
 
-func SendGetListRequest(resourceType string, resourceLimit int) (*http.Response, error) {
+func SendGetListRequest(resourceType ResourceType, resourceLimit int) (*http.Response, error) {
 
 	var reqUrl = buildRequestUrl(LIST, resourceType, "")
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
@@ -418,7 +418,7 @@ func SendGetListRequest(resourceType string, resourceLimit int) (*http.Response,
 	return resp, nil
 }
 
-func getResourcePath(resourceType string) string {
+func getResourcePath(resourceType ResourceType) string {
 
 	switch resourceType {
 	case APPLICATIONS:
@@ -433,7 +433,7 @@ func getResourcePath(resourceType string) string {
 	return ""
 }
 
-func getResourceBaseUrl(resourceType string) string {
+func getResourceBaseUrl(resourceType ResourceType) string {
 
 	basePath := "/t/" + SERVER_CONFIGS.TenantDomain
 	if IsSubOrganization() {
@@ -443,7 +443,7 @@ func getResourceBaseUrl(resourceType string) string {
 	return SERVER_CONFIGS.ServerUrl + basePath
 }
 
-func buildRequestUrl(requestType, resourceType, resourceId string) (reqUrl string) {
+func buildRequestUrl(requestType string, resourceType ResourceType, resourceId string) (reqUrl string) {
 
 	switch requestType {
 	case EXPORT:
@@ -474,7 +474,7 @@ func buildRequestUrl(requestType, resourceType, resourceId string) (reqUrl strin
 	return reqUrl
 }
 
-func addQueryParams(reqURL, resourceType string) string {
+func addQueryParams(reqURL string, resourceType ResourceType) string {
 
 	url, err := url.Parse(reqURL)
 	if err != nil {
