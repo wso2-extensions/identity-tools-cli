@@ -64,6 +64,7 @@ type ToolConfigs struct {
 	EmailTemplateConfigs       map[string]interface{} `json:"EMAIL_TEMPLATES"`
 	ScriptLibraryConfigs       map[string]interface{} `json:"SCRIPT_LIBRARIES"`
 	GovernanceConnectorConfigs map[string]interface{} `json:"GOVERNANCE_CONNECTORS"`
+	CertificateConfigs         map[string]interface{} `json:"CERTIFICATES"`
 }
 
 type KeywordConfigs struct {
@@ -78,6 +79,7 @@ type KeywordConfigs struct {
 	EmailTemplateConfigs       map[string]interface{} `json:"EMAIL_TEMPLATES"`
 	ScriptLibraryConfigs       map[string]interface{} `json:"SCRIPT_LIBRARIES"`
 	GovernanceConnectorConfigs map[string]interface{} `json:"GOVERNANCE_CONNECTORS"`
+	CertificateConfigs         map[string]interface{} `json:"CERTIFICATES"`
 }
 
 var SERVER_CONFIGS ServerConfigs
