@@ -29,6 +29,7 @@ const CHALLENGE_QUESTIONS_CONFIG = "CHALLENGE_QUESTIONS"
 const EMAIL_TEMPLATES_CONFIG = "EMAIL_TEMPLATES"
 const SCRIPT_LIBRARIES_CONFIG = "SCRIPT_LIBRARIES"
 const GOVERNANCE_CONNECTORS_CONFIG = "GOVERNANCE_CONNECTORS"
+const CERTIFICATES_CONFIG = "CERTIFICATES"
 
 // Tool configs
 const EXCLUDE_CONFIG = "EXCLUDE"
@@ -63,6 +64,7 @@ const (
 	EMAIL_TEMPLATES       ResourceType = "EmailTemplates"
 	SCRIPT_LIBRARIES      ResourceType = "ScriptLibraries"
 	GOVERNANCE_CONNECTORS ResourceType = "GovernanceConnectors"
+	CERTIFICATES          ResourceType = "Certificates"
 )
 
 // Config file names
@@ -83,6 +85,7 @@ const MEDIA_TYPE_JSON = "application/json"
 const MEDIA_TYPE_XML = "application/xml"
 const MEDIA_TYPE_YAML = "application/yaml"
 const MEDIA_TYPE_FORM = "application/x-www-form-urlencoded"
+const MEDIA_TYPE_PKIX_CERT = "application/pkix-cert"
 
 const DEFAULT_TENANT_DOMAIN = "carbon.super"
 const SENSITIVE_FIELD_MASK = "'********'"
@@ -197,4 +200,5 @@ const (
 	XML_ROOT_EMAIL_TEMPLATE       = "EmailTemplate"
 	XML_ROOT_SCRIPT_LIBRARY       = "ScriptLibrary"
 	XML_ROOT_GOVERNANCE_CONNECTOR = "GovernanceConnector"
+	XML_ROOT_CERTIFICATE          = "Certificate"
 )
