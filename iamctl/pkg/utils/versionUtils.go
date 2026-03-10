@@ -28,32 +28,38 @@ import (
 // Checks if a resource type is supported in the configured WSO2 IS version.
 // Returns true if:
 //   - Version is not configured (backward compatibility - version checking disabled)
-//   - Configured version >= minimum required version for the resource type
+//   - minimum required version <= Configured version <= maximum supported version for the resource type
 //   - No version requirement is defined for the resource type
 func IsEntitySupportedInVersion(resourceType ResourceType) bool {
 
 	if SERVER_CONFIGS.ServerVersion == "" {
 		return true
 	}
-	minVersion, exists := EntityVersionRequirements[resourceType]
-	if !exists {
-		return true
+
+	minVersion, hasMin := EntityMinVersionRequirements[resourceType]
+	maxVersion, hasMax := EntityMaxSupportedVersion[resourceType]
+
+	if hasMin {
+		comparison, err := CompareVersions(SERVER_CONFIGS.ServerVersion, minVersion)
+		if err != nil {
+			log.Printf("Warning: Invalid version format. Configured: %s", SERVER_CONFIGS.ServerVersion)
+		} else if comparison < 0 {
+			log.Printf("Skipping %s: Supported from IS version %s or higher", resourceType, minVersion)
+			return false
+		}
 	}
 
-	comparison, err := CompareVersions(SERVER_CONFIGS.ServerVersion, minVersion)
-	if err != nil {
-		log.Printf("Warning: Invalid version format. Configured: %s",
-			SERVER_CONFIGS.ServerVersion)
-		return true
+	if hasMax {
+		comparison, err := CompareVersions(SERVER_CONFIGS.ServerVersion, maxVersion)
+		if err != nil {
+			log.Printf("Warning: Invalid version format. Configured: %s", SERVER_CONFIGS.ServerVersion)
+		} else if comparison > 0 {
+			log.Printf("Skipping %s: Supported up to IS version %s", resourceType, maxVersion)
+			return false
+		}
 	}
 
-	isSupported := comparison >= 0
-	if !isSupported {
-		log.Printf("Skipping %s: Supported from IS version %s or higher",
-			resourceType, minVersion)
-	}
-
-	return isSupported
+	return true
 }
 
 // CompareVersions compares two semantic version strings
