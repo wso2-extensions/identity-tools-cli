@@ -23,6 +23,7 @@ const APPLICATIONS_CONFIG = "APPLICATIONS"
 const IDP_CONFIG = "IDENTITY_PROVIDERS"
 const CLAIM_CONFIG = "CLAIMS"
 const USERSTORES_CONFIG = "USERSTORES"
+const OIDC_SCOPES_CONFIG = "OIDC_SCOPES"
 
 // Tool configs
 const EXCLUDE_CONFIG = "EXCLUDE"
@@ -51,6 +52,7 @@ const (
 	IDENTITY_PROVIDERS ResourceType = "IdentityProviders"
 	CLAIMS             ResourceType = "Claims"
 	USERSTORES         ResourceType = "UserStores"
+	OIDC_SCOPES        ResourceType = "OidcScopes"
 )
 
 // Config file names
@@ -152,3 +154,13 @@ var RESOURCE_IDENTIFIER_METADATA = map[ResourceType]ResourceIdentifierMeta{}
 
 // Maps resource types to the resources they reference.
 var RESOURCE_REFERENCE_METADATA = map[ResourceType][]ResourceReferenceMeta{}
+
+// Array field paths for each resource type
+var oidcScopeArrayFields = []string{
+	"claims",
+}
+
+// XML root element tags for each resource type
+const (
+	XML_ROOT_OIDC_SCOPE = "Scope"
+)

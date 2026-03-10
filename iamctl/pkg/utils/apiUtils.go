@@ -429,6 +429,8 @@ func getResourcePath(resourceType ResourceType) string {
 		return "userstores"
 	case CLAIMS:
 		return "claim-dialects"
+	case OIDC_SCOPES:
+		return "oidc/scopes"
 	}
 	return ""
 }

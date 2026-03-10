@@ -155,7 +155,9 @@ func XMLToMap(data []byte) (map[string]interface{}, error) {
 
 func GetXMLRootTag(resourceType ResourceType) string {
 
-	xmlRootTags := map[ResourceType]string{}
+	xmlRootTags := map[ResourceType]string{
+		OIDC_SCOPES: XML_ROOT_OIDC_SCOPE,
+	}
 	return xmlRootTags[resourceType]
 }
 
@@ -185,6 +187,8 @@ func RemoveXMLRootTag(xmlMap map[string]interface{}, resourceType ResourceType) 
 func GetArrayFieldPaths(resourceType ResourceType) []string {
 
 	switch resourceType {
+	case OIDC_SCOPES:
+		return oidcScopeArrayFields
 	default:
 		return []string{}
 	}

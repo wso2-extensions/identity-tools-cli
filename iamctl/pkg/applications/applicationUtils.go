@@ -120,12 +120,12 @@ func getTotalAppCount() (count int, err error) {
 	if statusCode == 200 {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return -1, fmt.Errorf("error when reading the retrived app list. %w", err)
+			return -1, fmt.Errorf("error when reading the retrieved app list. %w", err)
 		}
 
 		err = json.Unmarshal(body, &list)
 		if err != nil {
-			return -1, fmt.Errorf("error when unmarshalling the retrived app list. %w", err)
+			return -1, fmt.Errorf("error when unmarshalling the retrieved app list. %w", err)
 		}
 		resp.Body.Close()
 
