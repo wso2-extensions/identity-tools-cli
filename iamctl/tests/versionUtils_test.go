@@ -124,33 +124,70 @@ func TestParseVersion(t *testing.T) {
 }
 
 func TestIsEntitySupportedInVersion(t *testing.T) {
-	// Save original version config
 	originalVersion := utils.SERVER_CONFIGS.ServerVersion
+	originalMinVersions := utils.EntityMinVersionRequirements
+	originalMaxVersions := utils.EntityMaxSupportedVersion
 	defer func() {
 		utils.SERVER_CONFIGS.ServerVersion = originalVersion
+		utils.EntityMinVersionRequirements = originalMinVersions
+		utils.EntityMaxSupportedVersion = originalMaxVersions
 	}()
 
+	const testResource = utils.APPLICATIONS
+
 	tests := []struct {
-		name         string
-		version      string
-		resourceType utils.ResourceType
-		expected     bool
+		name       string
+		version    string
+		minVersion string
+		maxVersion string
+		expected   bool
 	}{
-		{"no version", "", utils.APPLICATIONS, true},
-		{"sufficient version", "7.0.0", utils.APPLICATIONS, true},
-		{"exact version", "5.9.0", utils.USERSTORES, true},
-		{"insufficient version", "5.0.0", utils.USERSTORES, false},
-		{"invalid version", "invalid", utils.CLAIMS, true},
+		// No server version configured / no version requirements
+		{"no version configured", "", "6.0.0", "7.0.0", true},
+		{"no version requirement", "5.0.0", "", "", true},
+
+		// Min version checks
+		{"version above min", "7.0.0", "6.0.0", "", true},
+		{"version equals min", "6.0.0", "6.0.0", "", true},
+		{"version below min", "5.9.0", "6.0.0", "", false},
+
+		// Max version checks
+		{"version below max", "6.0.0", "", "7.0.0", true},
+		{"version equals max", "7.0.0", "", "7.0.0", true},
+		{"version above max", "7.1.0", "", "7.0.0", false},
+
+		// Both min and max bounds
+		{"version within range", "6.5.0", "6.0.0", "7.0.0", true},
+		{"version equals min of range", "6.0.0", "6.0.0", "7.0.0", true},
+		{"version equals max of range", "7.0.0", "6.0.0", "7.0.0", true},
+		{"version below range", "5.9.0", "6.0.0", "7.0.0", false},
+		{"version above range", "7.1.0", "6.0.0", "7.0.0", false},
+
+		// Invalid version format
+		{"invalid version format", "invalid", "6.0.0", "", true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			utils.SERVER_CONFIGS.ServerVersion = tt.version
-			result := utils.IsEntitySupportedInVersion(tt.resourceType)
+
+			if tt.minVersion != "" {
+				utils.EntityMinVersionRequirements = map[utils.ResourceType]string{testResource: tt.minVersion}
+			} else {
+				utils.EntityMinVersionRequirements = map[utils.ResourceType]string{}
+			}
+
+			if tt.maxVersion != "" {
+				utils.EntityMaxSupportedVersion = map[utils.ResourceType]string{testResource: tt.maxVersion}
+			} else {
+				utils.EntityMaxSupportedVersion = map[utils.ResourceType]string{}
+			}
+
+			result := utils.IsEntitySupportedInVersion(testResource)
 
 			if result != tt.expected {
-				t.Errorf("IsEntitySupportedInVersion(%s) with version %s = %v; expected %v",
-					tt.resourceType, tt.version, result, tt.expected)
+				t.Errorf("IsEntitySupportedInVersion(%s) with version=%s min=%s max=%s = %v; expected %v",
+					testResource, tt.version, tt.minVersion, tt.maxVersion, result, tt.expected)
 			}
 		})
 	}
