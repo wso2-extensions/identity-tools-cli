@@ -30,4 +30,5 @@ var ResourceOrder = []ResourceType{
 	USERSTORES,
 	APPLICATIONS,
 	OIDC_SCOPES,
+	ROLES, // Dependency: Applications
 }
