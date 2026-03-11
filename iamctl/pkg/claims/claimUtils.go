@@ -29,7 +29,7 @@ import (
 	"regexp"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type claimDialect struct {
@@ -55,12 +55,12 @@ func getClaimDialectsList() ([]claimDialect, error) {
 	if statusCode == 200 {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return nil, fmt.Errorf("error when reading the retrived claim dialect list. %w", err)
+			return nil, fmt.Errorf("error when reading the retrieved claim dialect list. %w", err)
 		}
 
 		err = json.Unmarshal(body, &list)
 		if err != nil {
-			return nil, fmt.Errorf("error when unmarshalling the retrived claim dialect list. %w", err)
+			return nil, fmt.Errorf("error when unmarshalling the retrieved claim dialect list. %w", err)
 		}
 		resp.Body.Close()
 

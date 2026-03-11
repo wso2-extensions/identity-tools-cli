@@ -31,7 +31,7 @@ import (
 func ImportAll(inputDirPath string, fileType string) {
 
 	log.Println("Importing user stores...")
-	importFilePath := filepath.Join(inputDirPath, utils.USERSTORES)
+	importFilePath := filepath.Join(inputDirPath, utils.USERSTORES.String())
 
 	if utils.IsResourceTypeExcluded(utils.USERSTORES) {
 		return

@@ -28,7 +28,7 @@ import (
 	"path/filepath"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 const USERSTORE_SECRET_MASK = "ENCRYPTED PROPERTY"
@@ -56,12 +56,12 @@ func getUserStoreList() ([]userStore, error) {
 	if statusCode == 200 {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return nil, fmt.Errorf("error when reading the retrived userstore list. %w", err)
+			return nil, fmt.Errorf("error when reading the retrieved userstore list. %w", err)
 		}
 
 		err = json.Unmarshal(body, &list)
 		if err != nil {
-			return nil, fmt.Errorf("error when unmarshalling the retrived userstore list. %w", err)
+			return nil, fmt.Errorf("error when unmarshalling the retrieved userstore list. %w", err)
 		}
 		resp.Body.Close()
 

@@ -29,7 +29,7 @@ import (
 	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 func ImportAll(inputDirPath string, fileType string) {
@@ -39,7 +39,7 @@ func ImportAll(inputDirPath string, fileType string) {
 		log.Println("Importing claims for sub organization not supported.")
 		return
 	}
-	importFilePath := filepath.Join(inputDirPath, utils.CLAIMS)
+	importFilePath := filepath.Join(inputDirPath, utils.CLAIMS.String())
 
 	if utils.IsResourceTypeExcluded(utils.CLAIMS) {
 		return

@@ -34,7 +34,7 @@ func ExportAll(exportFilePath string, format string) {
 
 	// Export all applications to the Applications folder.
 	log.Println("Exporting applications...")
-	exportFilePath = filepath.Join(exportFilePath, utils.APPLICATIONS)
+	exportFilePath = filepath.Join(exportFilePath, utils.APPLICATIONS.String())
 
 	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
 		return

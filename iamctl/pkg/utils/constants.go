@@ -15,7 +15,7 @@
 * specific language governing permissions and limitations
 * under the License.
  */
- 
+
 package utils
 
 // Resource type configs
@@ -23,6 +23,8 @@ const APPLICATIONS_CONFIG = "APPLICATIONS"
 const IDP_CONFIG = "IDENTITY_PROVIDERS"
 const CLAIM_CONFIG = "CLAIMS"
 const USERSTORES_CONFIG = "USERSTORES"
+const OIDC_SCOPES_CONFIG = "OIDC_SCOPES"
+const ROLES_CONFIG = "ROLES"
 
 // Tool configs
 const EXCLUDE_CONFIG = "EXCLUDE"
@@ -44,15 +46,29 @@ const KEYWORD_CONFIG_PATH = "KEYWORD_CONFIG_PATH"
 const TOKEN_CONFIG = "TOKEN"
 
 // Resource types
-const APPLICATIONS = "Applications"
-const IDENTITY_PROVIDERS = "IdentityProviders"
-const CLAIMS = "Claims"
-const USERSTORES = "UserStores"
+type ResourceType string
+
+const (
+	APPLICATIONS       ResourceType = "Applications"
+	IDENTITY_PROVIDERS ResourceType = "IdentityProviders"
+	CLAIMS             ResourceType = "Claims"
+	USERSTORES         ResourceType = "UserStores"
+	OIDC_SCOPES        ResourceType = "OidcScopes"
+	ROLES              ResourceType = "Roles"
+)
 
 // Config file names
 const SERVER_CONFIG_FILE = "serverConfig.json"
 const TOOL_CONFIG_FILE = "toolConfig.json"
 const KEYWORD_CONFIG_FILE = "keywordConfig.json"
+
+type Format string
+
+const (
+	FormatYAML Format = "yaml"
+	FormatJSON Format = "json"
+	FormatXML  Format = "xml"
+)
 
 // Media types
 const MEDIA_TYPE_JSON = "application/json"
@@ -65,7 +81,9 @@ const SENSITIVE_FIELD_MASK = "'********'"
 const RESIDENT_IDP_NAME = "LOCAL"
 const CONSOLE = "Console"
 const MY_ACCOUNT = "My Account"
+const ADMIN = "admin"
 const OAUTH2 = "oauth2"
+const ALL_ITEMS = "all_items" // Wildcard to match all elements in an array
 
 // Error codes
 var ErrorCodes = map[int]string{
@@ -123,3 +141,35 @@ var claimArrayIdentifiers = map[string]string{
 	"attributeMapping": "mappedAttribute",
 	"claims":           "id",
 }
+
+type ResourceIdentifierMeta struct {
+	IdentifierPath  string // Path to the ID field in the resource object
+	UniqueValuePath string // Path to the unique identifier field
+}
+
+type ResourceReferenceMeta struct {
+	ReferencedResourceType ResourceType // The resource type being referenced
+	ReferencePaths         []string     // Paths to where the referenced resource's ID appears
+}
+
+// Maps resource types to their identifier metadata.
+var RESOURCE_IDENTIFIER_METADATA = map[ResourceType]ResourceIdentifierMeta{}
+
+// Maps resource types to the resources they reference.
+var RESOURCE_REFERENCE_METADATA = map[ResourceType][]ResourceReferenceMeta{}
+
+// Array field paths for each resource type
+var oidcScopeArrayFields = []string{
+	"claims",
+}
+
+var rolesArrayFields = []string{
+	"permissions",
+	"schemas",
+}
+
+// XML root element tags for each resource type
+const (
+	XML_ROOT_OIDC_SCOPE = "Scope"
+	XML_ROOT_ROLE       = "Role"
+)

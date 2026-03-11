@@ -26,6 +26,7 @@ import (
 
 	"log"
 	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -48,125 +49,84 @@ func ReplaceKeywords(fileContent string, keywordMapping map[string]any) string {
 	return fileContent
 }
 
-func ProcessExportedContent(exportedFileName string, exportedFileContent []byte, keywordMapping map[string]any, resourceType string) ([]byte, error) {
-	fileType := strings.ToLower(filepath.Ext(exportedFileName))
-	// Only YAML uses !!org.wso2 type tags; avoid mangling XML/JSON
-	if fileType == ".yaml" || fileType == ".yml" {
-		// To preserve type tags in the exported YAML file, replace the type tags with a placeholder.
-		exportedFileContent = ReplaceTypeTags(exportedFileContent)
-	}
-	var exportedData any
+func ProcessExportedData(exportedData interface{}, localFilePath string, format Format, keywordMapping map[string]interface{}, resourceType ResourceType) (interface{}, error) {
 
-	switch fileType {
-	case ".json":
-		var exportedJson any
-		err := json.Unmarshal(exportedFileContent, &exportedJson)
-		if err != nil {
-			return nil, fmt.Errorf("error when parsing exported data to JSON. %w", err)
-		}
-		exportedData = exportedJson
-	case ".xml":
-		// FIX: Parse XML to Map instead of treating as string
-		exportedXmlMap, err := XMLToMap(exportedFileContent)
-		if err != nil {
-			return nil, fmt.Errorf("error when parsing exported data to XML. %w", err)
-		}
-		exportedData = exportedXmlMap
-	default:
-		var exportedYaml any
-		err := yaml.Unmarshal(exportedFileContent, &exportedYaml)
-		if err != nil {
-			return nil, fmt.Errorf("error when parsing exported data to YAML. %w", err)
-		}
-		exportedData = exportedYaml
+	localFileContent, err := ioutil.ReadFile(localFilePath)
+	if err != nil {
+		log.Printf("Local file not found at %s. Creating new file.", localFilePath)
+		return exportedData, nil
 	}
 
 	// Replace ESVs in the exported file according to the keyword placeholders added in the local file.
-	var modifiedExportedData any
-	localFileData, err := os.ReadFile(exportedFileName)
+	modifiedData, err := AddLocalKeywords(exportedData, format, localFileContent, keywordMapping, resourceType)
 	if err != nil {
-		log.Printf("Local file not found at %s. Creating new file.", exportedFileName)
-		modifiedExportedData = exportedData
-	} else {
-		modifiedExportedData, err = AddKeywords(exportedData, fileType, localFileData, keywordMapping, resourceType)
-		if err != nil {
-			log.Println("Error when adding keywords to the exported file. Overriding local file with exported content. ", err)
-			modifiedExportedData = exportedData
-		}
+		log.Println("Error processing keywords. Using exported content.", err)
+		return exportedData, nil
 	}
 
-	var modifiedExportedContent []byte
-	var marshalErr error
-
-	switch fileType {
-	case ".json":
-		modifiedExportedContent, marshalErr = json.MarshalIndent(modifiedExportedData, "", "  ")
-	case ".xml":
-		xmlMap, ok := modifiedExportedData.(map[string]any)
-		if !ok {
-			return nil, fmt.Errorf("unexpected XML data type %T; expected map[string]any", modifiedExportedData)
-		}
-		mv := mxj.Map(xmlMap)
-		mxj.SetAttrPrefix("-")
-
-		xmlData, err := mv.XmlIndent("", "  ")
-		if err != nil {
-			marshalErr = err
-		} else {
-			// Post-process the XML to fix the xsi:type and namespace issues
-			modifiedExportedContent = FixXmlStructure(xmlData)
-		}
-	default:
-		modifiedExportedContent, marshalErr = yaml.Marshal(modifiedExportedData)
-	}
-
-	if marshalErr != nil {
-		return nil, fmt.Errorf("error when creating exported data with keywords. %w", marshalErr)
-	}
-
-	// Re-add YAML type tags only for YAML files
-	if fileType == ".yaml" || fileType == ".yml" {
-		modifiedExportedContent = AddTypeTags(modifiedExportedContent)
-	}
-	return modifiedExportedContent, nil
+	return modifiedData, nil
 }
 
-func AddKeywords(exportedData any, fileType string, localFileData []byte, keywordMapping map[string]any, resourceType string) (any, error) {
-	var localData any
-	switch fileType {
-	case ".json":
-		var localJson any
-		err := json.Unmarshal(localFileData, &localJson)
-		if err != nil || localJson == nil {
-			err1 := fmt.Errorf("empty or invalid local file data. %w", err)
-			return exportedData, err1
-		}
-		localData = localJson
-	case ".xml":
-		localJsonMap, err := XMLToMap(localFileData)
-		if err != nil || localJsonMap == nil {
-			return exportedData, fmt.Errorf("invalid local file data: %w", err)
-		}
-		localData = localJsonMap
-	default:
-		var localYaml any
-		err := yaml.Unmarshal(localFileData, &localYaml)
-		if err != nil || localYaml == nil {
-			err1 := fmt.Errorf("empty or invalid local file data. %w", err)
-			return exportedData, err1
-		}
-		localData = localYaml
+func ProcessExportedContent(exportedFileName string, exportedFileContent []byte, keywordMapping map[string]interface{}, resourceType ResourceType) ([]byte, error) {
+
+	format, err := FormatFromExtension(filepath.Ext(exportedFileName))
+	if err != nil {
+		return nil, fmt.Errorf("unsupported file format: %w", err)
+	}
+	if format == FormatYAML {
+		// To preserve type tags in YAML files, replace the type tags with a placeholder.
+		exportedFileContent = ReplaceTypeTags(exportedFileContent)
+	}
+
+	// Unmarshall and marshall exported content in all cases to preserve a consistent format in the output.
+	exportedData, err := Deserialize(exportedFileContent, format, resourceType)
+	if err != nil {
+		return nil, fmt.Errorf("error when deserializing exported content: %w", err)
+	}
+
+	// Process exported content
+	modifiedData, err := ProcessExportedData(exportedData, exportedFileName, format, keywordMapping, resourceType)
+	if err != nil {
+		log.Println("Error when processing with keywords. Using original exported content. ", err)
+		modifiedData = exportedData
+	}
+
+	modifiedContent, err := Serialize(modifiedData, format, resourceType)
+	if err != nil {
+		return nil, fmt.Errorf("error when creating exported data with keywords: %w", err)
+	}
+
+	// Re-add YAML type tags for YAML files
+	if format == FormatYAML {
+		modifiedContent = AddTypeTags(modifiedContent)
+	}
+	return modifiedContent, nil
+}
+
+// Adds local keywords for exported content specifically in YAML format.
+// Use AddLocalKeywords for granular control over different formats.
+func AddKeywords(exportedYaml interface{}, localFileContent []byte, keywordMapping map[string]interface{}, resourceType ResourceType) (interface{}, error) {
+	return AddLocalKeywords(exportedYaml, FormatYAML, localFileContent, keywordMapping, resourceType)
+}
+
+func AddLocalKeywords(exportedData interface{}, format Format, localFileContent []byte, keywordMapping map[string]interface{}, resourceType ResourceType) (interface{}, error) {
+
+	localData, err := Deserialize(localFileContent, format, resourceType)
+	if err != nil || localData == nil {
+		return exportedData, fmt.Errorf("empty or invalid local file data: %w", err)
 	}
 
 	// Get keyword locations in local file.
 	keywordLocations := GetKeywordLocations(localData, []string{}, keywordMapping, resourceType)
+
 	// Compare the fields with keywords in the exported file and the local file and modify the exported file.
 	exportedData = ModifyFieldsWithKeywords(exportedData, localData, keywordLocations, keywordMapping)
 
 	return exportedData, nil
 }
 
-func GetKeywordLocations(fileData any, path []string, keywordMapping map[string]any, resourceType string) []string {
+func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map[string]interface{}, resourceType ResourceType) []string {
+
 	var keys []string
 	switch v := fileData.(type) {
 	case map[any]any:
@@ -214,7 +174,7 @@ func GetKeywordLocations(fileData any, path []string, keywordMapping map[string]
 	return keys
 }
 
-func GetArrayIdentifiers(resourceType string) map[string]string {
+func GetArrayIdentifiers(resourceType ResourceType) map[string]string {
 
 	switch resourceType {
 	case APPLICATIONS:
@@ -225,8 +185,9 @@ func GetArrayIdentifiers(resourceType string) map[string]string {
 		return userStoreArrayIdentifiers
 	case CLAIMS:
 		return claimArrayIdentifiers
+	default:
+		return make(map[string]string)
 	}
-	return make(map[string]string)
 }
 
 func resolvePathWithIdentifiers(arrayName string, element any, identifiers map[string]string) (string, error) {
@@ -297,7 +258,27 @@ func ModifyFieldsWithKeywords(exportedFileData any, localFileData any,
 
 func GetValue(data any, key string) string {
 
-	parts := GetPathKeys(key)
+	value := getRawValue(data, key)
+
+	if value == nil {
+		return ""
+	}
+	if reflect.TypeOf(value).Kind() == reflect.Int {
+		return strconv.Itoa(value.(int))
+	}
+	if finalArray, ok := value.([]interface{}); ok {
+		strArray := make([]string, len(finalArray))
+		for i, v := range finalArray {
+			strArray[i] = fmt.Sprintf("%v", v)
+		}
+		return strings.Join(strArray, ",")
+	}
+	return fmt.Sprintf("%v", value)
+}
+
+func getRawValue(data interface{}, pathString string) interface{} {
+
+	parts := GetPathKeys(pathString)
 	for _, part := range parts {
 		switch v := data.(type) {
 		case map[any]any:
@@ -307,53 +288,45 @@ func GetValue(data any, key string) string {
 		case []any:
 			index, err := GetArrayIndex(v, part)
 			if err != nil {
-				return ""
+				return nil
 			}
 			if len(v) > index {
 				data = v[index]
+			} else {
+				return nil
 			}
-
 		default:
-			return ""
+			return nil
 		}
-	}
-	if data == nil {
-		return ""
-	}
-	if reflect.TypeOf(data).Kind() == reflect.Int {
-		return strconv.Itoa(data.(int))
-	}
-	if finalArray, ok := data.([]any); ok {
-		strArray := make([]string, len(finalArray))
-		for i, v := range finalArray {
-			strArray[i] = v.(string)
-		}
-		data = strings.Join(strArray, ",")
 	}
 	// Convert the final value to a string and return.
 	dataAsString := fmt.Sprintf("%v", data)
 	return dataAsString
 }
 
-func ReplaceValue(data any, pathString string, replacement string) any {
+func ReplaceValue(data interface{}, pathString string, replacement string) interface{} {
+	return ReplaceRawValue(data, pathString, replacement)
+}
+
+func ReplaceRawValue(data interface{}, pathString string, replacement interface{}) interface{} {
 
 	path := GetPathKeys(pathString)
 	if len(path) == 1 {
-		switch data := data.(type) {
-		case map[any]any:
-			data[path[0]] = replacement
-		case map[string]any:
-			data[path[0]] = replacement
+		switch v := data.(type) {
+		case map[interface{}]interface{}:
+			v[path[0]] = replacement
+		case map[string]interface{}:
+			v[path[0]] = replacement
 		}
 	} else {
 		switch v := data.(type) {
 		case map[any]any:
 			currentKey := path[0]
-			data.(map[any]any)[currentKey] = ReplaceValue(v[currentKey], strings.Join(path[1:], "."), replacement)
-		case map[string]any:
+			v[currentKey] = ReplaceRawValue(v[currentKey], strings.Join(path[1:], "."), replacement)
+		case map[string]interface{}:
 			currentKey := path[0]
-			data.(map[string]any)[currentKey] = ReplaceValue(v[currentKey], strings.Join(path[1:], "."), replacement)
-		case []any:
+			v[currentKey] = ReplaceRawValue(v[currentKey], strings.Join(path[1:], "."), replacement)
+		case []interface{}:
 			currentKey := path[0]
 			index, err := GetArrayIndex(v, currentKey)
 			if err != nil {
@@ -361,7 +334,7 @@ func ReplaceValue(data any, pathString string, replacement string) any {
 				return data
 			}
 			if len(v) > index {
-				data.([]any)[index] = ReplaceValue(v[index], strings.Join(path[1:], "."), replacement)
+				v[index] = ReplaceRawValue(v[index], strings.Join(path[1:], "."), replacement)
 			}
 		default:
 			return data
@@ -481,4 +454,9 @@ func FixXmlStructure(data []byte) []byte {
 	})
 
 	return []byte(fixedXml)
+func extendPath(base, segment string) string {
+	if base == "" {
+		return segment
+	}
+	return base + "." + segment
 }

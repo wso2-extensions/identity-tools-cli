@@ -29,13 +29,13 @@ import (
 	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 func ImportAll(inputDirPath string, fileType string) {
 
 	log.Println("Importing applications...")
-	importFilePath := filepath.Join(inputDirPath, utils.APPLICATIONS)
+	importFilePath := filepath.Join(inputDirPath, utils.APPLICATIONS.String())
 
 	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
 		return

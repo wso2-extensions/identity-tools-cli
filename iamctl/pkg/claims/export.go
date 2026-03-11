@@ -37,7 +37,7 @@ func ExportAll(exportFilePath string, format string) {
 		log.Println("Exporting claims for sub organization not supported.")
 		return
 	}
-	exportFilePath = filepath.Join(exportFilePath, utils.CLAIMS)
+	exportFilePath = filepath.Join(exportFilePath, utils.CLAIMS.String())
 
 	if utils.IsResourceTypeExcluded(utils.CLAIMS) {
 		return
