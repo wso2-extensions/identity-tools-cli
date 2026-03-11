@@ -87,6 +87,7 @@ const MEDIA_TYPE_FORM = "application/x-www-form-urlencoded"
 
 const DEFAULT_TENANT_DOMAIN = "carbon.super"
 const SENSITIVE_FIELD_MASK = "'********'"
+const SENSITIVE_FIELD_MASK_WITHOUT_QUOTES = "********"
 const RESIDENT_IDP_NAME = "LOCAL"
 const CONSOLE = "Console"
 const MY_ACCOUNT = "My Account"
@@ -190,6 +191,10 @@ var governanceConnectorArrayFields = []string{
 	"properties",
 }
 
+var userStoreArrayFields = []string{
+	"properties",
+}
+
 // XML root element tags for each resource type
 const (
 	XML_ROOT_OIDC_SCOPE           = "Scope"
@@ -198,4 +203,5 @@ const (
 	XML_ROOT_EMAIL_TEMPLATE       = "EmailTemplate"
 	XML_ROOT_SCRIPT_LIBRARY       = "ScriptLibrary"
 	XML_ROOT_GOVERNANCE_CONNECTOR = "GovernanceConnector"
+	XML_ROOT_USERSTORE            = "UserStore"
 )
