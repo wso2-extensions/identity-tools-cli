@@ -20,7 +20,7 @@ package claims
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"mime"
 	"os"
@@ -99,7 +99,7 @@ func exportClaimDialect(dialectId string, outputDirPath string, format string) e
 	exportedFileName := filepath.Join(outputDirPath, fileName)
 	fileInfo := utils.GetFileInfo(exportedFileName)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("error while reading the response body when exporting claim dialect: %s. %s", fileName, err)
 	}
@@ -110,7 +110,7 @@ func exportClaimDialect(dialectId string, outputDirPath string, format string) e
 		return fmt.Errorf("error while processing the exported content: %s", err)
 	}
 
-	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
+	err = os.WriteFile(exportedFileName, modifiedFile, 0644)
 	if err != nil {
 		return fmt.Errorf("error when writing the exported content to file: %w", err)
 	}

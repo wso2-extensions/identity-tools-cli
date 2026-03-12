@@ -20,7 +20,6 @@ package userstores
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -29,7 +28,7 @@ import (
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
-func ImportAll(inputDirPath string) {
+func ImportAll(inputDirPath string, fileType string) {
 
 	log.Println("Importing user stores...")
 	importFilePath := filepath.Join(inputDirPath, utils.USERSTORES.String())
@@ -37,13 +36,24 @@ func ImportAll(inputDirPath string) {
 	if utils.IsResourceTypeExcluded(utils.USERSTORES) {
 		return
 	}
+	var entries []os.DirEntry
 	var files []os.FileInfo
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
 		log.Println("No user stores to import.")
 	} else {
-		files, err = ioutil.ReadDir(importFilePath)
+		entries, err = os.ReadDir(importFilePath)
 		if err != nil {
 			log.Println("Error importing user stores: ", err)
+		}
+
+		files = make([]os.FileInfo, 0, len(entries))
+		for _, entry := range entries {
+			info, err := entry.Info()
+			if err != nil {
+				log.Println("Error getting file info: ", err)
+				continue
+			}
+			files = append(files, info)
 		}
 		if utils.TOOL_CONFIGS.AllowDelete {
 			removeDeletedDeployedUserstores(files)
@@ -52,6 +62,10 @@ func ImportAll(inputDirPath string) {
 
 	for _, file := range files {
 		userStoreFilePath := filepath.Join(importFilePath, file.Name())
+		typeOfFile := filepath.Ext(file.Name())
+		if typeOfFile != "."+fileType {
+			continue
+		}
 		userStoreName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 
 		if !utils.IsResourceExcluded(userStoreName, utils.TOOL_CONFIGS.UserStoreConfigs) {
@@ -70,7 +84,7 @@ func ImportAll(inputDirPath string) {
 
 func importUserStore(userStoreId string, importFilePath string) error {
 
-	fileBytes, err := ioutil.ReadFile(importFilePath)
+	fileBytes, err := os.ReadFile(importFilePath)
 	if err != nil {
 		return fmt.Errorf("error when reading the file for user store: %s", err)
 	}
