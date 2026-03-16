@@ -33,9 +33,6 @@ func ExportAll(exportFilePath string, format string) {
 
 	// Export all claim dialects with related claims.
 	log.Println("Exporting claims...")
-	if !utils.IsEntitySupportedInVersion(utils.CLAIMS) {
-		return
-	}
 	if utils.IsSubOrganization() {
 		log.Println("Exporting claims for sub organization not supported.")
 		return
@@ -45,15 +42,17 @@ func ExportAll(exportFilePath string, format string) {
 	if utils.IsResourceTypeExcluded(utils.CLAIMS) {
 		return
 	}
+
+	claimDialects, err := getClaimDialectsList()
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		os.MkdirAll(exportFilePath, 0700)
 	} else {
 		if utils.TOOL_CONFIGS.AllowDelete {
-			utils.RemoveDeletedLocalResources(exportFilePath, getDeployedClaimDialectNames())
+			utils.RemoveDeletedLocalResources(exportFilePath, getDeployedDialectFileNames(claimDialects))
 		}
 	}
 
-	claimDialects, err := getClaimDialectsList()
+	exportAPIExists := exportAPIExists()
 	if err != nil {
 		log.Println("Error while retrieving Claim Dialect list.", err)
 	} else {
@@ -61,12 +60,18 @@ func ExportAll(exportFilePath string, format string) {
 			if !utils.IsResourceExcluded(dialect.DialectURI, utils.TOOL_CONFIGS.ClaimConfigs) {
 				log.Println("Exporting Claim Dialect: ", dialect.DialectURI)
 
-				err := exportClaimDialect(dialect.Id, exportFilePath, format)
+				var err error
+				if exportAPIExists {
+					err = exportClaimDialect(dialect.Id, dialect.DialectURI, exportFilePath, format)
+				} else {
+					err = exportClaimDialectWithCRUD(dialect.Id, dialect.DialectURI, exportFilePath, format)
+				}
+
 				if err != nil {
 					utils.UpdateFailureSummary(utils.CLAIMS, dialect.DialectURI)
 					log.Printf("Error while exporting Claim Dialect: %s. %s", dialect.DialectURI, err)
 				} else {
-					utils.UpdateSuccessSummary(utils.CLAIMS, dialect.DialectURI)
+					utils.UpdateSuccessSummary(utils.CLAIMS, utils.EXPORT)
 					log.Println("Claim Dialect exported successfully: ", dialect.DialectURI)
 				}
 			}
@@ -74,7 +79,7 @@ func ExportAll(exportFilePath string, format string) {
 	}
 }
 
-func exportClaimDialect(dialectId string, outputDirPath string, format string) error {
+func exportClaimDialect(dialectId, dialectUri, outputDirPath, format string) error {
 
 	var fileType string
 	// TODO: Extend support for json and xml formats.
@@ -100,14 +105,13 @@ func exportClaimDialect(dialectId string, outputDirPath string, format string) e
 
 	fileName := params["filename"]
 	exportedFileName := filepath.Join(outputDirPath, fileName)
-	fileInfo := utils.GetFileInfo(exportedFileName)
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("error while reading the response body when exporting claim dialect: %s. %s", fileName, err)
 	}
 
-	claimDialectKeywordMapping := getClaimKeywordMapping(fileInfo.ResourceName)
+	claimDialectKeywordMapping := getClaimKeywordMapping(dialectUri)
 	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, claimDialectKeywordMapping, utils.CLAIMS)
 	if err != nil {
 		return fmt.Errorf("error while processing the exported content: %s", err)
@@ -117,5 +121,35 @@ func exportClaimDialect(dialectId string, outputDirPath string, format string) e
 	if err != nil {
 		return fmt.Errorf("error when writing the exported content to file: %w", err)
 	}
+	return nil
+}
+
+func exportClaimDialectWithCRUD(dialectId, dialectUri, outputDirPath, formatString string) error {
+
+	claimDialect, err := getClaimDialect(dialectId)
+	if err != nil {
+		return fmt.Errorf("error while getting claim dialect: %w", err)
+	}
+
+	format := utils.FormatFromString(formatString)
+	fileName := formatFileName(dialectUri)
+	exportedFileName := utils.GetExportedFilePath(outputDirPath, fileName, format)
+
+	dialectKeywordMapping := getClaimKeywordMapping(dialectUri)
+	modifiedDialect, err := utils.ProcessExportedData(claimDialect, exportedFileName, format, dialectKeywordMapping, utils.CLAIMS)
+	if err != nil {
+		return fmt.Errorf("error while processing exported content: %w", err)
+	}
+
+	modifiedFile, err := utils.Serialize(modifiedDialect, format, utils.CLAIMS)
+	if err != nil {
+		return fmt.Errorf("error while serializing claim dialect: %w", err)
+	}
+
+	err = os.WriteFile(exportedFileName, modifiedFile, 0644)
+	if err != nil {
+		return fmt.Errorf("error when writing exported content to file: %w", err)
+	}
+
 	return nil
 }

@@ -23,13 +23,11 @@ package utils
 const (
 	MIN_VERSION_APPLICATIONS       = "6.1.0"
 	MIN_VERSION_IDENTITY_PROVIDERS = "6.1.0"
-	MIN_VERSION_CLAIMS             = "6.1.0"
 )
 
 var EntityMinVersionRequirements = map[ResourceType]string{
 	APPLICATIONS:       MIN_VERSION_APPLICATIONS,
 	IDENTITY_PROVIDERS: MIN_VERSION_IDENTITY_PROVIDERS,
-	CLAIMS:             MIN_VERSION_CLAIMS,
 }
 
 // Maximum supported WSO2 Identity Server version for each resource type.
@@ -41,4 +39,5 @@ var EntityMaxSupportedVersion = map[ResourceType]string{}
 // Minimum WSO2 Identity Server version requirements for resource-specific APIs
 const (
 	MIN_VERSION_USERSTORE_EXPORT_API = "6.1.0"
+	MIN_VERSION_CLAIMS_EXPORT_API    = "6.1.0"
 )

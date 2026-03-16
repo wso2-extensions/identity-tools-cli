@@ -92,23 +92,21 @@ func Serialize(data interface{}, format Format, resourceType ResourceType) ([]by
 	}
 }
 
-func Deserialize(data []byte, format Format, resourceType ResourceType) (interface{}, error) {
+func Deserialize(data []byte, format Format, resourceType ResourceType, target ...interface{}) (interface{}, error) {
 
 	switch format {
 	case FormatYAML:
 		var result interface{}
-		err := yaml.Unmarshal(data, &result)
-		if err != nil {
-			return nil, fmt.Errorf("error when parsing data to YAML: %w", err)
+		if len(target) > 0 {
+			return target[0], yaml.Unmarshal(data, target[0])
 		}
-		return result, nil
+		return result, yaml.Unmarshal(data, &result)
 	case FormatJSON:
 		var result interface{}
-		err := json.Unmarshal(data, &result)
-		if err != nil {
-			return nil, fmt.Errorf("error when parsing data to JSON: %w", err)
+		if len(target) > 0 {
+			return target[0], json.Unmarshal(data, target[0])
 		}
-		return result, nil
+		return result, json.Unmarshal(data, &result)
 	case FormatXML:
 		xmlMap, err := XMLToMap(data)
 		if err != nil {
@@ -121,6 +119,13 @@ func Deserialize(data []byte, format Format, resourceType ResourceType) (interfa
 		}
 
 		result := FixArrayFields(xmlData, resourceType)
+		if len(target) > 0 {
+			jsonBytes, err := json.Marshal(result)
+			if err != nil {
+				return nil, fmt.Errorf("error when converting XML data to typed struct: %w", err)
+			}
+			return target[0], json.Unmarshal(jsonBytes, target[0])
+		}
 		return result, nil
 	default:
 		return nil, fmt.Errorf("unsupported format: %s", format)
@@ -163,6 +168,7 @@ func GetXMLRootTag(resourceType ResourceType) string {
 		SCRIPT_LIBRARIES:      XML_ROOT_SCRIPT_LIBRARY,
 		GOVERNANCE_CONNECTORS: XML_ROOT_GOVERNANCE_CONNECTOR,
 		USERSTORES:            XML_ROOT_USERSTORE,
+		CLAIMS:                XML_ROOT_CLAIM,
 	}
 	return xmlRootTags[resourceType]
 }
@@ -203,6 +209,8 @@ func GetArrayFieldPaths(resourceType ResourceType) []string {
 		return governanceConnectorArrayFields
 	case USERSTORES:
 		return userStoreArrayFields
+	case CLAIMS:
+		return claimArrayFields
 	default:
 		return []string{}
 	}

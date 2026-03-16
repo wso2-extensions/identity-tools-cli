@@ -19,23 +19,20 @@
 package claims
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
-	"gopkg.in/yaml.v3"
 )
 
 func ImportAll(inputDirPath string) {
 
 	log.Println("Importing claims...")
-	if !utils.IsEntitySupportedInVersion(utils.CLAIMS) {
-		return
-	}
 	if utils.IsSubOrganization() {
 		log.Println("Importing claims for sub organization not supported.")
 		return
@@ -45,17 +42,22 @@ func ImportAll(inputDirPath string) {
 	if utils.IsResourceTypeExcluded(utils.CLAIMS) {
 		return
 	}
-	var files []os.FileInfo
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
 		log.Println("No claim dialects to import.")
-	} else {
-		files, err = ioutil.ReadDir(importFilePath)
-		if err != nil {
-			log.Println("Error importing claim dialects: ", err)
-		}
-		if utils.TOOL_CONFIGS.AllowDelete {
-			removeDeletedDeployedClaimdialect(files, importFilePath)
-		}
+		return
+	}
+
+	existingClaimDialectList, err := getClaimDialectsList()
+	if err != nil {
+		log.Printf("error when retrieving the deployed claim dialect list. %s", err)
+	}
+
+	files, err := ioutil.ReadDir(importFilePath)
+	if err != nil {
+		log.Println("Error importing claim dialects: ", err)
+	}
+	if utils.TOOL_CONFIGS.AllowDelete {
+		removeDeletedDeployedClaimdialect(files, existingClaimDialectList)
 	}
 
 	// Move the local claims file to the front of the array to import it first
@@ -68,23 +70,25 @@ func ImportAll(inputDirPath string) {
 
 	for _, file := range files {
 		claimFilePath := filepath.Join(importFilePath, file.Name())
-		dialectName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 
-		if !utils.IsResourceExcluded(dialectName, utils.TOOL_CONFIGS.ClaimConfigs) {
-			dialectId, err := getClaimDialectId(claimFilePath)
+		dialectUri, err := getDialectURIFromFile(claimFilePath)
+		if err != nil {
+			log.Println("error reading dialect URI from file:", err)
+			continue
+		}
+		dialectId := getClaimDialectId(dialectUri, existingClaimDialectList)
+
+		if !utils.IsResourceExcluded(dialectUri, utils.TOOL_CONFIGS.ClaimConfigs) {
+			err = importClaimDialect(dialectId, dialectUri, claimFilePath)
 			if err != nil {
-				log.Printf("Invalid file configurations for Claim Dialect: %s. %s", dialectName, err)
-			} else {
-				err := importClaimDialect(dialectId, claimFilePath)
-				if err != nil {
-					log.Println("error importing claim dialect:", err)
-				}
+				log.Println("error importing claim dialect:", err)
+				utils.UpdateFailureSummary(utils.CLAIMS, dialectUri)
 			}
 		}
 	}
 }
 
-func importClaimDialect(dialectId string, importFilePath string) error {
+func importClaimDialect(dialectId, dialectUri, importFilePath string) error {
 
 	fileBytes, err := ioutil.ReadFile(importFilePath)
 	if err != nil {
@@ -92,30 +96,37 @@ func importClaimDialect(dialectId string, importFilePath string) error {
 	}
 
 	// Replace keyword placeholders in the local file according to the keyword mappings added in configs.
-	fileInfo := utils.GetFileInfo(importFilePath)
-	claimKeywordMapping := getClaimKeywordMapping(fileInfo.ResourceName)
+	claimKeywordMapping := getClaimKeywordMapping(dialectUri)
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), claimKeywordMapping)
 
-	// Unmarshal the file data to get the dialect URI as the resource name.
-	var claimDialectConfigurations ClaimDialectConfigurations
-	error := yaml.Unmarshal([]byte(modifiedFileData), &claimDialectConfigurations)
-	if error != nil {
-		return fmt.Errorf("error when unmarshalling the file for claim dialect: %s", err)
+	if exportAPIExists() {
+		if dialectId == "" {
+			return importDialect(dialectUri, importFilePath, modifiedFileData)
+		}
+		return updateDialect(dialectId, dialectUri, importFilePath, modifiedFileData)
 	}
-	fileInfo.ResourceName = claimDialectConfigurations.URI
+
+	format, err := utils.FormatFromExtension(filepath.Ext(importFilePath))
+	if err != nil {
+		return fmt.Errorf("unsupported file format for claim dialect: %w", err)
+	}
+
+	claims, err := parseClaims([]byte(modifiedFileData), format)
+	if err != nil {
+		return fmt.Errorf("error parsing claims from dialect file: %w", err)
+	}
 
 	if dialectId == "" {
-		return importDialect(importFilePath, modifiedFileData, fileInfo)
+		return createClaimDialectWithCRUD(dialectUri, claims)
 	}
-	return updateDialect(dialectId, importFilePath, modifiedFileData, fileInfo)
+	return updateClaimDialectWithCRUD(dialectId, dialectUri, claims)
 }
 
-func importDialect(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+func importDialect(dialectUri, importFilePath, modifiedFileData string) error {
 
-	log.Println("Creating new claim dialect: " + fileInfo.ResourceName)
+	log.Println("Creating new claim dialect: " + dialectUri)
 	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.CLAIMS)
 	if err != nil {
-		utils.UpdateFailureSummary(utils.CLAIMS, fileInfo.ResourceName)
 		return fmt.Errorf("error when importing claim dialect: %s", err)
 	}
 	utils.UpdateSuccessSummary(utils.CLAIMS, utils.IMPORT)
@@ -123,12 +134,11 @@ func importDialect(importFilePath string, modifiedFileData string, fileInfo util
 	return nil
 }
 
-func updateDialect(dialectId string, importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+func updateDialect(dialectId, dialectUri, importFilePath, modifiedFileData string) error {
 
-	log.Println("Updating claim dialect: " + fileInfo.ResourceName)
+	log.Println("Updating claim dialect: " + dialectUri)
 	err := utils.SendUpdateRequest(dialectId, importFilePath, modifiedFileData, utils.CLAIMS)
 	if err != nil {
-		utils.UpdateFailureSummary(utils.CLAIMS, fileInfo.ResourceName)
 		return fmt.Errorf("error when updating claim dialect: %s", err)
 	}
 	utils.UpdateSuccessSummary(utils.CLAIMS, utils.UPDATE)
@@ -136,59 +146,170 @@ func updateDialect(dialectId string, importFilePath string, modifiedFileData str
 	return nil
 }
 
-func removeDeletedDeployedClaimdialect(localFiles []os.FileInfo, importFilePath string) {
+func createClaimDialectWithCRUD(dialectURI string, claims []map[string]interface{}) error {
 
-	// Remove deployed claim dialects that do not exist locally.
-	deployedClaimDialects, err := getClaimDialectsList()
+	log.Println("Creating new claim dialect: " + dialectURI)
+
+	newDialectId, err := createDialect(dialectURI)
 	if err != nil {
-		log.Println("Error retrieving deployed claim dialects: ", err)
+		return fmt.Errorf("error when creating claim dialect: %w", err)
+	}
+	for _, claim := range claims {
+		if err := createClaim(newDialectId, claim); err != nil {
+			return fmt.Errorf("error when creating claims of dialect %s: %w", dialectURI, err)
+		}
+	}
+
+	utils.UpdateSuccessSummary(utils.CLAIMS, utils.IMPORT)
+	log.Println("Claim dialect imported successfully.")
+	return nil
+}
+
+func updateClaimDialectWithCRUD(dialectId, dialectURI string, localClaims []map[string]interface{}) error {
+
+	log.Println("Updating claim dialect: " + dialectURI)
+
+	deployedClaims, err := getClaimsList(dialectId)
+	if err != nil {
+		return fmt.Errorf("error retrieving deployed claims for dialect: %w", err)
+	}
+	if utils.TOOL_CONFIGS.AllowDelete {
+		if err := removeDeletedDeployedClaims(dialectId, deployedClaims, localClaims); err != nil {
+			return fmt.Errorf("error removing deleted claims of dialect: %w", err)
+		}
+	}
+
+	if err := updateChangedClaims(dialectId, localClaims, deployedClaims); err != nil {
+		return fmt.Errorf("error updating changed claims of dialect: %w", err)
+	}
+
+	utils.UpdateSuccessSummary(utils.CLAIMS, utils.UPDATE)
+	log.Println("Claim dialect updated successfully.")
+	return nil
+}
+
+func createDialect(dialectURI string) (dialectId string, err error) {
+
+	dialectJSON, err := json.Marshal(map[string]string{"dialectURI": dialectURI})
+	if err != nil {
+		return "", fmt.Errorf("error serializing claim dialect: %w", err)
+	}
+
+	resp, err := utils.SendPostRequest(utils.CLAIMS, dialectJSON)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	location := resp.Header.Get("Location")
+	if location == "" {
+		return "", fmt.Errorf("no Location header in create dialect response")
+	}
+	return path.Base(location), nil
+}
+
+func updateChangedClaims(dialectId string, localClaims, deployedClaims []map[string]interface{}) error {
+
+	deployedByURI := make(map[string]map[string]interface{})
+	for _, c := range deployedClaims {
+		deployedByURI[getClaimURI(c)] = c
+	}
+
+	for _, claim := range localClaims {
+		uri := getClaimURI(claim)
+		if deployed, exists := deployedByURI[uri]; exists {
+			if !claimChanged(claim, deployed) {
+				continue
+			}
+			if err := updateClaim(dialectId, getClaimID(deployed), claim); err != nil {
+				return err
+			}
+		} else {
+			if err := createClaim(dialectId, claim); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func createClaim(dialectId string, claim map[string]interface{}) error {
+
+	claimJSON, err := createClaimReqBody(claim)
+	if err != nil {
+		return fmt.Errorf("error when marshalling claim %s: %w", getClaimURI(claim), err)
+	}
+
+	resp, err := utils.SendPostRequest(utils.CLAIMS, claimJSON, utils.WithPathSuffix(dialectId+"/claims"))
+	if err != nil {
+		return fmt.Errorf("error when creating claim %s: %w", getClaimURI(claim), err)
+	}
+	resp.Body.Close()
+	return nil
+}
+
+func updateClaim(dialectId, claimId string, claim map[string]interface{}) error {
+
+	claimJSON, err := createClaimReqBody(claim)
+	if err != nil {
+		return fmt.Errorf("error when marshalling claim %s: %w", getClaimURI(claim), err)
+	}
+
+	resp, err := utils.SendPutRequest(utils.CLAIMS, dialectId+"/claims/"+claimId, claimJSON)
+	if err != nil {
+		return fmt.Errorf("error when updating claim %s: %w", getClaimURI(claim), err)
+	}
+	resp.Body.Close()
+	return nil
+}
+
+func removeDeletedDeployedClaimdialect(localFiles []os.FileInfo, deployedClaimDialects []claimDialect) {
+
+	if len(deployedClaimDialects) == 0 {
 		return
 	}
-deployedResourcess:
+
+	localDialectNames := make(map[string]struct{})
+	for _, file := range localFiles {
+		localDialectNames[utils.GetFileInfo(file.Name()).ResourceName] = struct{}{}
+	}
+
 	for _, claimDialect := range deployedClaimDialects {
-		for _, file := range localFiles {
-
-			var claimDialectConfigurations ClaimDialectConfigurations
-			claimFilePath := filepath.Join(importFilePath, file.Name())
-
-			content, err := readFileContent(claimFilePath)
-			if err != nil {
-				log.Println("error when reading file content: ", err)
-			}
-
-			err = yaml.Unmarshal(content, &claimDialectConfigurations)
-			if err != nil {
-				log.Println("error when unmarshalling the file for claim dialect: ", err)
-			}
-
-			localResourceName := claimDialectConfigurations.URI
-			if claimDialect.DialectURI == localResourceName {
-				continue deployedResourcess
-			}
+		if _, existsLocally := localDialectNames[formatFileName(claimDialect.DialectURI)]; existsLocally {
+			continue
 		}
 		if utils.IsResourceExcluded(claimDialect.DialectURI, utils.TOOL_CONFIGS.ClaimConfigs) {
 			log.Printf("Claim dialect: %s is excluded from deletion.\n", claimDialect.DialectURI)
 			continue
 		}
 		log.Println("Claim dialect not found locally. Deleting claim dialect: ", claimDialect.DialectURI)
-		err := utils.SendDeleteRequest(claimDialect.Id, utils.CLAIMS)
-		if err != nil {
+		if err := utils.SendDeleteRequest(claimDialect.Id, utils.CLAIMS); err != nil {
+			utils.UpdateFailureSummary(utils.CLAIMS, claimDialect.DialectURI)
 			log.Println("Error deleting claim dialect: ", err)
+		} else {
+			utils.UpdateSuccessSummary(utils.CLAIMS, utils.DELETE)
 		}
 	}
 }
 
-func readFileContent(filename string) ([]byte, error) {
+func removeDeletedDeployedClaims(dialectId string, deployedClaims, localClaims []map[string]interface{}) error {
 
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, err
+	if len(deployedClaims) == 0 {
+		return nil
 	}
-	defer file.Close()
 
-	content, err := ioutil.ReadAll(file)
-	if err != nil {
-		return nil, err
+	localByURI := make(map[string]struct{})
+	for _, claim := range localClaims {
+		localByURI[getClaimURI(claim)] = struct{}{}
 	}
-	return content, nil
+
+	for _, deployed := range deployedClaims {
+		if _, existsLocally := localByURI[getClaimURI(deployed)]; existsLocally {
+			continue
+		}
+		if err := utils.SendDeleteRequest(dialectId+"/claims/"+getClaimID(deployed), utils.CLAIMS); err != nil {
+			return fmt.Errorf("error deleting claim %s of dialect: %w", getClaimURI(deployed), err)
+		}
+	}
+	return nil
 }
