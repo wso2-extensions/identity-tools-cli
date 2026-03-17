@@ -30,6 +30,7 @@ import (
 	"net/http"
 	"net/textproto"
 	"net/url"
+	"path"
 	"strconv"
 	"strings"
 )
@@ -292,7 +293,21 @@ func SendDeleteRequest(resourceId string, resourceType ResourceType) error {
 	return fmt.Errorf("unexpected error when deleting resource: %s", resp.Status)
 }
 
-func SendGetRequest(resourceType ResourceType, resourceId string) (interface{}, error) {
+func GetResourceData(resourceType ResourceType, resourceId string) (interface{}, error) {
+
+	body, err := SendGetRequest(resourceType, resourceId)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := Deserialize(body, FormatJSON, resourceType)
+	if err != nil {
+		return nil, fmt.Errorf("error deserializing JSON response: %w", err)
+	}
+	return data, nil
+}
+
+func SendGetRequest(resourceType ResourceType, resourceId string) ([]byte, error) {
 
 	reqUrl := buildRequestUrl(GET, resourceType, resourceId)
 	formattedReqUrl := addQueryParams(reqUrl, resourceType, GET)
@@ -330,17 +345,14 @@ func SendGetRequest(resourceType ResourceType, resourceId string) (interface{}, 
 		return nil, fmt.Errorf("error reading response body: %w", err)
 	}
 
-	data, err := Deserialize(body, FormatJSON, resourceType)
-	if err != nil {
-		return nil, fmt.Errorf("error deserializing JSON response: %w", err)
-	}
-
-	return data, nil
+	return body, nil
 }
 
-func SendPostRequest(resourceType ResourceType, requestBody []byte) (*http.Response, error) {
+func SendPostRequest(resourceType ResourceType, requestBody []byte, pathSuffix ...string) (*http.Response, error) {
 
-	reqUrl := buildRequestUrl(POST, resourceType, "")
+	combinedSuffix := path.Join(pathSuffix...)
+	reqUrl := buildRequestUrl(POST, resourceType, combinedSuffix)
+
 	request, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, fmt.Errorf("error creating POST request: %w", err)
@@ -482,6 +494,8 @@ func getResourcePath(resourceType ResourceType) string {
 		return "oidc/scopes"
 	case CHALLENGE_QUESTIONS:
 		return "challenges"
+	case EMAIL_TEMPLATES:
+		return "email/template-types"
 	}
 	return ""
 }
@@ -522,7 +536,7 @@ func buildRequestUrl(requestType string, resourceType ResourceType, resourceId s
 	case GET:
 		reqUrl = getResourceBaseUrl(resourceType) + resourceId
 	case POST:
-		reqUrl = getResourceBaseUrl(resourceType)
+		reqUrl = getResourceBaseUrl(resourceType) + resourceId
 	case PUT:
 		reqUrl = getResourceBaseUrl(resourceType) + resourceId
 	case PATCH:

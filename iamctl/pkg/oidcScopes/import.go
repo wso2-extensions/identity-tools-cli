@@ -133,6 +133,7 @@ func updateScope(scopeId string, requestBody []byte, format utils.Format, scopeN
 }
 
 func removeDeletedDeployedScopes(localFiles []os.DirEntry, deployedScopes []oidcScope) {
+
 	if len(deployedScopes) == 0 {
 		return
 	}
