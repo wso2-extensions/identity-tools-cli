@@ -22,9 +22,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
-	"gopkg.in/yaml.v3"
 )
 
 const USERSTORE_SECRET_MASK = "ENCRYPTED PROPERTY"
@@ -44,7 +44,7 @@ func getUserStoreList() ([]userStore, error) {
 	var list []userStore
 	resp, err := utils.SendGetListRequest(utils.USERSTORES, -1)
 	if err != nil {
-		return nil, fmt.Errorf("error while retrieving userstore list. %w", err)
+		return nil, fmt.Errorf("error while retrieving user store list. %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -52,20 +52,20 @@ func getUserStoreList() ([]userStore, error) {
 	if statusCode == 200 {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return nil, fmt.Errorf("error when reading the retrieved userstore list. %w", err)
+			return nil, fmt.Errorf("error when reading the retrieved user store list. %w", err)
 		}
 
 		err = json.Unmarshal(body, &list)
 		if err != nil {
-			return nil, fmt.Errorf("error when unmarshalling the retrieved userstore list. %w", err)
+			return nil, fmt.Errorf("error when unmarshalling the retrieved user store list. %w", err)
 		}
 		resp.Body.Close()
 
 		return list, nil
 	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		return nil, fmt.Errorf("error while retrieving userstore list. Status code: %d, Error: %s", statusCode, error)
+		return nil, fmt.Errorf("error while retrieving user store list. Status code: %d, Error: %s", statusCode, error)
 	}
-	return nil, fmt.Errorf("unexpected error while retrieving userstore list")
+	return nil, fmt.Errorf("unexpected error while retrieving user store list")
 }
 
 func getDeployedUserstoreNames() []string {
@@ -90,27 +90,29 @@ func getUserStoreKeywordMapping(userStoreName string) map[string]interface{} {
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
 
-func getUserStoreId(userStoreFilePath string) (string, error) {
-
-	fileContent, err := ioutil.ReadFile(userStoreFilePath)
-	if err != nil {
-		return "", fmt.Errorf("error when reading the file: %s. %s", userStoreFilePath, err)
-	}
-	var userStoreConfig UserStoreConfigurations
-	err = yaml.Unmarshal(fileContent, &userStoreConfig)
-	if err != nil {
-		return "", fmt.Errorf("invalid file content at: %s. %s", userStoreFilePath, err)
-	}
+func getUserStoreId(userStoreName string) (string, error) {
 
 	existingUserStoreList, err := getUserStoreList()
 	if err != nil {
-		return "", fmt.Errorf("error when retrieving the deployed userstore list: %s", err)
+		return "", fmt.Errorf("error when retrieving the deployed user store list: %s", err)
 	}
 
 	for _, userstore := range existingUserStoreList {
-		if userstore.Id == userStoreConfig.ID {
+		if userstore.Name == userStoreName {
 			return userstore.Id, nil
 		}
 	}
 	return "", nil
+}
+
+func exportAPIexists() bool {
+
+	res, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_USERSTORE_EXPORT_API)
+	if err != nil {
+		// Use the export API when the server version is not properly configured for backward compatibility
+		log.Println("Warn: Server version is not properly configured. For IS versions below 6.1, configure the server version properly to avoid failures.")
+		return true
+	}
+
+	return res >= 0
 }

@@ -35,9 +35,6 @@ func ExportAll(exportFilePath string, format string) {
 	// Export all userstores to the UserStores folder.
 	log.Println("Exporting user stores...")
 	exportFilePath = filepath.Join(exportFilePath, utils.USERSTORES.String())
-	if !utils.IsEntitySupportedInVersion(utils.USERSTORES) {
-		return
-	}
 
 	if utils.IsResourceTypeExcluded(utils.USERSTORES) {
 		return
@@ -50,18 +47,24 @@ func ExportAll(exportFilePath string, format string) {
 		}
 	}
 
+	exportAPIExists := exportAPIexists()
 	userstores, err := getUserStoreList()
 	if err != nil {
-		log.Println("Error: when exporting userstores.", err)
+		log.Println("Error: when exporting user stores.", err)
 	} else {
 		if !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.ApplicationConfigs) {
-			log.Println("Warn: Secrets exclusion cannot be disabled for userstores. All secrets will be masked.")
+			log.Println("Warn: Secrets exclusion cannot be disabled for user stores. All secrets will be masked.")
 		}
 		for _, userstore := range userstores {
 			if !utils.IsResourceExcluded(userstore.Name, utils.TOOL_CONFIGS.UserStoreConfigs) {
 				log.Println("Exporting user store: ", userstore.Name)
 
-				err := exportUserStore(userstore.Id, exportFilePath, format)
+				if exportAPIExists {
+					err = exportUserStore(userstore.Id, exportFilePath, format)
+				} else {
+					err = exportUserStoreWithCRUD(userstore.Id, userstore.Name, exportFilePath, format)
+				}
+
 				if err != nil {
 					utils.UpdateFailureSummary(utils.USERSTORES, userstore.Name)
 					log.Printf("Error while exporting user store: %s. %s", userstore.Name, err)
@@ -89,7 +92,7 @@ func exportUserStore(userStoreId string, outputDirPath string, format string) er
 
 	resp, err := utils.SendExportRequest(userStoreId, fileType, utils.USERSTORES, true)
 	if err != nil {
-		return fmt.Errorf("error while exporting the identity provider: %s", err)
+		return fmt.Errorf("error while exporting the user store: %s", err)
 	}
 
 	var attachmentDetail = resp.Header.Get("Content-Disposition")
@@ -104,7 +107,7 @@ func exportUserStore(userStoreId string, outputDirPath string, format string) er
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("error while reading the response body when exporting userstore: %s. %s", fileName, err)
+		return fmt.Errorf("error while reading the response body when exporting user store: %s. %s", fileName, err)
 	}
 
 	// Use the common mask for senstive data.
@@ -121,4 +124,50 @@ func exportUserStore(userStoreId string, outputDirPath string, format string) er
 		return fmt.Errorf("error when writing the exported content to file: %w", err)
 	}
 	return nil
+}
+
+func exportUserStoreWithCRUD(userStoreId, userStoreName, outputDirPath, formatString string) error {
+
+	userStore, err := getUserStore(userStoreId)
+	if err != nil {
+		return fmt.Errorf("error while getting user store: %w", err)
+	}
+
+	format := utils.FormatFromString(formatString)
+	exportedFileName := utils.GetExportedFilePath(outputDirPath, userStoreName, format)
+
+	storeKeywordMapping := getUserStoreKeywordMapping(userStoreName)
+	modifiedStore, err := utils.ProcessExportedData(userStore, exportedFileName, format, storeKeywordMapping, utils.USERSTORES)
+	if err != nil {
+		return fmt.Errorf("error while processing exported content: %w", err)
+	}
+
+	modifiedFile, err := utils.Serialize(modifiedStore, format, utils.USERSTORES)
+	if err != nil {
+		return fmt.Errorf("error while serializing user store: %w", err)
+	}
+
+	err = os.WriteFile(exportedFileName, modifiedFile, 0644)
+	if err != nil {
+		return fmt.Errorf("error when writing exported content to file: %w", err)
+	}
+
+	return nil
+}
+
+func getUserStore(userStoreId string) (interface{}, error) {
+
+	resp, err := utils.SendGetRequest(utils.USERSTORES, userStoreId)
+	if err != nil {
+		return nil, fmt.Errorf("error while retrieving user store with id: %s. %s", userStoreId, err)
+	}
+
+	modifiedResp := []byte(strings.ReplaceAll(string(resp), USERSTORE_SECRET_MASK, utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES))
+
+	userstore, err := utils.Deserialize(modifiedResp, utils.FormatJSON, utils.USERSTORES)
+	if err != nil {
+		return nil, fmt.Errorf("error deserializing JSON response: %w", err)
+	}
+
+	return userstore, nil
 }
