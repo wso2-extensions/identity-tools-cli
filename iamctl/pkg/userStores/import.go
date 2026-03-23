@@ -49,7 +49,7 @@ func ImportAll(inputDirPath string) {
 		}
 	}
 
-	exportAPIexists := exportAPIexists()
+	exportAPIexists := utils.ExportAPIExists(utils.USERSTORES)
 	for _, file := range files {
 		userStoreFilePath := filepath.Join(importFilePath, file.Name())
 		fileInfo := utils.GetFileInfo(userStoreFilePath)

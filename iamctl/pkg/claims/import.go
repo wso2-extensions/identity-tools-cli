@@ -99,7 +99,7 @@ func importClaimDialect(dialectId, dialectUri, importFilePath string) error {
 	claimKeywordMapping := getClaimKeywordMapping(dialectUri)
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), claimKeywordMapping)
 
-	if exportAPIExists() {
+	if utils.ExportAPIExists(utils.CLAIMS) {
 		if dialectId == "" {
 			return importDialect(dialectUri, importFilePath, modifiedFileData)
 		}

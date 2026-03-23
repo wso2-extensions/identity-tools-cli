@@ -141,14 +141,58 @@ func getIdpKeywordMapping(idpName string) map[string]interface{} {
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
 
-func exportAPIExists() bool {
+func preprocessIdpKeys(data interface{}) (interface{}, error) {
 
-	res, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_IDP_EXPORT_API)
-	if err != nil {
-		// Use the export API when the server version is not properly configured for backward compatibility
-		log.Println("Warn: Server version is not properly configured. For IS versions below 6.1, configure the server version properly to avoid failures.")
-		return true
+	if utils.ExportAPIExists(utils.IDENTITY_PROVIDERS) {
+		return data, nil
 	}
 
-	return res >= 0
+	data = utils.ConvertToStringKeyMap(data)
+	d, ok := data.(map[string]interface{})
+	if !ok {
+		return data, fmt.Errorf("invalid format for IDP data")
+	}
+
+	if claims, ok := d["claims"].(map[string]interface{}); ok {
+		if v, exists := claims["mappings"]; exists {
+			claims["claimMappings"] = v
+			delete(claims, "mappings")
+		}
+	}
+	if roles, ok := d["roles"].(map[string]interface{}); ok {
+		if v, exists := roles["mappings"]; exists {
+			roles["roleMappings"] = v
+			delete(roles, "mappings")
+		}
+	}
+
+	return data, nil
+}
+
+func postprocessIdpKeys(data interface{}) (interface{}, error) {
+
+	d, ok := data.(map[string]interface{})
+	if !ok {
+		return data, fmt.Errorf("invalid format for IDP data")
+	}
+
+	if claims, ok := d["claims"].(map[string]interface{}); ok {
+		if v, exists := claims["claimMappings"]; exists {
+			claims["mappings"] = v
+			delete(claims, "claimMappings")
+		}
+	}
+	if roles, ok := d["roles"].(map[string]interface{}); ok {
+		if v, exists := roles["roleMappings"]; exists {
+			roles["mappings"] = v
+			delete(roles, "roleMappings")
+		}
+	}
+
+	return data, nil
+}
+
+func init() {
+
+	utils.DataPreprocessFuncs[utils.IDENTITY_PROVIDERS] = preprocessIdpKeys
 }

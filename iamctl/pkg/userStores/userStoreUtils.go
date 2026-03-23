@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -103,16 +102,4 @@ func getUserStoreId(userStoreName string) (string, error) {
 		}
 	}
 	return "", nil
-}
-
-func exportAPIexists() bool {
-
-	res, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_USERSTORE_EXPORT_API)
-	if err != nil {
-		// Use the export API when the server version is not properly configured for backward compatibility
-		log.Println("Warn: Server version is not properly configured. For IS versions below 6.1, configure the server version properly to avoid failures.")
-		return true
-	}
-
-	return res >= 0
 }

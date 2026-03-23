@@ -111,6 +111,13 @@ func AddLocalKeywords(exportedData interface{}, format Format, localFileContent 
 		return exportedData, fmt.Errorf("empty or invalid local file data: %w", err)
 	}
 
+	if preprocessFunc, exists := DataPreprocessFuncs[resourceType]; exists {
+		localData, err = preprocessFunc(localData)
+		if err != nil {
+			return exportedData, fmt.Errorf("error occurred while preprocessing local data: %w", err)
+		}
+	}
+
 	// Get keyword locations in local file.
 	keywordLocations := GetKeywordLocations(localData, []string{}, keywordMapping, resourceType)
 
@@ -168,7 +175,10 @@ func GetArrayIdentifiers(resourceType ResourceType) map[string]string {
 	case APPLICATIONS:
 		return applicationArrayIdentifiers
 	case IDENTITY_PROVIDERS:
-		return idpArrayIdentifiers
+		if ExportAPIExists(IDENTITY_PROVIDERS) {
+			return idpExportAPIArrayIdentifiers
+		}
+		return idpGetAPIArrayIdentifiers
 	case USERSTORES:
 		return userStoreArrayIdentifiers
 	case CLAIMS:
@@ -406,3 +416,5 @@ func extendPath(base, segment string) string {
 	}
 	return base + "." + segment
 }
+
+var DataPreprocessFuncs = map[ResourceType]func(interface{}) (interface{}, error){}

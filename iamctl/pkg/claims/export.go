@@ -52,7 +52,7 @@ func ExportAll(exportFilePath string, format string) {
 		}
 	}
 
-	exportAPIExists := exportAPIExists()
+	exportAPIExists := utils.ExportAPIExists(utils.CLAIMS)
 	if err != nil {
 		log.Println("Error while retrieving Claim Dialect list.", err)
 	} else {

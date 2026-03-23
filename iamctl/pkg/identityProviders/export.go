@@ -49,7 +49,7 @@ func ExportAll(exportFilePath string, format string) {
 	}
 
 	excludeSecerts := utils.AreSecretsExcluded(utils.TOOL_CONFIGS.IdpConfigs)
-	exportAPIExists := exportAPIExists()
+	exportAPIExists := utils.ExportAPIExists(utils.IDENTITY_PROVIDERS)
 	idps, err := getIdpList()
 	if err != nil {
 		log.Println("Error: when exporting identity providers.", err)
@@ -143,12 +143,20 @@ func exportIdpWithCRUD(idpId, idpName, outputDirPath, formatString string) error
 	exportedFileName := utils.GetExportedFilePath(outputDirPath, idpName, format)
 
 	idpKeywordMapping := getIdpKeywordMapping(idpName)
-	modifiedIdp, err := utils.ProcessExportedData(idpMap, exportedFileName, format, idpKeywordMapping, utils.IDENTITY_PROVIDERS)
+	preproccessedIdp, err := preprocessIdpKeys(idpMap)
+	if err != nil {
+		return fmt.Errorf("error while preprocessing IDP keys: %w", err)
+	}
+	modifiedIdp, err := utils.ProcessExportedData(preproccessedIdp, exportedFileName, format, idpKeywordMapping, utils.IDENTITY_PROVIDERS)
 	if err != nil {
 		return fmt.Errorf("error while processing exported content: %w", err)
 	}
+	postprocessedIdp, err := postprocessIdpKeys(modifiedIdp)
+	if err != nil {
+		return fmt.Errorf("error while postprocessing IDP keys: %w", err)
+	}
 
-	modifiedFile, err := utils.Serialize(modifiedIdp, format, utils.IDENTITY_PROVIDERS)
+	modifiedFile, err := utils.Serialize(postprocessedIdp, format, utils.IDENTITY_PROVIDERS)
 	if err != nil {
 		return fmt.Errorf("error while serializing IDP: %w", err)
 	}
