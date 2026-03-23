@@ -36,10 +36,25 @@ type idpList struct {
 	IdpCount          int                `json:"totalResults"`
 	IdentityProviders []identityProvider `json:"identityProviders"`
 }
-
 type idpConfig struct {
-	IdentityProviderName string `yaml:"identityProviderName"`
-	IdentityProviderId   string
+	Id                      string `json:"id" yaml:"id"`
+	Name                    string `json:"name" yaml:"name"`
+	FederatedAuthenticators *struct {
+		DefaultAuthenticatorId string        `json:"defaultAuthenticatorId" yaml:"defaultAuthenticatorId"`
+		Authenticators         []interface{} `json:"authenticators" yaml:"authenticators"`
+	} `json:"federatedAuthenticators" yaml:"federatedAuthenticators"`
+	Provisioning *struct {
+		Jit                interface{} `json:"jit" yaml:"jit"`
+		OutboundConnectors *struct {
+			Connectors []interface{} `json:"connectors" yaml:"connectors"`
+		} `json:"outboundConnectors" yaml:"outboundConnectors"`
+	} `json:"provisioning" yaml:"provisioning"`
+	Claims      interface{} `json:"claims" yaml:"claims"`
+	Roles       interface{} `json:"roles" yaml:"roles"`
+	Certificate *struct {
+		Certificates []string `json:"certificates" yaml:"certificates"`
+		JwksUri      string   `json:"jwksUri" yaml:"jwksUri"`
+	} `json:"certificate" yaml:"certificate"`
 }
 
 func getIdpList() ([]identityProvider, error) {
@@ -124,4 +139,16 @@ func getIdpKeywordMapping(idpName string) map[string]interface{} {
 		return utils.ResolveAdvancedKeywordMapping(idpName, utils.KEYWORD_CONFIGS.IdpConfigs)
 	}
 	return utils.KEYWORD_CONFIGS.KeywordMappings
+}
+
+func exportAPIExists() bool {
+
+	res, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_IDP_EXPORT_API)
+	if err != nil {
+		// Use the export API when the server version is not properly configured for backward compatibility
+		log.Println("Warn: Server version is not properly configured. For IS versions below 6.1, configure the server version properly to avoid failures.")
+		return true
+	}
+
+	return res >= 0
 }

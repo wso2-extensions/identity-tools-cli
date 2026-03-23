@@ -27,7 +27,6 @@ import (
 	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
-	"gopkg.in/yaml.v3"
 )
 
 func ImportAll(inputDirPath string) {
@@ -41,18 +40,22 @@ func ImportAll(inputDirPath string) {
 	if utils.IsResourceTypeExcluded(utils.IDENTITY_PROVIDERS) {
 		return
 	}
-	var files []os.FileInfo
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
 		log.Println("No identity providers to import.")
-	} else {
-		files, err = ioutil.ReadDir(importFilePath)
-		if err != nil {
-			log.Println("Error importing identity providers: ", err)
-		}
-		if utils.TOOL_CONFIGS.AllowDelete {
-			removeDeletedDeployedIdps(files)
-		}
+		return
+	}
 
+	existingIdpList, err := getIdpList()
+	if err != nil {
+		log.Printf("error when retrieving the deployed identity provider list. %s", err)
+	}
+
+	files, err := ioutil.ReadDir(importFilePath)
+	if err != nil {
+		log.Println("Error importing identity providers: ", err)
+	}
+	if utils.TOOL_CONFIGS.AllowDelete {
+		removeDeletedDeployedIdps(files, existingIdpList)
 	}
 
 	for _, file := range files {
@@ -65,7 +68,7 @@ func ImportAll(inputDirPath string) {
 			if idpName == utils.RESIDENT_IDP_NAME {
 				idpId = utils.RESIDENT_IDP_NAME
 			} else {
-				idpId, err = getIdpId(idpFilePath, idpName)
+				idpId, err = getIdpId(idpName, existingIdpList)
 			}
 
 			if err != nil {
@@ -124,38 +127,18 @@ func updateIdentityProvider(idpId string, importFilePath string, modifiedFileDat
 	return nil
 }
 
-func getIdpId(idpFilePath string, idpName string) (string, error) {
-
-	fileContent, err := ioutil.ReadFile(idpFilePath)
-	if err != nil {
-		return "", fmt.Errorf("error when reading the file for idp: %s. %s", idpName, err)
-	}
-	var idpConfig idpConfig
-	err = yaml.Unmarshal(fileContent, &idpConfig)
-	if err != nil {
-		return "", fmt.Errorf("invalid file content for idp: %s. %s", idpName, err)
-	}
-	existingIdpList, err := getIdpList()
-	if err != nil {
-		return "", fmt.Errorf("error when retrieving the deployed idp list: %s", err)
-	}
+func getIdpId(idpName string, existingIdpList []identityProvider) (string, error) {
 
 	for _, idp := range existingIdpList {
-		if idp.Name == idpConfig.IdentityProviderName {
+		if idp.Name == idpName {
 			return idp.Id, nil
 		}
 	}
 	return "", nil
 }
 
-func removeDeletedDeployedIdps(localFiles []os.FileInfo) {
+func removeDeletedDeployedIdps(localFiles []os.FileInfo, deployedIdps []identityProvider) {
 
-	// Remove deployed identity providers that do not exist locally.
-	deployedIdps, err := getIdpList()
-	if err != nil {
-		log.Println("Error retrieving deployed identity providers: ", err)
-		return
-	}
 deployedResourcess:
 	for _, idp := range deployedIdps {
 		for _, file := range localFiles {
