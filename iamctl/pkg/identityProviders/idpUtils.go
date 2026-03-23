@@ -141,6 +141,16 @@ func getIdpKeywordMapping(idpName string) map[string]interface{} {
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
 
+func getIdpId(idpName string, existingIdpList []identityProvider) string {
+
+	for _, idp := range existingIdpList {
+		if idp.Name == idpName {
+			return idp.Id
+		}
+	}
+	return ""
+}
+
 func preprocessIdpKeys(data interface{}) (interface{}, error) {
 
 	if utils.ExportAPIExists(utils.IDENTITY_PROVIDERS) {
@@ -190,6 +200,32 @@ func postprocessIdpKeys(data interface{}) (interface{}, error) {
 	}
 
 	return data, nil
+}
+
+func createPostRequestBody(idpMap map[string]interface{}) ([]byte, error) {
+
+	delete(idpMap, "id")
+	delete(idpMap, "isEnabled")
+	body, err := json.Marshal(idpMap)
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling identity provider: %w", err)
+	}
+	return body, nil
+}
+
+func patchIdp(idpId string, patchOps []map[string]interface{}) error {
+
+	body, err := json.Marshal(patchOps)
+	if err != nil {
+		return fmt.Errorf("error marshalling patch operations for identity provider: %w", err)
+	}
+
+	resp, err := utils.SendPatchRequest(utils.IDENTITY_PROVIDERS, idpId, body)
+	if err != nil {
+		return fmt.Errorf("error patching identity provider: %w", err)
+	}
+	defer resp.Body.Close()
+	return nil
 }
 
 func init() {

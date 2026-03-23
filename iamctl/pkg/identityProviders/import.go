@@ -23,8 +23,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -33,9 +33,7 @@ func ImportAll(inputDirPath string) {
 
 	log.Println("Importing identity providers...")
 	importFilePath := filepath.Join(inputDirPath, utils.IDENTITY_PROVIDERS.String())
-	if !utils.IsEntitySupportedInVersion(utils.IDENTITY_PROVIDERS) {
-		return
-	}
+	exportAPIExists := utils.ExportAPIExists(utils.IDENTITY_PROVIDERS)
 
 	if utils.IsResourceTypeExcluded(utils.IDENTITY_PROVIDERS) {
 		return
@@ -60,53 +58,62 @@ func ImportAll(inputDirPath string) {
 
 	for _, file := range files {
 		idpFilePath := filepath.Join(importFilePath, file.Name())
-		idpName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
+		fileInfo := utils.GetFileInfo(idpFilePath)
+		idpName := fileInfo.ResourceName
 
 		if !utils.IsResourceExcluded(idpName, utils.TOOL_CONFIGS.IdpConfigs) {
 			var idpId string
-			var err error
 			if idpName == utils.RESIDENT_IDP_NAME {
+				if !exportAPIExists {
+					continue
+				}
 				idpId = utils.RESIDENT_IDP_NAME
 			} else {
-				idpId, err = getIdpId(idpName, existingIdpList)
+				idpId = getIdpId(idpName, existingIdpList)
 			}
 
+			err := importIdp(idpId, idpName, idpFilePath, exportAPIExists)
 			if err != nil {
-				log.Printf("Invalid file configurations for identity provider: %s. %s", idpName, err)
-			} else {
-				err := importIdp(idpId, idpFilePath)
-				if err != nil {
-					log.Println("Error importing identity provider: ", err)
-				}
+				log.Println("Error importing identity provider: ", err)
+				utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, idpName)
 			}
 		}
 	}
 }
 
-func importIdp(idpId string, importFilePath string) error {
+func importIdp(idpId string, idpName string, importFilePath string, exportAPIExists bool) error {
 
 	fileBytes, err := ioutil.ReadFile(importFilePath)
 	if err != nil {
 		return fmt.Errorf("error when reading the file for identity provider: %s", err)
 	}
 
-	// Replace keyword placeholders in the local file according to the keyword mappings added in configs.
-	fileInfo := utils.GetFileInfo(importFilePath)
-	idpKeywordMapping := getIdpKeywordMapping(fileInfo.ResourceName)
+	idpKeywordMapping := getIdpKeywordMapping(idpName)
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), idpKeywordMapping)
 
-	if idpId == "" {
-		return importIdentityProvider(importFilePath, modifiedFileData, fileInfo)
+	if exportAPIExists {
+		if idpId == "" {
+			return importIdentityProvider(idpName, importFilePath, modifiedFileData)
+		}
+		return updateIdentityProvider(idpId, idpName, importFilePath, modifiedFileData)
 	}
-	return updateIdentityProvider(idpId, importFilePath, modifiedFileData, fileInfo)
+
+	format, err := utils.FormatFromExtension(filepath.Ext(importFilePath))
+	if err != nil {
+		return fmt.Errorf("unsupported file format for identity provider: %w", err)
+	}
+
+	if idpId == "" {
+		return createIdpWithCRUD(idpName, []byte(modifiedFileData), format)
+	}
+	return updateIdpWithCRUD(idpId, idpName, []byte(modifiedFileData), format)
 }
 
-func importIdentityProvider(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+func importIdentityProvider(idpName, importFilePath, modifiedFileData string) error {
 
-	log.Println("Creating new identity provider: " + fileInfo.ResourceName)
+	log.Println("Creating new identity provider: " + idpName)
 	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.IDENTITY_PROVIDERS)
 	if err != nil {
-		utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, fileInfo.ResourceName)
 		return fmt.Errorf("error when importing identity provider: %s", err)
 	}
 	utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.IMPORT)
@@ -114,12 +121,11 @@ func importIdentityProvider(importFilePath string, modifiedFileData string, file
 	return nil
 }
 
-func updateIdentityProvider(idpId string, importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+func updateIdentityProvider(idpId, idpName, importFilePath, modifiedFileData string) error {
 
-	log.Println("Updating identity provider: " + fileInfo.ResourceName)
+	log.Println("Updating identity provider: " + idpName)
 	err := utils.SendUpdateRequest(idpId, importFilePath, modifiedFileData, utils.IDENTITY_PROVIDERS)
 	if err != nil {
-		utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, fileInfo.ResourceName)
 		return fmt.Errorf("error when updating identity provider: %s", err)
 	}
 	utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.UPDATE)
@@ -127,14 +133,74 @@ func updateIdentityProvider(idpId string, importFilePath string, modifiedFileDat
 	return nil
 }
 
-func getIdpId(idpName string, existingIdpList []identityProvider) (string, error) {
+func createIdpWithCRUD(idpName string, requestBody []byte, format utils.Format) error {
 
-	for _, idp := range existingIdpList {
-		if idp.Name == idpName {
-			return idp.Id, nil
+	log.Println("Creating new identity provider: " + idpName)
+
+	idpMap, err := utils.DeserializeToMap(requestBody, format, utils.IDENTITY_PROVIDERS)
+	if err != nil {
+		return fmt.Errorf("error deserializing identity provider: %w", err)
+	}
+	newIdpId, err := createIdp(idpMap)
+	if err != nil {
+		return fmt.Errorf("error creating identity provider: %w", err)
+	}
+
+	isEnabled, exists := idpMap["isEnabled"]
+	if exists {
+		err := patchIdpIsEnabled(newIdpId, isEnabled)
+		if err != nil {
+			return fmt.Errorf("error setting isEnabled for identity provider: %w", err)
 		}
 	}
-	return "", nil
+
+	utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.IMPORT)
+	log.Println("Identity provider imported successfully.")
+	return nil
+}
+
+func updateIdpWithCRUD(idpId, idpName string, requestBody []byte, format utils.Format) error {
+
+	return fmt.Errorf("not implemented")
+}
+
+func createIdp(idpMap map[string]interface{}) (string, error) {
+
+	reqBody, err := createPostRequestBody(idpMap)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := utils.SendPostRequest(utils.IDENTITY_PROVIDERS, reqBody)
+	if err != nil {
+		log.Println("Debug: Request Body: ", string(reqBody))
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	location := resp.Header.Get("Location")
+	if location == "" {
+		return "", fmt.Errorf("no Location header in create identity provider response")
+	}
+	return path.Base(location), nil
+}
+
+func patchIdpIsEnabled(idpId string, isEnabled interface{}) error {
+
+	enabled, ok := isEnabled.(bool)
+	if !ok {
+		return fmt.Errorf("invalid value for isEnabled field: %v", isEnabled)
+	}
+	if enabled {
+		return nil
+	}
+
+	patchBody := []map[string]interface{}{{
+		"operation": "REPLACE",
+		"path":      "/isEnabled",
+		"value":     false,
+	}}
+	return patchIdp(idpId, patchBody)
 }
 
 func removeDeletedDeployedIdps(localFiles []os.FileInfo, deployedIdps []identityProvider) {
@@ -146,7 +212,7 @@ deployedResourcess:
 				continue deployedResourcess
 			}
 		}
-		if utils.IsResourceExcluded(idp.Name, utils.TOOL_CONFIGS.ApplicationConfigs) || idp.Name == utils.RESIDENT_IDP_NAME {
+		if utils.IsResourceExcluded(idp.Name, utils.TOOL_CONFIGS.IdpConfigs) || idp.Name == utils.RESIDENT_IDP_NAME {
 			log.Println("Identity provider is excluded from deletion: ", idp.Name)
 			continue
 		}
