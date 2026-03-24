@@ -173,7 +173,6 @@ func createIdp(idpMap map[string]interface{}) (string, error) {
 
 	resp, err := utils.SendPostRequest(utils.IDENTITY_PROVIDERS, reqBody)
 	if err != nil {
-		log.Println("Debug: Request Body: ", string(reqBody))
 		return "", err
 	}
 	defer resp.Body.Close()

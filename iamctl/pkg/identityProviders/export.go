@@ -188,77 +188,15 @@ func getIdp(idpId string) (map[string]interface{}, error) {
 		return nil, fmt.Errorf("error unmarshalling IDP response to map: %w", err)
 	}
 
-	auths, err := getFederatedAuthenticators(idpId, idpStruct)
-	if err != nil {
-		return nil, fmt.Errorf("error while retrieving federated authenticators for IDP:. %w", err)
+	if err := processFederatedAuthenticators(idpId, idpStruct, idpMap); err != nil {
+		return nil, fmt.Errorf("error while processing federated authenticators of IDP: %w", err)
 	}
-	if fedAuths, ok := idpMap["federatedAuthenticators"].(map[string]interface{}); ok {
-		fedAuths["authenticators"] = auths
+	if err := processOutboundConnectors(idpId, idpStruct, idpMap); err != nil {
+		return nil, fmt.Errorf("error while processing outbound connectors of IDP: %w", err)
 	}
-
-	connectors, err := getOutboundConnectors(idpId, idpStruct)
-	if err != nil {
-		return nil, fmt.Errorf("error while retrieving outbound connectors for IDP: %w", err)
-	}
-	if provisioning, ok := idpMap["provisioning"].(map[string]interface{}); ok {
-		if outbound, ok := provisioning["outboundConnectors"].(map[string]interface{}); ok {
-			outbound["connectors"] = connectors
-		}
+	if err := processClaims(idpMap); err != nil {
+		return nil, fmt.Errorf("error while processing claims of IDP: %w", err)
 	}
 
 	return idpMap, nil
-}
-
-func getFederatedAuthenticators(idpId string, idpStruct idpConfig) ([]interface{}, error) {
-
-	auths := []interface{}{}
-	if idpStruct.FederatedAuthenticators == nil {
-		return auths, nil
-	}
-
-	for _, auth := range idpStruct.FederatedAuthenticators.Authenticators {
-		authMap, ok := auth.(map[string]interface{})
-		if !ok {
-			return nil, fmt.Errorf("unexpected format for federated authenticator of IDP")
-		}
-		authId, ok := authMap["authenticatorId"].(string)
-		if !ok {
-			return nil, fmt.Errorf("id not found for federated authenticator of IDP")
-		}
-
-		auth, err := utils.GetResourceData(utils.IDENTITY_PROVIDERS, idpId+"/federated-authenticators/"+authId)
-		if err != nil {
-			return nil, fmt.Errorf("error while retrieving federated authenticator %s: %w", authId, err)
-		}
-		auths = append(auths, auth)
-	}
-
-	return auths, nil
-}
-
-func getOutboundConnectors(idpId string, idpStruct idpConfig) ([]interface{}, error) {
-
-	connectors := []interface{}{}
-	if idpStruct.Provisioning == nil || idpStruct.Provisioning.OutboundConnectors == nil {
-		return connectors, nil
-	}
-
-	for _, conn := range idpStruct.Provisioning.OutboundConnectors.Connectors {
-		connMap, ok := conn.(map[string]interface{})
-		if !ok {
-			return nil, fmt.Errorf("unexpected format for outbound connector of IDP")
-		}
-		connId, ok := connMap["connectorId"].(string)
-		if !ok {
-			return nil, fmt.Errorf("id not found for outbound connector of IDP")
-		}
-
-		connector, err := utils.GetResourceData(utils.IDENTITY_PROVIDERS, idpId+"/provisioning/outbound-connectors/"+connId)
-		if err != nil {
-			return nil, fmt.Errorf("error while retrieving outbound connector %s: %w", connId, err)
-		}
-		connectors = append(connectors, connector)
-	}
-
-	return connectors, nil
 }

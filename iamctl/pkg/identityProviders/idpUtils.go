@@ -46,7 +46,8 @@ type idpConfig struct {
 	Provisioning *struct {
 		Jit                interface{} `json:"jit" yaml:"jit"`
 		OutboundConnectors *struct {
-			Connectors []interface{} `json:"connectors" yaml:"connectors"`
+			DefaultConnectorId string        `json:"defaultConnectorId" yaml:"defaultConnectorId"`
+			Connectors         []interface{} `json:"connectors" yaml:"connectors"`
 		} `json:"outboundConnectors" yaml:"outboundConnectors"`
 	} `json:"provisioning" yaml:"provisioning"`
 	Claims      interface{} `json:"claims" yaml:"claims"`
@@ -149,6 +150,91 @@ func getIdpId(idpName string, existingIdpList []identityProvider) string {
 		}
 	}
 	return ""
+}
+
+func processFederatedAuthenticators(idpId string, idpStruct idpConfig, idpMap map[string]interface{}) error {
+
+	fedAuths, ok := idpMap["federatedAuthenticators"].(map[string]interface{})
+	if !ok || idpStruct.FederatedAuthenticators == nil {
+		return fmt.Errorf("invalid format for federated authenticators")
+	}
+
+	auths := []interface{}{}
+	for _, auth := range idpStruct.FederatedAuthenticators.Authenticators {
+		authMap, ok := auth.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for federated authenticator")
+		}
+		authId, ok := authMap["authenticatorId"].(string)
+		if !ok {
+			return fmt.Errorf("id not found for federated authenticator")
+		}
+		fullAuth, err := utils.GetResourceData(utils.IDENTITY_PROVIDERS, idpId+"/federated-authenticators/"+authId)
+		if err != nil {
+			return fmt.Errorf("error while retrieving federated authenticator %s: %w", authId, err)
+		}
+		auths = append(auths, fullAuth)
+	}
+	fedAuths["authenticators"] = auths
+
+	if idpStruct.FederatedAuthenticators.DefaultAuthenticatorId == "" {
+		fedAuths["defaultAuthenticatorId"] = ""
+	}
+	return nil
+}
+
+func processOutboundConnectors(idpId string, idpStruct idpConfig, idpMap map[string]interface{}) error {
+
+	provisioning, ok := idpMap["provisioning"].(map[string]interface{})
+	if !ok || idpStruct.Provisioning == nil || idpStruct.Provisioning.OutboundConnectors == nil {
+		return fmt.Errorf("invalid format for provisioning")
+	}
+	outbound, ok := provisioning["outboundConnectors"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("invalid format for outbound connectors")
+	}
+
+	connectors := []interface{}{}
+	for _, conn := range idpStruct.Provisioning.OutboundConnectors.Connectors {
+		connMap, ok := conn.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for outbound connector")
+		}
+		connId, ok := connMap["connectorId"].(string)
+		if !ok {
+			return fmt.Errorf("id not found for outbound connector")
+		}
+		fullConn, err := utils.GetResourceData(utils.IDENTITY_PROVIDERS, idpId+"/provisioning/outbound-connectors/"+connId)
+		if err != nil {
+			return fmt.Errorf("error while retrieving outbound connector %s: %w", connId, err)
+		}
+		connectors = append(connectors, fullConn)
+	}
+	outbound["connectors"] = connectors
+
+	if idpStruct.Provisioning.OutboundConnectors.DefaultConnectorId == "" {
+		outbound["defaultConnectorId"] = ""
+	}
+	return nil
+}
+
+func processClaims(idpMap map[string]interface{}) error {
+
+	claims, ok := idpMap["claims"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("invalid format for claims")
+	}
+
+	for _, claimKey := range []string{"userIdClaim", "roleClaim"} {
+		claim, ok := claims[claimKey].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("invalid format for claim: %s", claimKey)
+		}
+		if len(claim) == 0 {
+			claims[claimKey] = map[string]interface{}{"uri": ""}
+		}
+	}
+	return nil
 }
 
 func preprocessIdpKeys(data interface{}) (interface{}, error) {
