@@ -309,21 +309,6 @@ func createPostRequestBody(idpMap map[string]interface{}) ([]byte, error) {
 	return body, nil
 }
 
-func patchIdp(idpId string, patchOps []map[string]interface{}) error {
-
-	body, err := json.Marshal(patchOps)
-	if err != nil {
-		return fmt.Errorf("error marshalling patch operations for identity provider: %w", err)
-	}
-
-	resp, err := utils.SendPatchRequest(utils.IDENTITY_PROVIDERS, idpId, body)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	return nil
-}
-
 func buildIdpPatchOps(idpMap map[string]interface{}) []map[string]interface{} {
 
 	patchOps := []map[string]interface{}{}
@@ -338,6 +323,86 @@ func buildIdpPatchOps(idpMap map[string]interface{}) []map[string]interface{} {
 		})
 	}
 	return patchOps
+}
+
+func buildCertificatePatchOps(idpId string, localIdpStruct idpConfig) ([]map[string]interface{}, error) {
+
+	body, err := utils.SendGetRequest(utils.IDENTITY_PROVIDERS, idpId)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching deployed identity provider: %w", err)
+	}
+	var deployedIdp idpConfig
+	if err := json.Unmarshal(body, &deployedIdp); err != nil {
+		return nil, fmt.Errorf("error parsing deployed identity provider: %w", err)
+	}
+
+	deployedCert := deployedIdp.Certificate
+	localCert := localIdpStruct.Certificate
+
+	if deployedCert == nil && localCert == nil {
+		return nil, nil
+	}
+
+	deployedHasJwks := deployedCert != nil && deployedCert.JwksUri != ""
+	deployedHasCerts := deployedCert != nil && len(deployedCert.Certificates) > 0
+	localHasJwks := localCert != nil && localCert.JwksUri != ""
+	localHasCerts := localCert != nil && len(localCert.Certificates) > 0
+
+	var patchOps []map[string]interface{}
+
+	// Remove first, then add (order matters for mutually exclusive fields)
+	if deployedHasJwks && !localHasJwks {
+		patchOps = append(patchOps, map[string]interface{}{
+			"operation": "REMOVE",
+			"path":      "/certificate/jwksUri",
+		})
+	}
+	if deployedHasCerts && !localHasCerts {
+		patchOps = append(patchOps, map[string]interface{}{
+			"operation": "REMOVE",
+			"path":      "/certificate/certificates/0",
+		})
+	}
+
+	if localHasJwks {
+		op := "ADD"
+		if deployedHasJwks {
+			op = "REPLACE"
+		}
+		patchOps = append(patchOps, map[string]interface{}{
+			"operation": op,
+			"path":      "/certificate/jwksUri",
+			"value":     localCert.JwksUri,
+		})
+	}
+	if localHasCerts {
+		op := "ADD"
+		if deployedHasCerts {
+			op = "REPLACE"
+		}
+		patchOps = append(patchOps, map[string]interface{}{
+			"operation": op,
+			"path":      "/certificate/certificates/0",
+			"value":     localCert.Certificates[0],
+		})
+	}
+
+	return patchOps, nil
+}
+
+func patchIdp(idpId string, patchOps []map[string]interface{}) error {
+
+	body, err := json.Marshal(patchOps)
+	if err != nil {
+		return fmt.Errorf("error marshalling patch operations for identity provider: %w", err)
+	}
+
+	resp, err := utils.SendPatchRequest(utils.IDENTITY_PROVIDERS, idpId, body)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
 }
 
 func init() {

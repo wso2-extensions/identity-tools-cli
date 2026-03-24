@@ -142,17 +142,14 @@ func createIdpWithCRUD(idpName string, requestBody []byte, format utils.Format) 
 	if err != nil {
 		return fmt.Errorf("error deserializing identity provider: %w", err)
 	}
+	isEnabled := idpMap["isEnabled"]
+
 	newIdpId, err := createIdp(idpMap)
 	if err != nil {
 		return fmt.Errorf("error creating identity provider: %w", err)
 	}
-
-	isEnabled, exists := idpMap["isEnabled"]
-	if exists {
-		err := patchIdpIsEnabled(newIdpId, isEnabled)
-		if err != nil {
-			return fmt.Errorf("error setting isEnabled for identity provider: %w", err)
-		}
+	if err := patchIdpIsEnabled(newIdpId, isEnabled); err != nil {
+		return fmt.Errorf("error setting isEnabled for identity provider: %w", err)
 	}
 
 	utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.IMPORT)
@@ -178,6 +175,9 @@ func updateIdpWithCRUD(idpId, idpName string, requestBody []byte, format utils.F
 		if err := patchIdp(idpId, patchOps); err != nil {
 			return fmt.Errorf("error updating identity provider: %w", err)
 		}
+	}
+	if err := updateIdpCertificate(idpId, idpStruct); err != nil {
+		return fmt.Errorf("error updating certificate: %w", err)
 	}
 
 	if err := updateIdpSubResources(idpId, idpStruct); err != nil {
@@ -218,10 +218,24 @@ func patchIdpIsEnabled(idpId string, isEnabled interface{}) error {
 	if enabled {
 		return nil
 	}
+
 	patchBody := buildIdpPatchOps(map[string]interface{}{
 		"isEnabled": false,
 	})
 	return patchIdp(idpId, patchBody)
+}
+
+func updateIdpCertificate(idpId string, localIdpStruct idpConfig) error {
+
+	patchOps, err := buildCertificatePatchOps(idpId, localIdpStruct)
+	if err != nil {
+		return fmt.Errorf("error building certificate patch operations: %w", err)
+	}
+
+	if len(patchOps) == 0 {
+		return nil
+	}
+	return patchIdp(idpId, patchOps)
 }
 
 func updateIdpSubResources(idpId string, idpStruct idpConfig) error {
