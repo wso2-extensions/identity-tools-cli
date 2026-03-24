@@ -19,6 +19,7 @@
 package identityproviders
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -161,7 +162,31 @@ func createIdpWithCRUD(idpName string, requestBody []byte, format utils.Format) 
 
 func updateIdpWithCRUD(idpId, idpName string, requestBody []byte, format utils.Format) error {
 
-	return fmt.Errorf("not implemented")
+	log.Println("Updating identity provider: " + idpName)
+
+	idpMap, err := utils.DeserializeToMap(requestBody, format, utils.IDENTITY_PROVIDERS)
+	if err != nil {
+		return fmt.Errorf("error deserializing identity provider: %w", err)
+	}
+	var idpStruct idpConfig
+	if _, err := utils.Deserialize(requestBody, format, utils.IDENTITY_PROVIDERS, &idpStruct); err != nil {
+		return fmt.Errorf("error parsing identity provider struct: %w", err)
+	}
+
+	patchOps := buildIdpPatchOps(idpMap)
+	if len(patchOps) > 0 {
+		if err := patchIdp(idpId, patchOps); err != nil {
+			return fmt.Errorf("error updating identity provider: %w", err)
+		}
+	}
+
+	if err := updateIdpSubResources(idpId, idpStruct); err != nil {
+		return err
+	}
+
+	utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.UPDATE)
+	log.Println("Identity provider updated successfully.")
+	return nil
 }
 
 func createIdp(idpMap map[string]interface{}) (string, error) {
@@ -193,13 +218,77 @@ func patchIdpIsEnabled(idpId string, isEnabled interface{}) error {
 	if enabled {
 		return nil
 	}
-
-	patchBody := []map[string]interface{}{{
-		"operation": "REPLACE",
-		"path":      "/isEnabled",
-		"value":     false,
-	}}
+	patchBody := buildIdpPatchOps(map[string]interface{}{
+		"isEnabled": false,
+	})
 	return patchIdp(idpId, patchBody)
+}
+
+func updateIdpSubResources(idpId string, idpStruct idpConfig) error {
+
+	if idpStruct.FederatedAuthenticators != nil {
+		body, err := json.Marshal(idpStruct.FederatedAuthenticators)
+		if err != nil {
+			return fmt.Errorf("error marshalling federated authenticators: %w", err)
+		}
+		resp, err := utils.SendPutRequest(utils.IDENTITY_PROVIDERS, idpId+"/federated-authenticators", body)
+		if err != nil {
+			return fmt.Errorf("error updating federated authenticators: %w", err)
+		}
+		resp.Body.Close()
+	}
+
+	if idpStruct.Claims != nil {
+		body, err := json.Marshal(idpStruct.Claims)
+		if err != nil {
+			return fmt.Errorf("error marshalling claims: %w", err)
+		}
+		resp, err := utils.SendPutRequest(utils.IDENTITY_PROVIDERS, idpId+"/claims", body)
+		if err != nil {
+			return fmt.Errorf("error updating claims: %w", err)
+		}
+		resp.Body.Close()
+	}
+
+	if idpStruct.Roles != nil {
+		body, err := json.Marshal(idpStruct.Roles)
+		if err != nil {
+			return fmt.Errorf("error marshalling roles: %w", err)
+		}
+		resp, err := utils.SendPutRequest(utils.IDENTITY_PROVIDERS, idpId+"/roles", body)
+		if err != nil {
+			return fmt.Errorf("error updating roles: %w", err)
+		}
+		resp.Body.Close()
+	}
+
+	if idpStruct.Provisioning != nil {
+		if idpStruct.Provisioning.Jit != nil {
+			body, err := json.Marshal(idpStruct.Provisioning.Jit)
+			if err != nil {
+				return fmt.Errorf("error marshalling JIT provisioning: %w", err)
+			}
+			resp, err := utils.SendPutRequest(utils.IDENTITY_PROVIDERS, idpId+"/provisioning/jit", body)
+			if err != nil {
+				return fmt.Errorf("error updating JIT provisioning: %w", err)
+			}
+			resp.Body.Close()
+		}
+
+		if idpStruct.Provisioning.OutboundConnectors != nil {
+			body, err := json.Marshal(idpStruct.Provisioning.OutboundConnectors)
+			if err != nil {
+				return fmt.Errorf("error marshalling outbound connectors: %w", err)
+			}
+			resp, err := utils.SendPutRequest(utils.IDENTITY_PROVIDERS, idpId+"/provisioning/outbound-connectors", body)
+			if err != nil {
+				return fmt.Errorf("error updating outbound connectors: %w", err)
+			}
+			resp.Body.Close()
+		}
+	}
+
+	return nil
 }
 
 func removeDeletedDeployedIdps(localFiles []os.FileInfo, deployedIdps []identityProvider) {

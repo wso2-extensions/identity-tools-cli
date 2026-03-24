@@ -58,6 +58,16 @@ type idpConfig struct {
 	} `json:"certificate" yaml:"certificate"`
 }
 
+var idpPatchSkipKeys = map[string]bool{
+	"id":                      true,
+	"name":                    true,
+	"certificate":             true,
+	"federatedAuthenticators": true,
+	"provisioning":            true,
+	"claims":                  true,
+	"roles":                   true,
+}
+
 func getIdpList() ([]identityProvider, error) {
 
 	idpCount, err := getTotalIdpCount()
@@ -308,10 +318,26 @@ func patchIdp(idpId string, patchOps []map[string]interface{}) error {
 
 	resp, err := utils.SendPatchRequest(utils.IDENTITY_PROVIDERS, idpId, body)
 	if err != nil {
-		return fmt.Errorf("error patching identity provider: %w", err)
+		return err
 	}
 	defer resp.Body.Close()
 	return nil
+}
+
+func buildIdpPatchOps(idpMap map[string]interface{}) []map[string]interface{} {
+
+	patchOps := []map[string]interface{}{}
+	for key, value := range idpMap {
+		if idpPatchSkipKeys[key] {
+			continue
+		}
+		patchOps = append(patchOps, map[string]interface{}{
+			"operation": "REPLACE",
+			"path":      "/" + key,
+			"value":     value,
+		})
+	}
+	return patchOps
 }
 
 func init() {
