@@ -186,6 +186,13 @@ func processFederatedAuthenticators(idpId string, idpStruct idpConfig, idpMap ma
 		if !ok {
 			return fmt.Errorf("id not found for federated authenticator")
 		}
+		isEnabled, ok := authMap["isEnabled"].(bool)
+		if !ok {
+			return fmt.Errorf("isEnabled flag not found for federated authenticator: %s", authId)
+		}
+		if !isEnabled {
+			continue
+		}
 
 		fullAuth, err := utils.GetResourceData(utils.IDENTITY_PROVIDERS, idpId+"/federated-authenticators/"+authId)
 		if err != nil {
@@ -231,6 +238,13 @@ func processOutboundConnectors(idpId string, idpStruct idpConfig, idpMap map[str
 		connId, ok := connMap["connectorId"].(string)
 		if !ok {
 			return fmt.Errorf("id not found for outbound connector")
+		}
+		isEnabled, ok := connMap["isEnabled"].(bool)
+		if !ok {
+			return fmt.Errorf("isEnabled flag not found for outbound connector: %s", connId)
+		}
+		if !isEnabled {
+			continue
 		}
 
 		fullConn, err := utils.GetResourceData(utils.IDENTITY_PROVIDERS, idpId+"/provisioning/outbound-connectors/"+connId)
