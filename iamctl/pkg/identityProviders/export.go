@@ -65,7 +65,7 @@ func ExportAll(exportFilePath string, format string) {
 				if exportAPIExists {
 					err = exportIdp(idp.Id, exportFilePath, format, excludeSecerts)
 				} else {
-					err = exportIdpWithCRUD(idp.Id, idp.Name, exportFilePath, format)
+					err = exportIdpWithCRUD(idp.Id, idp.Name, exportFilePath, format, excludeSecerts)
 				}
 				if err != nil {
 					utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, idp.Name)
@@ -135,9 +135,9 @@ func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets
 	return nil
 }
 
-func exportIdpWithCRUD(idpId, idpName, outputDirPath, formatString string) error {
+func exportIdpWithCRUD(idpId, idpName, outputDirPath, formatString string, excludeSecrets bool) error {
 
-	idpMap, err := getIdp(idpId)
+	idpMap, err := getIdp(idpId, excludeSecrets)
 	if err != nil {
 		return fmt.Errorf("error while getting IDP: %w", err)
 	}
@@ -172,7 +172,7 @@ func exportIdpWithCRUD(idpId, idpName, outputDirPath, formatString string) error
 	return nil
 }
 
-func getIdp(idpId string) (map[string]interface{}, error) {
+func getIdp(idpId string, excludeSecrets bool) (map[string]interface{}, error) {
 
 	body, err := utils.SendGetRequest(utils.IDENTITY_PROVIDERS, idpId)
 	if err != nil {
@@ -188,10 +188,10 @@ func getIdp(idpId string) (map[string]interface{}, error) {
 		return nil, fmt.Errorf("error unmarshalling IDP response to map: %w", err)
 	}
 
-	if err := processFederatedAuthenticators(idpId, idpStruct, idpMap); err != nil {
+	if err := processFederatedAuthenticators(idpId, idpStruct, idpMap, excludeSecrets); err != nil {
 		return nil, fmt.Errorf("error while processing federated authenticators of IDP: %w", err)
 	}
-	if err := processOutboundConnectors(idpId, idpStruct, idpMap); err != nil {
+	if err := processOutboundConnectors(idpId, idpStruct, idpMap, excludeSecrets); err != nil {
 		return nil, fmt.Errorf("error while processing outbound connectors of IDP: %w", err)
 	}
 	if err := processClaims(idpMap); err != nil {

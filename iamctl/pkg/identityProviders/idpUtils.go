@@ -58,6 +58,13 @@ type idpConfig struct {
 	} `json:"certificate" yaml:"certificate"`
 }
 
+type resourceMeta struct {
+	Properties []struct {
+		Key            string `json:"key"`
+		IsConfidential bool   `json:"isConfidential"`
+	} `json:"properties"`
+}
+
 var idpPatchSkipKeys = map[string]bool{
 	"id":                      true,
 	"name":                    true,
@@ -162,7 +169,7 @@ func getIdpId(idpName string, existingIdpList []identityProvider) string {
 	return ""
 }
 
-func processFederatedAuthenticators(idpId string, idpStruct idpConfig, idpMap map[string]interface{}) error {
+func processFederatedAuthenticators(idpId string, idpStruct idpConfig, idpMap map[string]interface{}, excludeSecrets bool) error {
 
 	fedAuths, ok := idpMap["federatedAuthenticators"].(map[string]interface{})
 	if !ok || idpStruct.FederatedAuthenticators == nil {
@@ -179,10 +186,21 @@ func processFederatedAuthenticators(idpId string, idpStruct idpConfig, idpMap ma
 		if !ok {
 			return fmt.Errorf("id not found for federated authenticator")
 		}
+
 		fullAuth, err := utils.GetResourceData(utils.IDENTITY_PROVIDERS, idpId+"/federated-authenticators/"+authId)
 		if err != nil {
 			return fmt.Errorf("error while retrieving federated authenticator %s: %w", authId, err)
 		}
+		if excludeSecrets {
+			fullAuthMap, ok := fullAuth.(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("unexpected format for retrieved federated authenticator: %s", authId)
+			}
+			if err := maskSecretProperties(fullAuthMap, "meta/federated-authenticators/"+authId); err != nil {
+				return fmt.Errorf("error masking secrets for authenticator %s: %v", authId, err)
+			}
+		}
+
 		auths = append(auths, fullAuth)
 	}
 	fedAuths["authenticators"] = auths
@@ -193,7 +211,7 @@ func processFederatedAuthenticators(idpId string, idpStruct idpConfig, idpMap ma
 	return nil
 }
 
-func processOutboundConnectors(idpId string, idpStruct idpConfig, idpMap map[string]interface{}) error {
+func processOutboundConnectors(idpId string, idpStruct idpConfig, idpMap map[string]interface{}, excludeSecrets bool) error {
 
 	provisioning, ok := idpMap["provisioning"].(map[string]interface{})
 	if !ok || idpStruct.Provisioning == nil || idpStruct.Provisioning.OutboundConnectors == nil {
@@ -214,10 +232,21 @@ func processOutboundConnectors(idpId string, idpStruct idpConfig, idpMap map[str
 		if !ok {
 			return fmt.Errorf("id not found for outbound connector")
 		}
+
 		fullConn, err := utils.GetResourceData(utils.IDENTITY_PROVIDERS, idpId+"/provisioning/outbound-connectors/"+connId)
 		if err != nil {
 			return fmt.Errorf("error while retrieving outbound connector %s: %w", connId, err)
 		}
+		if excludeSecrets {
+			fullConnMap, ok := fullConn.(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("unexpected format for retrieved outbound connector: %s", connId)
+			}
+			if err := maskSecretProperties(fullConnMap, "meta/outbound-provisioning-connectors/"+connId); err != nil {
+				return fmt.Errorf("error masking secrets for connector %s: %v", connId, err)
+			}
+		}
+
 		connectors = append(connectors, fullConn)
 	}
 	outbound["connectors"] = connectors
@@ -242,6 +271,44 @@ func processClaims(idpMap map[string]interface{}) error {
 		}
 		if len(claim) == 0 {
 			claims[claimKey] = map[string]interface{}{"uri": ""}
+		}
+	}
+	return nil
+}
+
+func maskSecretProperties(resourceMap map[string]interface{}, metaPath string) error {
+
+	body, err := utils.SendGetRequest(utils.IDENTITY_PROVIDERS, metaPath)
+	if err != nil {
+		return fmt.Errorf("error fetching metadata from %s: %w", metaPath, err)
+	}
+	var meta resourceMeta
+	if err := json.Unmarshal(body, &meta); err != nil {
+		return fmt.Errorf("error parsing metadata from %s: %w", metaPath, err)
+	}
+
+	confidentialKeys := map[string]bool{}
+	for _, prop := range meta.Properties {
+		if prop.IsConfidential {
+			confidentialKeys[prop.Key] = true
+		}
+	}
+	properties, ok := resourceMap["properties"].([]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for properties")
+	}
+
+	for _, p := range properties {
+		propMap, ok := p.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for property")
+		}
+		key, ok := propMap["key"].(string)
+		if !ok {
+			return fmt.Errorf("unexpected format for property key")
+		}
+		if confidentialKeys[key] {
+			propMap["value"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
 		}
 	}
 	return nil
