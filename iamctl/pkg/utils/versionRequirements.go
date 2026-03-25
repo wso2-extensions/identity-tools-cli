@@ -21,8 +21,7 @@ package utils
 // Minimum WSO2 Identity Server version requirements for each resource type.
 // If a resource type is not present in this map, there is no minimum version requirement.
 const (
-	MIN_VERSION_APPLICATIONS       = "6.1.0"
-	MIN_VERSION_IDENTITY_PROVIDERS = "6.1.0"
+	MIN_VERSION_APPLICATIONS = "6.1.0"
 )
 
 var EntityMinVersionRequirements = map[ResourceType]string{

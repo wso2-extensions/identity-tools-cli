@@ -117,7 +117,7 @@ func loadServerConfigs(envConfigPath string) (baseDir string, toolConfigPath str
 
 	// Get access token.
 	SERVER_CONFIGS.Token = getAccessToken(SERVER_CONFIGS)
-	log.Println("Access Token recieved succesfully.")
+	log.Println("Access Token received successfully.")
 
 	return baseDir, toolConfigPath, keywordConfigPath
 }

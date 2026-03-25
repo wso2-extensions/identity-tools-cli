@@ -102,11 +102,11 @@ func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets
 	}
 
 	resp, err := utils.SendExportRequest(idpId, fileType, utils.IDENTITY_PROVIDERS, excludeSecrets)
-	defer resp.Body.Close()
-
 	if err != nil {
 		return fmt.Errorf("error while exporting the identity provider: %s", err)
 	}
+	defer resp.Body.Close()
+
 	var attachmentDetail = resp.Header.Get("Content-Disposition")
 	_, params, err := mime.ParseMediaType(attachmentDetail)
 	if err != nil {
