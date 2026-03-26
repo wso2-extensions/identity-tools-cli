@@ -25,7 +25,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"text/tabwriter"
@@ -196,25 +195,24 @@ func maskOAuthConsumerSecret(fileContent []byte) []byte {
 	return []byte(maskedContent)
 }
 
-func isToolMgtApp(file os.FileInfo, importFilePath string) (bool, error) {
+func isToolMgtApp(appId string) (bool, error) {
 
-	appFilePath := filepath.Join(importFilePath, file.Name())
-	fileData, err := ioutil.ReadFile(appFilePath)
+	body, err := utils.SendGetRequest(utils.APPLICATIONS, appId+"/inbound-protocols/oidc")
 	if err != nil {
-		return false, fmt.Errorf("failed to read file: %s", err.Error())
-	}
-
-	config, err := unmarshalAuthConfig(fileData)
-	if err != nil {
-		return false, fmt.Errorf(err.Error())
-	}
-
-	for _, requestConfig := range config.InboundAuthenticationConfig.InboundAuthenticationRequestConfigs {
-		if requestConfig.InboundAuthKey == utils.SERVER_CONFIGS.ClientId {
-			appName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
-			log.Printf("Info: Tool Management App: %s is excluded from deletion.\n", appName)
-			return true, nil
+		// 404 means no OIDC config — not the tool management app
+		if strings.Contains(err.Error(), "Resource not found") {
+			return false, nil
 		}
+		return false, err
+	}
+	var oidcConfig map[string]interface{}
+	if err := json.Unmarshal(body, &oidcConfig); err != nil {
+		return false, fmt.Errorf("error unmarshalling OIDC config: %w", err)
+	}
+
+	clientId, _ := oidcConfig["clientId"].(string)
+	if clientId == utils.SERVER_CONFIGS.ClientId {
+		return true, nil
 	}
 	return false, nil
 }

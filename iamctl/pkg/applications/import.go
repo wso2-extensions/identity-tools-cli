@@ -50,7 +50,7 @@ func ImportAll(inputDirPath string) {
 			log.Println("Error importing applications: ", err)
 		}
 		if utils.TOOL_CONFIGS.AllowDelete {
-			removeDeletedDeployedApps(files, importFilePath)
+			removeDeletedDeployedApps(files)
 		}
 	}
 
@@ -150,27 +150,33 @@ func importApplication(importFilePath string, modifiedFileData string, fileInfo 
 	return nil
 }
 
-func removeDeletedDeployedApps(localFiles []os.FileInfo, importFilePath string) {
+func removeDeletedDeployedApps(localFiles []os.FileInfo) {
 
-	// Remove deployed applications that do not exist locally.
+	localAppNames := make(map[string]struct{})
+	for _, file := range localFiles {
+		localAppNames[utils.GetFileInfo(file.Name()).ResourceName] = struct{}{}
+	}
+
 	deployedApps := getAppList()
-deployedResources:
 	for _, app := range deployedApps {
-		for _, file := range localFiles {
-			isToolManagementApp, err := isToolMgtApp(file, importFilePath)
-			if err != nil {
-				log.Printf("Error checking if application is a tool management app: %s\n", err.Error())
-				log.Printf("Application: %s is excluded from deletion.\n", app.Name)
-				continue deployedResources
-			}
-			if app.Name == utils.GetFileInfo(file.Name()).ResourceName || isToolManagementApp {
-				continue deployedResources
-			}
+		if _, existsLocally := localAppNames[app.Name]; existsLocally {
+			continue
 		}
-		if utils.IsResourceExcluded(app.Name, utils.TOOL_CONFIGS.ApplicationConfigs) || app.Name == utils.CONSOLE || app.Name == utils.MY_ACCOUNT {
+
+		if utils.IsResourceExcluded(app.Name, utils.TOOL_CONFIGS.ApplicationConfigs) ||
+			app.Name == utils.CONSOLE || app.Name == utils.MY_ACCOUNT || app.Name == utils.CARBON_SP {
 			log.Printf("Application: %s is excluded from deletion.\n", app.Name)
 			continue
 		}
+		if isToolMgt, err := isToolMgtApp(app.Id); err != nil {
+			log.Printf("Error checking if application is the tool management app: %s\n", err.Error())
+			log.Printf("Application: %s is excluded from deletion.\n", app.Name)
+			continue
+		} else if isToolMgt {
+			log.Printf("Info: Tool Management App: %s is excluded from deletion.\n", app.Name)
+			continue
+		}
+
 		log.Println("Application not found locally. Deleting app: ", app.Name)
 		err := utils.SendDeleteRequest(app.Id, utils.APPLICATIONS)
 		if err != nil {
