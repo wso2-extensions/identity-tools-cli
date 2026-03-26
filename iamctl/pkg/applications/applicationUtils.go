@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -33,9 +34,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type inboundProtocolRef struct {
+	Self string `json:"self"`
+}
+
 type Application struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
+	Id               string               `json:"id"`
+	Name             string               `json:"name"`
+	InboundProtocols []inboundProtocolRef `json:"inboundProtocols"`
 }
 
 type AppList struct {
@@ -45,6 +51,18 @@ type AppList struct {
 
 type AppConfig struct {
 	ApplicationName string `yaml:"applicationName"`
+}
+
+var protocolPathToKey = map[string]string{
+	"saml":        "saml",
+	"oidc":        "oidc",
+	"passive-sts": "passiveSts",
+	"ws-trust":    "wsTrust",
+}
+
+var unsupportedInboundProtocols = map[string]struct{}{
+	"kerberos": {},
+	"openid":   {},
 }
 
 type AuthConfig struct {
@@ -216,4 +234,58 @@ func isOauthSecretGiven(modifiedFileData string) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func processInboundProtocolConfigs(appId string, inboundProtocols []inboundProtocolRef, appMap map[string]interface{}, excludeSecrets bool) error {
+
+	result := make(map[string]interface{})
+	var customProtocols []interface{}
+	var skippedProtocols []string
+
+	for _, protocol := range inboundProtocols {
+		self := protocol.Self
+		protocolPath := path.Base(self)
+
+		if _, skip := unsupportedInboundProtocols[protocolPath]; skip {
+			skippedProtocols = append(skippedProtocols, protocolPath)
+			continue
+		}
+
+		body, err := utils.SendGetRequest(utils.APPLICATIONS, appId+"/inbound-protocols/"+protocolPath)
+		if err != nil {
+			return fmt.Errorf("error retrieving inbound protocol %s: %w", protocolPath, err)
+		}
+		var protocolConfig map[string]interface{}
+		if err := json.Unmarshal(body, &protocolConfig); err != nil {
+			return fmt.Errorf("error unmarshalling inbound protocol %s: %w", protocolPath, err)
+		}
+
+		if protocolPath == "oidc" && excludeSecrets {
+			maskOIDCClientSecret(protocolConfig)
+		}
+
+		protocolConfig["self"] = self
+
+		if key, known := protocolPathToKey[protocolPath]; known {
+			result[key] = protocolConfig
+		} else {
+			customProtocols = append(customProtocols, protocolConfig)
+		}
+	}
+
+	if len(customProtocols) > 0 {
+		result["custom"] = customProtocols
+	}
+	if len(skippedProtocols) > 0 {
+		log.Printf("Warn: Skipped unsupported inbound protocols: %v", skippedProtocols)
+	}
+
+	delete(appMap, "inboundProtocols")
+	appMap["inboundProtocolConfiguration"] = result
+	return nil
+}
+
+func maskOIDCClientSecret(oidcConfig map[string]interface{}) {
+
+	oidcConfig["clientSecret"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
 }

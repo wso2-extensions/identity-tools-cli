@@ -107,7 +107,7 @@ var ErrorCodes = map[int]string{
 }
 
 // Identifiers of array types for each resource type
-var applicationArrayIdentifiers = map[string]string{
+var appExportAPIArrayIdentifiers = map[string]string{
 
 	"inboundAuthenticationRequestConfigs": "inboundAuthKey",
 	"spProperties":                        "name",
@@ -124,6 +124,17 @@ var applicationArrayIdentifiers = map[string]string{
 	"idpClaims":                           "claimId",
 	"provisioningProperties":              "name",
 	"applicationRoleMappingConfig":        "idPName",
+}
+
+var appGetAPIArrayIdentifiers = map[string]string{
+
+	"claimMappings":            "localClaim.uri",
+	"requestedClaims":          "claim.uri",
+	"steps":                    "id",
+	"options":                  "authenticator",
+	"outboundProvisioningIdps": "idp",
+	"mappings":                 "localRole",
+	"properties":               "key",
 }
 
 var idpExportAPIArrayIdentifiers = map[string]string{
@@ -185,31 +196,38 @@ var RESOURCE_REFERENCE_METADATA = map[ResourceType][]ResourceReferenceMeta{}
 
 // Array field paths for each resource type
 var oidcScopeArrayFields = []string{
+
 	"claims",
 }
 
 var rolesArrayFields = []string{
+
 	"permissions",
 	"schemas",
 }
 
 var challengeQuestionsArrayFields = []string{
+
 	"questions",
 }
 
 var governanceConnectorArrayFields = []string{
+
 	"properties",
 }
 
 var userStoreArrayFields = []string{
+
 	"properties",
 }
 
 var claimArrayFields = []string{
+
 	"claims",
 }
 
 var idpArrayFields = []string{
+
 	"federatedAuthenticators.authenticators",
 	"provisioning.outboundConnectors.connectors",
 	"federatedAuthenticators.authenticators.properties",
@@ -218,6 +236,28 @@ var idpArrayFields = []string{
 	"roles.mappings",
 	"claims.provisioningClaims",
 	"certificate.certificates",
+}
+
+var appArrayFields = []string{
+
+	"claimConfiguration.claimMappings",
+	"claimConfiguration.requestedClaims",
+	"claimConfiguration.role.mappings",
+	"authenticationSequence.steps",
+	"authenticationSequence.steps.options",
+	"authenticationSequence.requestPathAuthenticators",
+	"provisioningConfigurations.outboundProvisioningIdps",
+	"inboundProtocolConfiguration.oidc.grantTypes",
+	"inboundProtocolConfiguration.oidc.callbackURLs",
+	"inboundProtocolConfiguration.oidc.allowedOrigins",
+	"inboundProtocolConfiguration.oidc.scopeValidators",
+	"inboundProtocolConfiguration.oidc.idToken.audience",
+	"inboundProtocolConfiguration.saml.assertionConsumerUrls",
+	"inboundProtocolConfiguration.saml.singleSignOnProfile.bindings",
+	"inboundProtocolConfiguration.saml.singleLogoutProfile.idpInitiatedSingleLogout.returnToUrls",
+	"inboundProtocolConfiguration.saml.singleSignOnProfile.assertion.audiences",
+	"inboundProtocolConfiguration.saml.singleSignOnProfile.assertion.recipients",
+	"inboundProtocolConfiguration.custom",
 }
 
 // XML root element tags for each resource type
@@ -231,4 +271,5 @@ const (
 	XML_ROOT_USERSTORE            = "UserStore"
 	XML_ROOT_CLAIM                = "DialectConfiguration"
 	XML_ROOT_IDENTITY_PROVIDER    = "IdentityProvider"
+	XML_ROOT_APPLICATION          = "ServiceProvider"
 )

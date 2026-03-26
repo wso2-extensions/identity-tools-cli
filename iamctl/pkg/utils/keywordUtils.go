@@ -173,7 +173,10 @@ func GetArrayIdentifiers(resourceType ResourceType) map[string]string {
 
 	switch resourceType {
 	case APPLICATIONS:
-		return applicationArrayIdentifiers
+		if ExportAPIExists(APPLICATIONS) {
+			return appExportAPIArrayIdentifiers
+		}
+		return appGetAPIArrayIdentifiers
 	case IDENTITY_PROVIDERS:
 		if ExportAPIExists(IDENTITY_PROVIDERS) {
 			return idpExportAPIArrayIdentifiers
