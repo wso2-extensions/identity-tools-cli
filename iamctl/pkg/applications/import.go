@@ -225,17 +225,15 @@ func patchApplication(appId string, appMap map[string]interface{}) error {
 func updateInboundProtocols(appId string, localProtocols []map[string]interface{}) error {
 
 	for _, protocolMap := range localProtocols {
-		self, ok := protocolMap["self"].(string)
-		if !ok {
-			return fmt.Errorf("unexpected format for self URL")
+		protocolPath, err := processInboundProtocolForUpdate(appId, protocolMap)
+		if err != nil {
+			return fmt.Errorf("error processing protocol: %w", err)
 		}
-		protocolPath := path.Base(self)
-		delete(protocolMap, "self")
-
 		protocolBody, err := json.Marshal(protocolMap)
 		if err != nil {
 			return fmt.Errorf("error marshalling protocol %s: %w", protocolPath, err)
 		}
+
 		resp, err := utils.SendPutRequest(utils.APPLICATIONS, appId+"/inbound-protocols/"+protocolPath, protocolBody)
 		if err != nil {
 			return fmt.Errorf("error updating protocol %s: %w", protocolPath, err)
@@ -297,6 +295,9 @@ func removeDeletedInboundProtocols(appId string, deployedRefs []inboundProtocolR
 			continue
 		}
 		protocolPath := path.Base(ref.Self)
+		if _, unsupported := unsupportedInboundProtocols[protocolPath]; unsupported {
+			continue
+		}
 		if err := utils.SendDeleteRequest(appId+"/inbound-protocols/"+protocolPath, utils.APPLICATIONS); err != nil {
 			return fmt.Errorf("error deleting inbound protocol %s: %w", protocolPath, err)
 		}

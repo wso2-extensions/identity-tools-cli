@@ -376,3 +376,55 @@ func flattenInboundProtocols(localProtocolConfig map[string]interface{}) ([]map[
 	}
 	return result, nil
 }
+
+func processInboundProtocolForUpdate(appId string, protocolMap map[string]interface{}) (protocolPath string, err error) {
+
+	self, ok := protocolMap["self"].(string)
+	if !ok {
+		return "", fmt.Errorf("self URL not found")
+	}
+	protocolPath = path.Base(self)
+	delete(protocolMap, "self")
+
+	if protocolPath == "oidc" || protocolPath == "passive-sts" {
+		if err := injectDeployedReadOnlyFields(appId, protocolPath, protocolMap); err != nil {
+			return "", err
+		}
+	}
+	return protocolPath, nil
+}
+
+func injectDeployedReadOnlyFields(appId, protocolPath string, localConfig map[string]interface{}) error {
+
+	body, err := utils.SendGetRequest(utils.APPLICATIONS, appId+"/inbound-protocols/"+protocolPath)
+	if err != nil {
+		return fmt.Errorf("error retrieving deployed %s config: %w", protocolPath, err)
+	}
+	var deployedConfig map[string]interface{}
+	if err := json.Unmarshal(body, &deployedConfig); err != nil {
+		return fmt.Errorf("error unmarshalling deployed %s config: %w", protocolPath, err)
+	}
+
+	switch protocolPath {
+	case "oidc":
+		clientId, ok := deployedConfig["clientId"].(string)
+		if !ok {
+			return fmt.Errorf("clientId not found in deployed oidc config")
+		}
+		localConfig["clientId"] = clientId
+
+		deployedSecret, ok := deployedConfig["clientSecret"].(string)
+		if !ok {
+			return fmt.Errorf("clientSecret not found in deployed oidc config")
+		}
+		localConfig["clientSecret"] = deployedSecret
+
+	case "passive-sts":
+		realm, ok := deployedConfig["realm"].(string)
+		if !ok {
+			return fmt.Errorf("realm not found in deployed passive-sts config")
+		}
+		localConfig["realm"] = realm
+	}
+	return nil
+}
