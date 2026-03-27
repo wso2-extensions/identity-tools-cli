@@ -167,5 +167,6 @@ func RemoveDeletedLocalResources(filePath string, deployedResourceNames []string
 func RemoveSecretMasks(modifiedFileData string) string {
 
 	modifiedFileData = strings.ReplaceAll(modifiedFileData, SENSITIVE_FIELD_MASK, "null")
+	modifiedFileData = strings.ReplaceAll(modifiedFileData, `"`+SENSITIVE_FIELD_MASK_WITHOUT_QUOTES+`"`, "null")
 	return modifiedFileData
 }

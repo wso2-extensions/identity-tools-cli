@@ -105,7 +105,7 @@ func importIdp(idpId string, idpName string, importFilePath string, exportAPIExi
 	}
 
 	if idpId == "" {
-		return createIdpWithCRUD(idpName, []byte(modifiedFileData), format)
+		return importIdpWithCRUD(idpName, []byte(modifiedFileData), format)
 	}
 	return updateIdpWithCRUD(idpId, idpName, []byte(modifiedFileData), format)
 }
@@ -134,7 +134,7 @@ func updateIdentityProvider(idpId, idpName, importFilePath, modifiedFileData str
 	return nil
 }
 
-func createIdpWithCRUD(idpName string, requestBody []byte, format utils.Format) error {
+func importIdpWithCRUD(idpName string, requestBody []byte, format utils.Format) error {
 
 	log.Println("Creating new identity provider: " + idpName)
 

@@ -117,7 +117,7 @@ func importClaimDialect(dialectId, dialectUri, importFilePath string) error {
 	}
 
 	if dialectId == "" {
-		return createClaimDialectWithCRUD(dialectUri, claims)
+		return importClaimDialectWithCRUD(dialectUri, claims)
 	}
 	return updateClaimDialectWithCRUD(dialectId, dialectUri, claims)
 }
@@ -146,7 +146,7 @@ func updateDialect(dialectId, dialectUri, importFilePath, modifiedFileData strin
 	return nil
 }
 
-func createClaimDialectWithCRUD(dialectURI string, claims []map[string]interface{}) error {
+func importClaimDialectWithCRUD(dialectURI string, claims []map[string]interface{}) error {
 
 	log.Println("Creating new claim dialect: " + dialectURI)
 

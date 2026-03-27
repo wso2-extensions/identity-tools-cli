@@ -48,10 +48,6 @@ type AppList struct {
 	Applications []Application `json:"applications"`
 }
 
-type AppConfig struct {
-	ApplicationName string `yaml:"applicationName"`
-}
-
 var protocolPathToKey = map[string]string{
 	"saml":        "saml",
 	"oidc":        "oidc",
@@ -159,6 +155,16 @@ func getAppKeywordMapping(appName string) map[string]interface{} {
 		return utils.ResolveAdvancedKeywordMapping(appName, utils.KEYWORD_CONFIGS.ApplicationConfigs)
 	}
 	return utils.KEYWORD_CONFIGS.KeywordMappings
+}
+
+func getAppId(appName string, appList []Application) string {
+
+	for _, app := range appList {
+		if app.Name == appName {
+			return app.Id
+		}
+	}
+	return ""
 }
 
 func isOauthApp(fileData string) (bool, error) {
@@ -286,4 +292,46 @@ func processInboundProtocolConfigs(appId string, inboundProtocols []inboundProto
 func maskOIDCClientSecret(oidcConfig map[string]interface{}) {
 
 	oidcConfig["clientSecret"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+}
+
+func processInboundProtocolsForPost(appMap map[string]interface{}) (newSecretCreated bool, err error) {
+
+	inboundConfig, ok := appMap["inboundProtocolConfiguration"].(map[string]interface{})
+	if !ok {
+		return false, fmt.Errorf("unexpected format for inboundProtocolConfiguration")
+	}
+
+	for key, config := range inboundConfig {
+		if key == "custom" {
+			customArr, ok := config.([]interface{})
+			if !ok {
+				return false, fmt.Errorf("unexpected format for custom inbound protocols")
+			}
+			for _, item := range customArr {
+				itemMap, ok := item.(map[string]interface{})
+				if !ok {
+					return false, fmt.Errorf("unexpected format for custom inbound protocol")
+				}
+				delete(itemMap, "self")
+			}
+			continue
+		}
+
+		configMap, ok := config.(map[string]interface{})
+		if !ok {
+			return false, fmt.Errorf("unexpected format for inbound protocol: %s", key)
+		}
+		delete(configMap, "self")
+
+		if key == "saml" {
+			inboundConfig[key] = map[string]interface{}{"manualConfiguration": configMap}
+		}
+		if key == "oidc" {
+			secret, _ := configMap["clientSecret"].(string)
+			if secret == "" {
+				newSecretCreated = true
+			}
+		}
+	}
+	return newSecretCreated, nil
 }

@@ -19,84 +19,56 @@
 package applications
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
-	"gopkg.in/yaml.v3"
 )
 
 func ImportAll(inputDirPath string) {
 
 	log.Println("Importing applications...")
 	importFilePath := filepath.Join(inputDirPath, utils.APPLICATIONS.String())
-	if !utils.IsEntitySupportedInVersion(utils.APPLICATIONS) {
-		return
-	}
+	exportAPIExists := utils.ExportAPIExists(utils.APPLICATIONS)
 
 	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
 		return
 	}
-	var files []os.FileInfo
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
 		log.Println("No applications to import.")
-	} else {
-		files, err = ioutil.ReadDir(importFilePath)
-		if err != nil {
-			log.Println("Error importing applications: ", err)
-		}
-		if utils.TOOL_CONFIGS.AllowDelete {
-			removeDeletedDeployedApps(files)
-		}
+		return
+	}
+
+	deployedApps := getAppList()
+	files, err := ioutil.ReadDir(importFilePath)
+	if err != nil {
+		log.Println("Error importing applications: ", err)
+	}
+	if utils.TOOL_CONFIGS.AllowDelete {
+		removeDeletedDeployedApps(files, deployedApps)
 	}
 
 	for _, file := range files {
 		appFilePath := filepath.Join(importFilePath, file.Name())
-		appName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
-		appExists, isValidFile := validateFile(appFilePath, appName)
+		fileInfo := utils.GetFileInfo(appFilePath)
+		appName := fileInfo.ResourceName
 
-		if isValidFile && !utils.IsResourceExcluded(appName, utils.TOOL_CONFIGS.ApplicationConfigs) {
-			importApp(appFilePath, appExists)
+		if !utils.IsResourceExcluded(appName, utils.TOOL_CONFIGS.ApplicationConfigs) {
+			appId := getAppId(appName, deployedApps)
+			err := importApp(appId, appName, appFilePath, exportAPIExists)
+			if err != nil {
+				log.Println("Error importing application: ", err)
+				utils.UpdateFailureSummary(utils.APPLICATIONS, appName)
+			}
 		}
 	}
 }
 
-func validateFile(appFilePath string, appName string) (appExists bool, isValid bool) {
-
-	appExists = false
-
-	fileContent, err := ioutil.ReadFile(appFilePath)
-	if err != nil {
-		log.Println("Error when reading the file for app: ", appName, err)
-		return appExists, false
-	}
-
-	// Validate the YAML format.
-	var appConfig AppConfig
-	err = yaml.Unmarshal(fileContent, &appConfig)
-	if err != nil {
-		log.Println("Invalid file content for app: ", appName, err)
-		return appExists, false
-	}
-
-	existingAppList := getDeployedAppNames()
-	for _, app := range existingAppList {
-		if app == appConfig.ApplicationName {
-			appExists = true
-			break
-		}
-	}
-	if appConfig.ApplicationName != appName {
-		log.Println("Warning: Application name in the file " + appFilePath + " is not matching with the file name.")
-	}
-	return appExists, true
-}
-
-func importApp(importFilePath string, isUpdate bool) error {
+func importApp(appId, appName, importFilePath string, exportAPIExists bool) error {
 
 	fileBytes, err := ioutil.ReadFile(importFilePath)
 	if err != nil {
@@ -104,36 +76,39 @@ func importApp(importFilePath string, isUpdate bool) error {
 	}
 
 	// Replace keyword placeholders in the local file according to the keyword mappings added in configs.
-	fileInfo := utils.GetFileInfo(importFilePath)
-	appKeywordMapping := getAppKeywordMapping(fileInfo.ResourceName)
+	appKeywordMapping := getAppKeywordMapping(appName)
 	fileDataWithReplacedKeywords := utils.ReplaceKeywords(string(fileBytes), appKeywordMapping)
 	modifiedFileData := utils.RemoveSecretMasks(fileDataWithReplacedKeywords)
 
-	if isUpdate {
-		return updateApplication(importFilePath, modifiedFileData, fileInfo)
+	if exportAPIExists {
+		if appId == "" {
+			return importApplication(appName, importFilePath, modifiedFileData)
+		}
+		return updateApplication(appName, importFilePath, modifiedFileData)
 	}
-	return importApplication(importFilePath, modifiedFileData, fileInfo)
-}
 
-func updateApplication(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
-
-	log.Println("Updating application: " + fileInfo.ResourceName)
-	err := utils.SendUpdateRequest("", importFilePath, modifiedFileData, utils.APPLICATIONS)
+	format, err := utils.FormatFromExtension(filepath.Ext(importFilePath))
 	if err != nil {
-		utils.UpdateFailureSummary(utils.APPLICATIONS, fileInfo.ResourceName)
-		return fmt.Errorf("error when updating application: %s", err)
+		return fmt.Errorf("unsupported file format for application: %w", err)
 	}
-	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.UPDATE)
-	log.Println("Application updated successfully.")
-	return nil
+
+	appMap, err := utils.DeserializeToMap([]byte(modifiedFileData), format, utils.APPLICATIONS)
+	if err != nil {
+		return fmt.Errorf("error deserializing application: %w", err)
+	}
+	delete(appMap, "id")
+
+	if appId == "" {
+		return importAppWithCRUD(appName, appMap)
+	}
+	return updateAppWithCRUD(appId, appName, appMap)
 }
 
-func importApplication(importFilePath string, modifiedFileData string, fileInfo utils.FileInfo) error {
+func importApplication(appName, importFilePath, modifiedFileData string) error {
 
-	log.Println("Creating new application: " + fileInfo.ResourceName)
+	log.Println("Creating new application: " + appName)
 	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.APPLICATIONS)
 	if err != nil {
-		utils.UpdateFailureSummary(utils.APPLICATIONS, fileInfo.ResourceName)
 		return fmt.Errorf("error when importing application: %s", err)
 	}
 
@@ -143,21 +118,66 @@ func importApplication(importFilePath string, modifiedFileData string, fileInfo 
 		fmt.Println("Failed to check if oauthConsumerSecret is given:", err.Error())
 	} else if oauthApp && !oauthSecretGiven {
 		// Check if oauthConsumerSecret is given or else add an indicator to the summary informing a new secret is generated.
-		utils.AddNewSecretIndicatorToSummary(fileInfo.ResourceName)
+		utils.AddNewSecretIndicatorToSummary(appName)
 	}
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.IMPORT)
 	log.Println("Application imported successfully.")
 	return nil
 }
 
-func removeDeletedDeployedApps(localFiles []os.FileInfo) {
+func updateApplication(appName, importFilePath, modifiedFileData string) error {
+
+	log.Println("Updating application: " + appName)
+	err := utils.SendUpdateRequest("", importFilePath, modifiedFileData, utils.APPLICATIONS)
+	if err != nil {
+		return fmt.Errorf("error when updating application: %s", err)
+	}
+	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.UPDATE)
+	log.Println("Application updated successfully.")
+	return nil
+}
+
+func importAppWithCRUD(appName string, appMap map[string]interface{}) error {
+
+	log.Println("Creating new application: " + appName)
+
+	newSecretCreated, err := processInboundProtocolsForPost(appMap)
+	if err != nil {
+		return fmt.Errorf("error processing inbound protocols: %w", err)
+	}
+
+	body, err := json.Marshal(appMap)
+	if err != nil {
+		return fmt.Errorf("error marshalling application: %w", err)
+	}
+
+	resp, err := utils.SendPostRequest(utils.APPLICATIONS, body)
+	if err != nil {
+		return fmt.Errorf("error creating application: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if newSecretCreated {
+		utils.AddNewSecretIndicatorToSummary(appName)
+	}
+	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.IMPORT)
+	log.Println("Application imported successfully.")
+	return nil
+}
+
+func updateAppWithCRUD(appId, appName string, appMap map[string]interface{}) error {
+
+	// Implemented in commit 4.
+	return fmt.Errorf("updateAppWithCRUD not yet implemented")
+}
+
+func removeDeletedDeployedApps(localFiles []os.FileInfo, deployedApps []Application) {
 
 	localAppNames := make(map[string]struct{})
 	for _, file := range localFiles {
 		localAppNames[utils.GetFileInfo(file.Name()).ResourceName] = struct{}{}
 	}
 
-	deployedApps := getAppList()
 	for _, app := range deployedApps {
 		if _, existsLocally := localAppNames[app.Name]; existsLocally {
 			continue
