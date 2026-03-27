@@ -267,9 +267,13 @@ func processInboundProtocolConfigs(appId string, inboundProtocols []inboundProto
 		if protocolPath == "oidc" && excludeSecrets {
 			maskOIDCClientSecret(protocolConfig)
 		}
+		if protocolPath == "saml" {
+			protocolConfig = map[string]interface{}{
+				"manualConfiguration": protocolConfig,
+			}
+		}
 
 		protocolConfig["self"] = self
-
 		if key, known := protocolPathToKey[protocolPath]; known {
 			result[key] = protocolConfig
 		} else {
@@ -323,9 +327,6 @@ func processInboundProtocolsForPost(appMap map[string]interface{}) (newSecretCre
 		}
 		delete(configMap, "self")
 
-		if key == "saml" {
-			inboundConfig[key] = map[string]interface{}{"manualConfiguration": configMap}
-		}
 		if key == "oidc" {
 			secret, _ := configMap["clientSecret"].(string)
 			if secret == "" {
@@ -334,4 +335,44 @@ func processInboundProtocolsForPost(appMap map[string]interface{}) (newSecretCre
 		}
 	}
 	return newSecretCreated, nil
+}
+
+func getDeployedInboundProtocols(appId string) ([]inboundProtocolRef, error) {
+
+	body, err := utils.SendGetRequest(utils.APPLICATIONS, appId+"/inbound-protocols")
+	if err != nil {
+		return nil, err
+	}
+	var deployedRefs []inboundProtocolRef
+	if err := json.Unmarshal(body, &deployedRefs); err != nil {
+		return nil, fmt.Errorf("error unmarshalling deployed inbound protocols: %w", err)
+	}
+	return deployedRefs, nil
+}
+
+func flattenInboundProtocols(localProtocolConfig map[string]interface{}) ([]map[string]interface{}, error) {
+
+	var result []map[string]interface{}
+	for key, config := range localProtocolConfig {
+		if key == "custom" {
+			customArr, ok := config.([]interface{})
+			if !ok {
+				return nil, fmt.Errorf("unexpected format for custom inbound protocols")
+			}
+			for _, item := range customArr {
+				itemMap, ok := item.(map[string]interface{})
+				if !ok {
+					return nil, fmt.Errorf("unexpected format for custom inbound protocol")
+				}
+				result = append(result, itemMap)
+			}
+		} else {
+			configMap, ok := config.(map[string]interface{})
+			if !ok {
+				return nil, fmt.Errorf("unexpected format for inbound protocol: %s", key)
+			}
+			result = append(result, configMap)
+		}
+	}
+	return result, nil
 }

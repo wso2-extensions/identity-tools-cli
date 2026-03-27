@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
@@ -167,8 +168,77 @@ func importAppWithCRUD(appName string, appMap map[string]interface{}) error {
 
 func updateAppWithCRUD(appId, appName string, appMap map[string]interface{}) error {
 
-	// Implemented in commit 4.
-	return fmt.Errorf("updateAppWithCRUD not yet implemented")
+	log.Println("Updating application: " + appName)
+
+	localProtocolConfig, ok := appMap["inboundProtocolConfiguration"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for inboundProtocolConfiguration")
+	}
+	localProtocols, err := flattenInboundProtocols(localProtocolConfig)
+	if err != nil {
+		return fmt.Errorf("error processing inbound protocols: %w", err)
+	}
+
+	if err := patchApplication(appId, appMap); err != nil {
+		return fmt.Errorf("error updating application: %w", err)
+	}
+
+	if utils.TOOL_CONFIGS.AllowDelete {
+		deployedRefs, err := getDeployedInboundProtocols(appId)
+		if err != nil {
+			return fmt.Errorf("error retrieving deployed inbound protocols: %w", err)
+		}
+		if err := removeDeletedInboundProtocols(appId, deployedRefs, localProtocols); err != nil {
+			return fmt.Errorf("error removing deleted inbound protocols: %w", err)
+		}
+	}
+	if err := updateInboundProtocols(appId, localProtocols); err != nil {
+		return fmt.Errorf("error updating inbound protocols: %w", err)
+	}
+
+	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.UPDATE)
+	log.Println("Application updated successfully.")
+	return nil
+}
+
+func patchApplication(appId string, appMap map[string]interface{}) error {
+
+	delete(appMap, "inboundProtocolConfiguration")
+
+	body, err := json.Marshal(appMap)
+	if err != nil {
+		return fmt.Errorf("error marshalling application: %w", err)
+	}
+	resp, err := utils.SendPatchRequest(utils.APPLICATIONS, appId, body)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+
+	return nil
+}
+
+func updateInboundProtocols(appId string, localProtocols []map[string]interface{}) error {
+
+	for _, protocolMap := range localProtocols {
+		self, ok := protocolMap["self"].(string)
+		if !ok {
+			return fmt.Errorf("unexpected format for self URL")
+		}
+		protocolPath := path.Base(self)
+		delete(protocolMap, "self")
+
+		protocolBody, err := json.Marshal(protocolMap)
+		if err != nil {
+			return fmt.Errorf("error marshalling protocol %s: %w", protocolPath, err)
+		}
+		resp, err := utils.SendPutRequest(utils.APPLICATIONS, appId+"/inbound-protocols/"+protocolPath, protocolBody)
+		if err != nil {
+			return fmt.Errorf("error updating protocol %s: %w", protocolPath, err)
+		}
+		resp.Body.Close()
+	}
+	return nil
 }
 
 func removeDeletedDeployedApps(localFiles []os.FileInfo, deployedApps []Application) {
@@ -205,4 +275,27 @@ func removeDeletedDeployedApps(localFiles []os.FileInfo, deployedApps []Applicat
 		}
 		utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.DELETE)
 	}
+}
+
+func removeDeletedInboundProtocols(appId string, deployedRefs []inboundProtocolRef, localProtocols []map[string]interface{}) error {
+
+	localSelfURLs := make(map[string]struct{})
+	for _, p := range localProtocols {
+		self, ok := p["self"].(string)
+		if !ok {
+			return fmt.Errorf("unexpected format for self URL")
+		}
+		localSelfURLs[self] = struct{}{}
+	}
+
+	for _, ref := range deployedRefs {
+		if _, existsLocally := localSelfURLs[ref.Self]; existsLocally {
+			continue
+		}
+		protocolPath := path.Base(ref.Self)
+		if err := utils.SendDeleteRequest(appId+"/inbound-protocols/"+protocolPath, utils.APPLICATIONS); err != nil {
+			return fmt.Errorf("error deleting inbound protocol %s: %w", protocolPath, err)
+		}
+	}
+	return nil
 }

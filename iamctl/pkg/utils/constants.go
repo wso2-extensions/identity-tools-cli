@@ -253,11 +253,11 @@ var appArrayFields = []string{
 	"inboundProtocolConfiguration.oidc.allowedOrigins",
 	"inboundProtocolConfiguration.oidc.scopeValidators",
 	"inboundProtocolConfiguration.oidc.idToken.audience",
-	"inboundProtocolConfiguration.saml.assertionConsumerUrls",
-	"inboundProtocolConfiguration.saml.singleSignOnProfile.bindings",
-	"inboundProtocolConfiguration.saml.singleLogoutProfile.idpInitiatedSingleLogout.returnToUrls",
-	"inboundProtocolConfiguration.saml.singleSignOnProfile.assertion.audiences",
-	"inboundProtocolConfiguration.saml.singleSignOnProfile.assertion.recipients",
+	"inboundProtocolConfiguration.saml.manualConfiguration.assertionConsumerUrls",
+	"inboundProtocolConfiguration.saml.manualConfiguration.singleSignOnProfile.bindings",
+	"inboundProtocolConfiguration.saml.manualConfiguration.singleLogoutProfile.idpInitiatedSingleLogout.returnToUrls",
+	"inboundProtocolConfiguration.saml.manualConfiguration.singleSignOnProfile.assertion.audiences",
+	"inboundProtocolConfiguration.saml.manualConfiguration.singleSignOnProfile.assertion.recipients",
 	"inboundProtocolConfiguration.custom",
 }
 
