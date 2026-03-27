@@ -168,6 +168,10 @@ func importAppWithCRUD(appName string, appMap map[string]interface{}) error {
 
 func updateAppWithCRUD(appId, appName string, appMap map[string]interface{}) error {
 
+	if appName == utils.CONSOLE || appName == utils.MY_ACCOUNT {
+		log.Printf("Application: %s is a system application. Skipping update.\n", appName)
+		return nil
+	}
 	log.Println("Updating application: " + appName)
 
 	localProtocolConfig, ok := appMap["inboundProtocolConfiguration"].(map[string]interface{})
