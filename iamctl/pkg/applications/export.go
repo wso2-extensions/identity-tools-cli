@@ -44,7 +44,7 @@ func ExportAll(exportFilePath string, format string) {
 		os.MkdirAll(exportFilePath, 0700)
 	} else {
 		if utils.TOOL_CONFIGS.AllowDelete {
-			utils.RemoveDeletedLocalResources(exportFilePath, getDeployedAppNames())
+			utils.RemoveDeletedLocalResources(exportFilePath, append(getDeployedAppNames(), utils.RESIDENT_APP))
 		}
 	}
 
@@ -66,6 +66,16 @@ func ExportAll(exportFilePath string, format string) {
 				utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.EXPORT)
 				log.Println("Application exported successfully: ", app.Name)
 			}
+		}
+	}
+
+	if !utils.IsResourceExcluded(utils.RESIDENT_APP, utils.TOOL_CONFIGS.ApplicationConfigs) {
+		if err := exportResidentApp(exportFilePath, format); err != nil {
+			utils.UpdateFailureSummary(utils.APPLICATIONS, utils.RESIDENT_APP)
+			log.Printf("Error while exporting resident application: %s", err)
+		} else {
+			utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.EXPORT)
+			log.Println("Resident application exported successfully.")
 		}
 	}
 }
@@ -144,6 +154,36 @@ func exportAppWithCRUD(appId, appName, outputDirPath, formatString string, exclu
 		return fmt.Errorf("error when writing exported content to file: %w", err)
 	}
 
+	return nil
+}
+
+func exportResidentApp(outputDirPath, formatString string) error {
+
+	log.Println("Exporting Resident application...")
+
+	appData, err := utils.GetResourceData(utils.APPLICATIONS, "resident")
+	if err != nil {
+		return fmt.Errorf("error retrieving application: %w", err)
+	}
+
+	format := utils.FormatFromString(formatString)
+	exportedFileName := utils.GetExportedFilePath(outputDirPath, utils.RESIDENT_APP, format)
+
+	appKeywordMapping := getAppKeywordMapping(utils.RESIDENT_APP)
+	modifiedApp, err := utils.ProcessExportedData(appData, exportedFileName, format, appKeywordMapping, utils.APPLICATIONS)
+	if err != nil {
+		return fmt.Errorf("error while processing exported content: %w", err)
+	}
+
+	modifiedFile, err := utils.Serialize(modifiedApp, format, utils.APPLICATIONS)
+	if err != nil {
+		return fmt.Errorf("error while serializing application: %w", err)
+	}
+
+	err = os.WriteFile(exportedFileName, modifiedFile, 0644)
+	if err != nil {
+		return fmt.Errorf("error when writing exported content to file: %w", err)
+	}
 	return nil
 }
 

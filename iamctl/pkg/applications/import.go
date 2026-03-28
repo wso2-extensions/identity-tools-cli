@@ -76,12 +76,11 @@ func importApp(appId, appName, importFilePath string, exportAPIExists bool) erro
 		return fmt.Errorf("error when reading the file for application: %s", err)
 	}
 
-	// Replace keyword placeholders in the local file according to the keyword mappings added in configs.
 	appKeywordMapping := getAppKeywordMapping(appName)
 	fileDataWithReplacedKeywords := utils.ReplaceKeywords(string(fileBytes), appKeywordMapping)
 	modifiedFileData := utils.RemoveSecretMasks(fileDataWithReplacedKeywords)
 
-	if exportAPIExists {
+	if exportAPIExists && appName != utils.RESIDENT_APP {
 		if appId == "" {
 			return importApplication(appName, importFilePath, modifiedFileData)
 		}
@@ -92,13 +91,16 @@ func importApp(appId, appName, importFilePath string, exportAPIExists bool) erro
 	if err != nil {
 		return fmt.Errorf("unsupported file format for application: %w", err)
 	}
-
 	appMap, err := utils.DeserializeToMap([]byte(modifiedFileData), format, utils.APPLICATIONS)
 	if err != nil {
 		return fmt.Errorf("error deserializing application: %w", err)
 	}
-	delete(appMap, "id")
 
+	if appName == utils.RESIDENT_APP {
+		return updateResidentApp(appMap)
+	}
+
+	delete(appMap, "id")
 	if appId == "" {
 		return importAppWithCRUD(appName, appMap)
 	}
@@ -202,6 +204,35 @@ func updateAppWithCRUD(appId, appName string, appMap map[string]interface{}) err
 
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.UPDATE)
 	log.Println("Application updated successfully.")
+	return nil
+}
+
+func updateResidentApp(appMap map[string]interface{}) error {
+
+	log.Println("Updating Resident application")
+
+	provConfig, ok := appMap["provisioningConfigurations"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unsupported format for provisioningConfigurations")
+	}
+	if inbound, ok := provConfig["inboundProvisioning"].(map[string]interface{}); ok {
+		if _, exists := inbound["proxyMode"]; !exists {
+			inbound["proxyMode"] = false
+		}
+	}
+
+	reqBody, err := json.Marshal(provConfig)
+	if err != nil {
+		return fmt.Errorf("error marshalling provisioning configurations: %w", err)
+	}
+	resp, err := utils.SendPutRequest(utils.APPLICATIONS, "resident", reqBody)
+	if err != nil {
+		return fmt.Errorf("error updating application: %w", err)
+	}
+	resp.Body.Close()
+
+	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.UPDATE)
+	log.Println("Resident application updated successfully.")
 	return nil
 }
 
