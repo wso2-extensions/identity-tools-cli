@@ -34,8 +34,6 @@ func FormatFromExtension(ext string) (Format, error) {
 		return FormatYAML, nil
 	case ".json":
 		return FormatJSON, nil
-	case ".xml":
-		return FormatXML, nil
 	default:
 		return "", fmt.Errorf("unsupported file extension: %s", ext)
 	}
@@ -58,8 +56,6 @@ func FormatFromString(format string) Format {
 	switch strings.ToLower(format) {
 	case "json":
 		return FormatJSON
-	case "xml":
-		return FormatXML
 	default:
 		return FormatYAML
 	}
