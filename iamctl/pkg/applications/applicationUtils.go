@@ -273,7 +273,7 @@ func processInboundProtocolConfigs(appId string, inboundProtocols []inboundProto
 			}
 		}
 
-		protocolConfig["self"] = self
+		protocolConfig["_type"] = protocolPath
 		if key, known := protocolPathToKey[protocolPath]; known {
 			result[key] = protocolConfig
 		} else {
@@ -316,7 +316,7 @@ func processInboundProtocolsForPost(appMap map[string]interface{}) (newSecretCre
 				if !ok {
 					return false, fmt.Errorf("unexpected format for custom inbound protocol")
 				}
-				delete(itemMap, "self")
+				delete(itemMap, "_type")
 			}
 			continue
 		}
@@ -325,7 +325,7 @@ func processInboundProtocolsForPost(appMap map[string]interface{}) (newSecretCre
 		if !ok {
 			return false, fmt.Errorf("unexpected format for inbound protocol: %s", key)
 		}
-		delete(configMap, "self")
+		delete(configMap, "_type")
 
 		if key == "oidc" {
 			secret, _ := configMap["clientSecret"].(string)
@@ -379,12 +379,11 @@ func flattenInboundProtocols(localProtocolConfig map[string]interface{}) ([]map[
 
 func processInboundProtocolForUpdate(appId string, protocolMap map[string]interface{}) (protocolPath string, err error) {
 
-	self, ok := protocolMap["self"].(string)
+	protocolPath, ok := protocolMap["_type"].(string)
 	if !ok {
-		return "", fmt.Errorf("self URL not found")
+		return "", fmt.Errorf("_type not found in inbound protocol")
 	}
-	protocolPath = path.Base(self)
-	delete(protocolMap, "self")
+	delete(protocolMap, "_type")
 
 	if protocolPath == "oidc" || protocolPath == "passive-sts" {
 		if err := injectDeployedReadOnlyFields(appId, protocolPath, protocolMap); err != nil {
@@ -398,6 +397,9 @@ func injectDeployedReadOnlyFields(appId, protocolPath string, localConfig map[st
 
 	body, err := utils.SendGetRequest(utils.APPLICATIONS, appId+"/inbound-protocols/"+protocolPath)
 	if err != nil {
+		if strings.Contains(err.Error(), "Resource not found") {
+			return nil
+		}
 		return fmt.Errorf("error retrieving deployed %s config: %w", protocolPath, err)
 	}
 	var deployedConfig map[string]interface{}
