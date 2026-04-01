@@ -2,7 +2,13 @@
 
 IAM-CTL is a tool that can manage WSO2 Identity Server configurations from the command line. It is written in [GO](https://go.dev/) and uses the management REST APIs of WSO2 Identity Server to manage configurations.
 
-Refer IS Official documentation for further information [Promote configurations between environments](https://is.docs.wso2.com/en/latest/deploy/promote-configurations/)
+For version specific set up instructions, supported resource types and other guidelines refer IS Official documentation.
+
+### Supported versions
+- [5.11](https://is.docs.wso2.com/en/5.11.0/setup/promote-configurations/)
+- [7.0](https://is.docs.wso2.com/en/7.0.0/deploy/promote-configurations/)
+- [7.1](https://is.docs.wso2.com/en/7.1.0/deploy/promote-configurations/)
+- [7.2](https://is.docs.wso2.com/en/7.2.0/deploy/promote-configurations/)
 
 ### Prerequisites
 You need to [setup](https://is.docs.wso2.com/en/latest/get-started/sample-use-cases/set-up/) WSO2 Identity Server.
@@ -32,79 +38,27 @@ You need to [setup](https://is.docs.wso2.com/en/latest/get-started/sample-use-ca
     ```
     iamctl -h
     ```
-   
-### Registering an Application in WSO2 Identity Server
-
-#### For Export and Import in the Root Organization
-1. Start WSO2 Identity Server.
-2. Open the Console application.
-3. Login as the admin user (admin/admin).
-4. [Register a M2M application](https://is.docs.wso2.com/en/latest/guides/applications/register-machine-to-machine-app/).
-5. Grant the following API authorizations under Management APIs.
-
-API                                              | Scopes
------------------------------------------------- | --------------------------------------------------------------------
-Management --> Application Management API        | Create Application, Update Application, Delete Application, View Application, Update authorised business APIs of an Application, Update authorised internal APIs of an Application, View application client secret, Regenerate application client secret
-Management --> Application Authentication Script Management API | Update Application Authentication Script
-Management --> Claim Management API              | Create Claim, Update Claim, Delete Claim, View Claim
-Management --> Identity Provider Management API  | Create Identity Provider, Update Identity Provider, Delete Identity Provider, View Identity Provider
-Management --> Userstore Management API          | Create Userstore, Update Userstore, Delete Userstore, View Userstore
-Management --> OIDC Scope Management API         | Create OIDC Scopes, Update OIDC Scopes, Delete OIDC Scopes, View OIDC Scopes
-
-6. Take note of the client ID and client secret of this application.
-
-#### For Export and Import in a Sub-Organization
-1. WSO2 Identity Server.
-2. Open the Console application.
-3. Login as the admin user (admin/admin) of the root organization.
-4. [Register a Standard-Based Application](https://is.docs.wso2.com/en/latest/guides/applications/register-standard-based-app/) in the root organization.
-5. Share the application with the relevant sub-organization (e.g., `wso2.com`).
-6. Allow following grant types in the newly created Standard-Based Application:
-   * Client Credentials
-   * Organization Switch
-7. Grant the following API authorizations under Organization APIs.
-
-API                                              | Scopes
------------------------------------------------- | --------------------------------------------------------------------
-Organization --> Application Management API        | Create Application, Update Application, Delete Application, View Application, View application client secret, Regenerate application client secret
-Organization --> Application Authentication Script Management API | Update Application Authentication Script
-Organization --> Identity Provider Management API  | Create Identity Provider, Update Identity Provider, Delete Identity Provider, View Identity Provider
-Organization --> Userstore Management API          | Create Userstore, Update Userstore, Delete Userstore, View Userstore
-
-8. Take note of the client ID and client secret of this application from the root organization.
-
 
 ## CLI mode
 
 The CLI mode of the tool can be used to handle bulk configurations in the target environment. This can be used to promote resources across multiple environments, deploy new configurations to target environments, and act as a backup of each environment's configurations.
 
-This mode consists of the `exportAll` and `importAll` commands that can be used to export and import all configurations of the supported resource types from or to a target environment. This can be used to transfer resources across sub organisations. 
-
-The supported resource types to transfer resources between root organizations are: 
-* Applications
-* Identity Providers
-* Claims
-* User Stores
-* OIDC Scopes
-
-The supported resource types to transfer resources between sub organizations are:
-* Applications
-* Identity Providers
-* User Stores
+This mode consists of the `exportAll` and `importAll` commands that can be used to export and import all configurations of the supported resource types from or to a target environment. This can also be used to transfer supported resources across sub organisations from IS 7.0.
 
 ### Running the tool in the CLI mode
 The following explains the basic steps for running the tool in the simplest way. Find more comprehensive details about the commands used in the CLI mode [here](docs/cli-mode.md).
 
 #### Tool initialization
 The tool should be initialized with the server details of the environment it is run against.
-1. Create a new folder and navigate to it from your terminal.
-2. Run the following command to create the configuration files needed to initialize the tool.
+1. Register a tool management application in the Identity Server following instructions specific to your server version.
+2. Create a new folder and navigate to it from your terminal.
+3. Run the following command to create the configuration files needed to initialize the tool.
     ```
     iamctl setupCLI
     ```
-3. A new folder named ```configs``` will be created with an ```env``` folder inside it. The `env` folder contains three configuration files: ```serverConfig.json```, ```toolConfig.json```, and ```keywordConfig.json```
+4. A new folder named ```configs``` will be created with an ```env``` folder inside it. The `env` folder contains three configuration files: ```serverConfig.json```, ```toolConfig.json```, and ```keywordConfig.json```
 > **Note:** If you have multiple environments, get a copy of the ```env``` folder and rename it according to the environments you have. For example, if you have two environments: dev and prod, have two separate config folders as ```dev``` and ```prod```. 
-4. Open the ```serverConfig.json``` file and provide the WSO2 IS details and client ID/secret of the app you created earlier.
+5. Open the ```serverConfig.json``` file and provide the WSO2 IS details and client ID/secret of the app you created earlier.
 
 Example configurations:
 
@@ -116,20 +70,7 @@ Example configurations:
        "CLIENT_ID" : "********",
        "CLIENT_SECRET" : "********",
        "TENANT_DOMAIN" : "carbon.super",
-       "SERVER_VERSION" : "7.2.0"
-    }
-```
-
-*Sub Organization*
-
-```
-    {
-       "SERVER_URL" : "https://localhost:9443",
-       "CLIENT_ID" : "********",
-       "CLIENT_SECRET" : "********",
-       "TENANT_DOMAIN" : "carbon.super",
-       "SERVER_VERSION" : "7.2.0",
-       "ORGANIZATION": "b833d7de-264c-4c4e-8d52-61f9c57e84ca"
+       "SERVER_VERSION" : "5.11"
     }
 ```
 
