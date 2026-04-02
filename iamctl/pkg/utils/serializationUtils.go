@@ -162,6 +162,7 @@ func GetXMLRootTag(resourceType ResourceType) string {
 		EMAIL_TEMPLATES:       XML_ROOT_EMAIL_TEMPLATE,
 		SCRIPT_LIBRARIES:      XML_ROOT_SCRIPT_LIBRARY,
 		GOVERNANCE_CONNECTORS: XML_ROOT_GOVERNANCE_CONNECTOR,
+		USERSTORES:            XML_ROOT_USERSTORE,
 	}
 	return xmlRootTags[resourceType]
 }
@@ -200,6 +201,8 @@ func GetArrayFieldPaths(resourceType ResourceType) []string {
 		return challengeQuestionsArrayFields
 	case GOVERNANCE_CONNECTORS:
 		return governanceConnectorArrayFields
+	case USERSTORES:
+		return userStoreArrayFields
 	default:
 		return []string{}
 	}
