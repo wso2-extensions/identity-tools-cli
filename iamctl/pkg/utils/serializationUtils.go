@@ -171,6 +171,7 @@ func GetXMLRootTag(resourceType ResourceType) string {
 		CLAIMS:                XML_ROOT_CLAIM,
 		IDENTITY_PROVIDERS:    XML_ROOT_IDENTITY_PROVIDER,
 		APPLICATIONS:          XML_ROOT_APPLICATION,
+		CERTIFICATES:          XML_ROOT_CERTIFICATE,
 	}
 	return xmlRootTags[resourceType]
 }

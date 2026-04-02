@@ -320,8 +320,26 @@ func GetResourceData(resourceType ResourceType, resourceId string) (interface{},
 	return data, nil
 }
 
-func SendGetRequest(resourceType ResourceType, resourceId string) ([]byte, error) {
+func WithContentType(ct string) SendOption {
+	return func(c *sendConfig) { c.contentType = ct }
+}
 
+// WithPathSuffix appends a suffix to the request URL. Only used in POST requests
+func WithPathSuffix(suffix string) SendOption {
+	return func(c *sendConfig) { c.pathSuffix = suffix }
+}
+
+func applySendOptions(opts []SendOption) *sendConfig {
+	cfg := &sendConfig{contentType: MEDIA_TYPE_JSON}
+	for _, opt := range opts {
+		opt(cfg)
+	}
+	return cfg
+}
+
+func SendGetRequest(resourceType ResourceType, resourceId string, opts ...SendOption) ([]byte, error) {
+
+	cfg := applySendOptions(opts)
 	reqUrl := buildRequestUrl(GET, resourceType, resourceId)
 	formattedReqUrl := addQueryParams(reqUrl, resourceType, GET)
 	request, err := http.NewRequest("GET", formattedReqUrl, nil)
@@ -330,7 +348,7 @@ func SendGetRequest(resourceType ResourceType, resourceId string) ([]byte, error
 	}
 
 	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
-	request.Header.Set("Accept", MEDIA_TYPE_JSON)
+	request.Header.Set("Accept", cfg.contentType)
 
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -359,22 +377,6 @@ func SendGetRequest(resourceType ResourceType, resourceId string) ([]byte, error
 	}
 
 	return body, nil
-}
-
-func WithContentType(ct string) SendOption {
-	return func(c *sendConfig) { c.contentType = ct }
-}
-
-func WithPathSuffix(suffix string) SendOption {
-	return func(c *sendConfig) { c.pathSuffix = suffix }
-}
-
-func applySendOptions(opts []SendOption) *sendConfig {
-	cfg := &sendConfig{contentType: MEDIA_TYPE_JSON}
-	for _, opt := range opts {
-		opt(cfg)
-	}
-	return cfg
 }
 
 func SendPostRequest(resourceType ResourceType, requestBody []byte, opts ...SendOption) (*http.Response, error) {
@@ -531,6 +533,8 @@ func getResourcePath(resourceType ResourceType) string {
 		return "script-libraries"
 	case GOVERNANCE_CONNECTORS:
 		return "identity-governance"
+	case CERTIFICATES:
+		return "keystores/certs"
 	}
 	return ""
 }
@@ -600,6 +604,10 @@ func addQueryParams(reqURL string, resourceType ResourceType, operation string) 
 	case ROLES:
 		if operation == GET {
 			queryParams.Set("excludedAttributes", "meta,users,groups")
+		}
+	case CERTIFICATES:
+		if operation == GET {
+			queryParams.Set("encode-cert", "true")
 		}
 	}
 
