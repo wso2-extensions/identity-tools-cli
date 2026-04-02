@@ -20,7 +20,8 @@ package userstores
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
+
 	"log"
 	"mime"
 	"os"
@@ -99,7 +100,7 @@ func exportUserStore(userStoreId string, outputDirPath string, format string) er
 	exportedFileName := filepath.Join(outputDirPath, fileName)
 	fileInfo := utils.GetFileInfo(exportedFileName)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("error while reading the response body when exporting userstore: %s. %s", fileName, err)
 	}
@@ -113,7 +114,7 @@ func exportUserStore(userStoreId string, outputDirPath string, format string) er
 		return fmt.Errorf("error while processing the exported content: %s", err)
 	}
 
-	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
+	err = os.WriteFile(exportedFileName, modifiedFile, 0644)
 	if err != nil {
 		return fmt.Errorf("error when writing the exported content to file: %w", err)
 	}

@@ -19,18 +19,20 @@
 package applications
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 	"gopkg.in/yaml.v3"
 )
 
-func ImportAll(inputDirPath string) {
+func ImportAll(inputDirPath string, fileType string) {
 
 	log.Println("Importing applications...")
 	importFilePath := filepath.Join(inputDirPath, utils.APPLICATIONS.String())
@@ -38,13 +40,24 @@ func ImportAll(inputDirPath string) {
 	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
 		return
 	}
+	var entries []os.DirEntry
 	var files []os.FileInfo
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
 		log.Println("No applications to import.")
 	} else {
-		files, err = ioutil.ReadDir(importFilePath)
+		entries, err = os.ReadDir(importFilePath)
 		if err != nil {
 			log.Println("Error importing applications: ", err)
+		}
+
+		files = make([]os.FileInfo, 0, len(entries))
+		for _, entry := range entries {
+			info, err := entry.Info()
+			if err != nil {
+				log.Println("Error getting file info: ", err)
+				continue
+			}
+			files = append(files, info)
 		}
 		if utils.TOOL_CONFIGS.AllowDelete {
 			removeDeletedDeployedApps(files, importFilePath)
@@ -53,11 +66,21 @@ func ImportAll(inputDirPath string) {
 
 	for _, file := range files {
 		appFilePath := filepath.Join(importFilePath, file.Name())
+		typeOfFile := filepath.Ext(file.Name())
+		if typeOfFile != "."+fileType {
+			continue
+		}
 		appName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
 		appExists, isValidFile := validateFile(appFilePath, appName)
 
 		if isValidFile && !utils.IsResourceExcluded(appName, utils.TOOL_CONFIGS.ApplicationConfigs) {
-			importApp(appFilePath, appExists)
+			importErr := importApp(appFilePath, appExists)
+			if importErr != nil {
+				log.Println("Error importing application file: ", appFilePath, importErr)
+			}
+		}
+		if !isValidFile {
+			log.Println("Skipping invalid application file: ", appFilePath)
 		}
 	}
 }
@@ -66,26 +89,44 @@ func validateFile(appFilePath string, appName string) (appExists bool, isValid b
 
 	appExists = false
 
-	fileContent, err := ioutil.ReadFile(appFilePath)
+	fileContent, err := os.ReadFile(appFilePath)
 	if err != nil {
 		log.Println("Error when reading the file for app: ", appName, err)
 		return appExists, false
 	}
+	fileType := filepath.Ext(appFilePath)
 
-	// Validate the YAML format.
 	var appConfig AppConfig
-	err = yaml.Unmarshal(fileContent, &appConfig)
-	if err != nil {
-		log.Println("Invalid file content for app: ", appName, err)
+	switch fileType {
+	case ".yml", ".yaml":
+		// Validate the YAML format.
+		err = yaml.Unmarshal(fileContent, &appConfig)
+		if err != nil {
+			log.Println("Invalid file content for app: ", appName, err)
+			return appExists, false
+		}
+	case ".json":
+		err = json.Unmarshal(fileContent, &appConfig)
+		if err != nil {
+			log.Println("Invalid file content for app: ", appName, err)
+			return appExists, false
+		}
+	case ".xml":
+		err = xml.Unmarshal(fileContent, &appConfig)
+		if err != nil {
+			log.Println("Invalid XML file content for application: ", appName, err)
+			return appExists, false
+		}
+	default:
+		log.Println("Unsupported file type for application: ", appName)
 		return appExists, false
 	}
 
 	existingAppList := getDeployedAppNames()
-	for _, app := range existingAppList {
-		if app == appConfig.ApplicationName {
-			appExists = true
-			break
-		}
+	if slices.Contains(existingAppList, appConfig.ApplicationName) {
+		appExists = true
+	} else {
+		log.Println("Application: " + appConfig.ApplicationName + " does not exist in the server.")
 	}
 	if appConfig.ApplicationName != appName {
 		log.Println("Warning: Application name in the file " + appFilePath + " is not matching with the file name.")
@@ -95,7 +136,7 @@ func validateFile(appFilePath string, appName string) (appExists bool, isValid b
 
 func importApp(importFilePath string, isUpdate bool) error {
 
-	fileBytes, err := ioutil.ReadFile(importFilePath)
+	fileBytes, err := os.ReadFile(importFilePath)
 	if err != nil {
 		return fmt.Errorf("error when reading the file for application: %s", err)
 	}

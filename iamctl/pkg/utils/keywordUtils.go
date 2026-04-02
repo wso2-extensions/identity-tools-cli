@@ -19,9 +19,11 @@
 package utils
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"path/filepath"
+
 	"log"
 	"os"
 	"path/filepath"
@@ -29,9 +31,12 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/clbanning/mxj/v2"
+	"gopkg.in/yaml.v2"
 )
 
-func ReplaceKeywords(fileContent string, keywordMapping map[string]interface{}) string {
+func ReplaceKeywords(fileContent string, keywordMapping map[string]any) string {
 
 	// Loop over the keyword mapping and replace each keyword in the file.
 	for keyword, value := range keywordMapping {
@@ -124,17 +129,17 @@ func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map
 
 	var keys []string
 	switch v := fileData.(type) {
-	case map[interface{}]interface{}:
+	case map[any]any:
 		for k, val := range v {
 			newPath := append(path, fmt.Sprintf("%v", k))
 			keys = append(keys, GetKeywordLocations(val, newPath, keywordMapping, resourceType)...)
 		}
-	case map[string]interface{}:
+	case map[string]any:
 		for k, val := range v {
 			newPath := append(path, fmt.Sprintf("%v", k))
 			keys = append(keys, GetKeywordLocations(val, newPath, keywordMapping, resourceType)...)
 		}
-	case []interface{}:
+	case []any:
 		for _, val := range v {
 			if _, ok := val.(string); ok {
 				if ContainsKeywords(val.(string), keywordMapping) {
@@ -143,8 +148,15 @@ func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map
 				}
 				break
 			} else {
+				parentName := ""
+				if len(path) > 0 {
+					parentName = path[len(path)-1]
+				} else {
+					parentName = resourceType
+				}
+
 				arrayIdentifiers := GetArrayIdentifiers(resourceType)
-				arrayElementPath, err := resolvePathWithIdentifiers(path[len(path)-1], val, arrayIdentifiers)
+				arrayElementPath, err := resolvePathWithIdentifiers(parentName, val, arrayIdentifiers)
 				if err != nil {
 					log.Printf("Error: cannot resolve path for the field %s. %s.\n", strings.Join(path, "."), err)
 					break
@@ -180,12 +192,12 @@ func GetArrayIdentifiers(resourceType ResourceType) map[string]string {
 	}
 }
 
-func resolvePathWithIdentifiers(arrayName string, element interface{}, identifiers map[string]string) (string, error) {
+func resolvePathWithIdentifiers(arrayName string, element any, identifiers map[string]string) (string, error) {
 
-	var elementMap interface{}
-	elementMap, ok := element.(map[interface{}]interface{})
+	var elementMap any
+	elementMap, ok := element.(map[any]any)
 	if !ok {
-		elementMap, ok = element.(map[string]interface{})
+		elementMap, ok = element.(map[string]any)
 		if !ok {
 			log.Printf("Error: cannot convert %T to a map", element)
 		}
@@ -203,7 +215,7 @@ func resolvePathWithIdentifiers(arrayName string, element interface{}, identifie
 	return fmt.Sprintf("[%s=%s]", identifier, identifierValue), nil
 }
 
-func ContainsKeywords(data string, keywordMapping map[string]interface{}) bool {
+func ContainsKeywords(data string, keywordMapping map[string]any) bool {
 
 	for keyword := range keywordMapping {
 		if strings.Contains(data, "{{"+keyword+"}}") {
@@ -213,8 +225,15 @@ func ContainsKeywords(data string, keywordMapping map[string]interface{}) bool {
 	return false
 }
 
-func ModifyFieldsWithKeywords(exportedFileData interface{}, localFileData interface{},
-	keywordLocations []string, keywordMap map[string]interface{}) interface{} {
+func ModifyFieldsWithKeywords(exportedFileData any, localFileData any,
+	keywordLocations []string, keywordMap map[string]any) any {
+
+	if exportedStr, ok := exportedFileData.(string); ok {
+		if localStr, ok := localFileData.(string); ok && ContainsKeywords(localStr, keywordMap) {
+			return ReplaceKeywords(localStr, keywordMap)
+		}
+		return ReplaceKeywords(exportedStr, keywordMap)
+	}
 
 	for _, location := range keywordLocations {
 
@@ -239,7 +258,7 @@ func ModifyFieldsWithKeywords(exportedFileData interface{}, localFileData interf
 	return exportedFileData
 }
 
-func GetValue(data interface{}, key string) string {
+func GetValue(data any, key string) string {
 
 	value := getRawValue(data, key)
 
@@ -264,11 +283,11 @@ func getRawValue(data interface{}, pathString string) interface{} {
 	parts := GetPathKeys(pathString)
 	for _, part := range parts {
 		switch v := data.(type) {
-		case map[interface{}]interface{}:
+		case map[any]any:
 			data = v[part]
-		case map[string]interface{}:
+		case map[string]any:
 			data = v[part]
-		case []interface{}:
+		case []any:
 			index, err := GetArrayIndex(v, part)
 			if err != nil {
 				return nil
@@ -282,7 +301,9 @@ func getRawValue(data interface{}, pathString string) interface{} {
 			return nil
 		}
 	}
-	return data
+	// Convert the final value to a string and return.
+	dataAsString := fmt.Sprintf("%v", data)
+	return dataAsString
 }
 
 func ReplaceValue(data interface{}, pathString string, replacement string) interface{} {
@@ -301,7 +322,7 @@ func ReplaceRawValue(data interface{}, pathString string, replacement interface{
 		}
 	} else {
 		switch v := data.(type) {
-		case map[interface{}]interface{}:
+		case map[any]any:
 			currentKey := path[0]
 			v[currentKey] = ReplaceRawValue(v[currentKey], strings.Join(path[1:], "."), replacement)
 		case map[string]interface{}:
@@ -324,18 +345,18 @@ func ReplaceRawValue(data interface{}, pathString string, replacement interface{
 	return data
 }
 
-func GetArrayIndex(arrayMap []interface{}, elementIdentifier string) (int, error) {
+func GetArrayIndex(arrayMap []any, elementIdentifier string) (int, error) {
 
 	if strings.HasPrefix(elementIdentifier, "[") && strings.HasSuffix(elementIdentifier, "]") {
 		identifier := elementIdentifier[1 : len(elementIdentifier)-1]
 		parts := strings.SplitN(identifier, "=", 2)
 		for k, v := range arrayMap {
 			switch v := v.(type) {
-			case map[interface{}]interface{}:
+			case map[any]any:
 				if GetValue(v, parts[0]) == parts[1] {
 					return k, nil
 				}
-			case map[string]interface{}:
+			case map[string]any:
 				if GetValue(v, parts[0]) == parts[1] {
 					return k, nil
 				}
@@ -400,6 +421,41 @@ func ReplacePlaceholders(configFile []byte) []byte {
 	return []byte(configStr)
 }
 
+func XMLToMap(data []byte) (map[string]any, error) {
+	mxj.SetAttrPrefix("-")
+	m, err := mxj.NewMapXml(data)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func FixXmlStructure(data []byte) []byte {
+	xmlStr := string(data)
+
+	xmlStr = strings.ReplaceAll(xmlStr, " xsi=", " xmlns:xsi=")
+	xmlStr = strings.ReplaceAll(xmlStr, " type=\"oAuthAppDO\"", " xsi:type=\"oAuthAppDO\"")
+	xmlStr = strings.ReplaceAll(xmlStr, " nil=\"true\"", " xsi:nil=\"true\"")
+
+	re := regexp.MustCompile(`(?s)<value>(.*?)</value>`)
+
+	fixedXml := re.ReplaceAllStringFunc(xmlStr, func(match string) string {
+		content := strings.TrimPrefix(match, "<value>")
+		content = strings.TrimSuffix(content, "</value>")
+
+		if strings.ContainsAny(content, "<>&") || strings.Contains(content, "&lt;") || strings.Contains(content, "&amp;") {
+			content = strings.ReplaceAll(content, "&lt;", "<")
+			content = strings.ReplaceAll(content, "&gt;", ">")
+			content = strings.ReplaceAll(content, "&amp;", "&")
+			content = strings.ReplaceAll(content, "&quot;", "\"")
+			content = strings.ReplaceAll(content, "&apos;", "'")
+
+			return "<value><![CDATA[" + content + "]]></value>"
+		}
+		return match
+	})
+
+	return []byte(fixedXml)
 func extendPath(base, segment string) string {
 	if base == "" {
 		return segment

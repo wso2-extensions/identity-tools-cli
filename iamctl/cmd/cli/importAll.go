@@ -40,10 +40,13 @@ var importAllCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		inputDirPath, _ := cmd.Flags().GetString("inputDir")
 		configFile, _ := cmd.Flags().GetString("config")
-
+		format, _ := cmd.Flags().GetString("format")
 		baseDir := utils.LoadConfigs(configFile)
 		if inputDirPath == "" {
 			inputDirPath = baseDir
+		}
+		if format == "yaml" {
+			format = "yml"
 		}
 
 		importFunctions := map[utils.ResourceType]func(string){
@@ -72,6 +75,7 @@ func init() {
 
 	cmd.RootCmd.AddCommand(importAllCmd)
 	importAllCmd.Flags().StringP("inputDir", "i", "", "Path to the input directory")
+	importAllCmd.Flags().StringP("format", "f", "yml", "Format of the imported files")
 	importAllCmd.Flags().StringP("config", "c", "", "Path to the environment specific config folder")
 	importAllCmd.MarkFlagRequired("config")
 }
