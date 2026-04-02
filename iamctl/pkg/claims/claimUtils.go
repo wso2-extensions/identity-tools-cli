@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -214,16 +213,4 @@ func claimChanged(local, deployed map[string]interface{}) bool {
 	localJSON, _ := createClaimReqBody(local)
 	deployedJSON, _ := createClaimReqBody(deployed)
 	return string(localJSON) != string(deployedJSON)
-}
-
-func exportAPIExists() bool {
-
-	res, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_CLAIMS_EXPORT_API)
-	if err != nil {
-		// Use the export API when the server version is not properly configured for backward compatibility
-		log.Println("Warn: Server version is not properly configured. For IS versions below 6.1, configure the server version properly to avoid failures.")
-		return true
-	}
-
-	return res >= 0
 }

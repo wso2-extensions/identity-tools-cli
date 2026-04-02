@@ -36,10 +36,43 @@ type idpList struct {
 	IdpCount          int                `json:"totalResults"`
 	IdentityProviders []identityProvider `json:"identityProviders"`
 }
-
 type idpConfig struct {
-	IdentityProviderName string `yaml:"identityProviderName"`
-	IdentityProviderId   string
+	Id                      string `json:"id" yaml:"id"`
+	Name                    string `json:"name" yaml:"name"`
+	FederatedAuthenticators *struct {
+		DefaultAuthenticatorId string        `json:"defaultAuthenticatorId" yaml:"defaultAuthenticatorId"`
+		Authenticators         []interface{} `json:"authenticators" yaml:"authenticators"`
+	} `json:"federatedAuthenticators" yaml:"federatedAuthenticators"`
+	Provisioning *struct {
+		Jit                interface{} `json:"jit" yaml:"jit"`
+		OutboundConnectors *struct {
+			DefaultConnectorId string        `json:"defaultConnectorId" yaml:"defaultConnectorId"`
+			Connectors         []interface{} `json:"connectors" yaml:"connectors"`
+		} `json:"outboundConnectors" yaml:"outboundConnectors"`
+	} `json:"provisioning" yaml:"provisioning"`
+	Claims      interface{} `json:"claims" yaml:"claims"`
+	Roles       interface{} `json:"roles" yaml:"roles"`
+	Certificate *struct {
+		Certificates []string `json:"certificates" yaml:"certificates"`
+		JwksUri      string   `json:"jwksUri" yaml:"jwksUri"`
+	} `json:"certificate" yaml:"certificate"`
+}
+
+type resourceMeta struct {
+	Properties []struct {
+		Key            string `json:"key"`
+		IsConfidential bool   `json:"isConfidential"`
+	} `json:"properties"`
+}
+
+var idpPatchSkipKeys = map[string]bool{
+	"id":                      true,
+	"name":                    true,
+	"certificate":             true,
+	"federatedAuthenticators": true,
+	"provisioning":            true,
+	"claims":                  true,
+	"roles":                   true,
 }
 
 func getIdpList() ([]identityProvider, error) {
@@ -124,4 +157,336 @@ func getIdpKeywordMapping(idpName string) map[string]interface{} {
 		return utils.ResolveAdvancedKeywordMapping(idpName, utils.KEYWORD_CONFIGS.IdpConfigs)
 	}
 	return utils.KEYWORD_CONFIGS.KeywordMappings
+}
+
+func getIdpId(idpName string, existingIdpList []identityProvider) string {
+
+	for _, idp := range existingIdpList {
+		if idp.Name == idpName {
+			return idp.Id
+		}
+	}
+	return ""
+}
+
+func processFederatedAuthenticators(idpId string, idpStruct idpConfig, idpMap map[string]interface{}, excludeSecrets bool) error {
+
+	fedAuths, ok := idpMap["federatedAuthenticators"].(map[string]interface{})
+	if !ok || idpStruct.FederatedAuthenticators == nil {
+		return fmt.Errorf("invalid format for federated authenticators")
+	}
+
+	auths := []interface{}{}
+	for _, auth := range idpStruct.FederatedAuthenticators.Authenticators {
+		authMap, ok := auth.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for federated authenticator")
+		}
+		authId, ok := authMap["authenticatorId"].(string)
+		if !ok {
+			return fmt.Errorf("id not found for federated authenticator")
+		}
+		isEnabled, ok := authMap["isEnabled"].(bool)
+		if !ok {
+			return fmt.Errorf("isEnabled flag not found for federated authenticator: %s", authId)
+		}
+		if !isEnabled {
+			continue
+		}
+
+		fullAuth, err := utils.GetResourceData(utils.IDENTITY_PROVIDERS, idpId+"/federated-authenticators/"+authId)
+		if err != nil {
+			return fmt.Errorf("error while retrieving federated authenticator %s: %w", authId, err)
+		}
+		if excludeSecrets {
+			fullAuthMap, ok := fullAuth.(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("unexpected format for retrieved federated authenticator: %s", authId)
+			}
+			if err := maskSecretProperties(fullAuthMap, "meta/federated-authenticators/"+authId); err != nil {
+				return fmt.Errorf("error masking secrets for authenticator %s: %v", authId, err)
+			}
+		}
+
+		auths = append(auths, fullAuth)
+	}
+	fedAuths["authenticators"] = auths
+
+	if idpStruct.FederatedAuthenticators.DefaultAuthenticatorId == "" {
+		fedAuths["defaultAuthenticatorId"] = ""
+	}
+	return nil
+}
+
+func processOutboundConnectors(idpId string, idpStruct idpConfig, idpMap map[string]interface{}, excludeSecrets bool) error {
+
+	provisioning, ok := idpMap["provisioning"].(map[string]interface{})
+	if !ok || idpStruct.Provisioning == nil || idpStruct.Provisioning.OutboundConnectors == nil {
+		return fmt.Errorf("invalid format for provisioning")
+	}
+	outbound, ok := provisioning["outboundConnectors"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("invalid format for outbound connectors")
+	}
+
+	connectors := []interface{}{}
+	for _, conn := range idpStruct.Provisioning.OutboundConnectors.Connectors {
+		connMap, ok := conn.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for outbound connector")
+		}
+		connId, ok := connMap["connectorId"].(string)
+		if !ok {
+			return fmt.Errorf("id not found for outbound connector")
+		}
+		isEnabled, ok := connMap["isEnabled"].(bool)
+		if !ok {
+			return fmt.Errorf("isEnabled flag not found for outbound connector: %s", connId)
+		}
+		if !isEnabled {
+			continue
+		}
+
+		fullConn, err := utils.GetResourceData(utils.IDENTITY_PROVIDERS, idpId+"/provisioning/outbound-connectors/"+connId)
+		if err != nil {
+			return fmt.Errorf("error while retrieving outbound connector %s: %w", connId, err)
+		}
+		if excludeSecrets {
+			fullConnMap, ok := fullConn.(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("unexpected format for retrieved outbound connector: %s", connId)
+			}
+			if err := maskSecretProperties(fullConnMap, "meta/outbound-provisioning-connectors/"+connId); err != nil {
+				return fmt.Errorf("error masking secrets for connector %s: %v", connId, err)
+			}
+		}
+
+		connectors = append(connectors, fullConn)
+	}
+	outbound["connectors"] = connectors
+
+	if idpStruct.Provisioning.OutboundConnectors.DefaultConnectorId == "" {
+		outbound["defaultConnectorId"] = ""
+	}
+	return nil
+}
+
+func processClaims(idpMap map[string]interface{}) error {
+
+	claims, ok := idpMap["claims"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("invalid format for claims")
+	}
+
+	for _, claimKey := range []string{"userIdClaim", "roleClaim"} {
+		claim, ok := claims[claimKey].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("invalid format for claim: %s", claimKey)
+		}
+		if len(claim) == 0 {
+			claims[claimKey] = map[string]interface{}{"uri": ""}
+		}
+	}
+	return nil
+}
+
+func maskSecretProperties(resourceMap map[string]interface{}, metaPath string) error {
+
+	body, err := utils.SendGetRequest(utils.IDENTITY_PROVIDERS, metaPath)
+	if err != nil {
+		return fmt.Errorf("error fetching metadata from %s: %w", metaPath, err)
+	}
+	var meta resourceMeta
+	if err := json.Unmarshal(body, &meta); err != nil {
+		return fmt.Errorf("error parsing metadata from %s: %w", metaPath, err)
+	}
+
+	confidentialKeys := map[string]bool{}
+	for _, prop := range meta.Properties {
+		if prop.IsConfidential {
+			confidentialKeys[prop.Key] = true
+		}
+	}
+	properties, ok := resourceMap["properties"].([]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for properties")
+	}
+
+	for _, p := range properties {
+		propMap, ok := p.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for property")
+		}
+		key, ok := propMap["key"].(string)
+		if !ok {
+			return fmt.Errorf("unexpected format for property key")
+		}
+		if confidentialKeys[key] {
+			propMap["value"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+		}
+	}
+	return nil
+}
+
+func preprocessIdpKeys(data interface{}) (interface{}, error) {
+
+	if utils.ExportAPIExists(utils.IDENTITY_PROVIDERS) {
+		return data, nil
+	}
+
+	data = utils.ConvertToStringKeyMap(data)
+	d, ok := data.(map[string]interface{})
+	if !ok {
+		return data, fmt.Errorf("invalid format for IDP data")
+	}
+
+	if claims, ok := d["claims"].(map[string]interface{}); ok {
+		if v, exists := claims["mappings"]; exists {
+			claims["claimMappings"] = v
+			delete(claims, "mappings")
+		}
+	}
+	if roles, ok := d["roles"].(map[string]interface{}); ok {
+		if v, exists := roles["mappings"]; exists {
+			roles["roleMappings"] = v
+			delete(roles, "mappings")
+		}
+	}
+
+	return data, nil
+}
+
+func postprocessIdpKeys(data interface{}) (interface{}, error) {
+
+	d, ok := data.(map[string]interface{})
+	if !ok {
+		return data, fmt.Errorf("invalid format for IDP data")
+	}
+
+	if claims, ok := d["claims"].(map[string]interface{}); ok {
+		if v, exists := claims["claimMappings"]; exists {
+			claims["mappings"] = v
+			delete(claims, "claimMappings")
+		}
+	}
+	if roles, ok := d["roles"].(map[string]interface{}); ok {
+		if v, exists := roles["roleMappings"]; exists {
+			roles["mappings"] = v
+			delete(roles, "roleMappings")
+		}
+	}
+
+	return data, nil
+}
+
+func createPostRequestBody(idpMap map[string]interface{}) ([]byte, error) {
+
+	delete(idpMap, "id")
+	delete(idpMap, "isEnabled")
+	body, err := json.Marshal(idpMap)
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling identity provider: %w", err)
+	}
+	return body, nil
+}
+
+func buildIdpPatchOps(idpMap map[string]interface{}) []map[string]interface{} {
+
+	patchOps := []map[string]interface{}{}
+	for key, value := range idpMap {
+		if idpPatchSkipKeys[key] {
+			continue
+		}
+		patchOps = append(patchOps, map[string]interface{}{
+			"operation": "REPLACE",
+			"path":      "/" + key,
+			"value":     value,
+		})
+	}
+	return patchOps
+}
+
+func buildCertificatePatchOps(idpId string, localIdpStruct idpConfig) ([]map[string]interface{}, error) {
+
+	body, err := utils.SendGetRequest(utils.IDENTITY_PROVIDERS, idpId)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching deployed identity provider: %w", err)
+	}
+	var deployedIdp idpConfig
+	if err := json.Unmarshal(body, &deployedIdp); err != nil {
+		return nil, fmt.Errorf("error parsing deployed identity provider: %w", err)
+	}
+
+	deployedCert := deployedIdp.Certificate
+	localCert := localIdpStruct.Certificate
+
+	if deployedCert == nil && localCert == nil {
+		return nil, nil
+	}
+
+	deployedHasJwks := deployedCert != nil && deployedCert.JwksUri != ""
+	deployedHasCerts := deployedCert != nil && len(deployedCert.Certificates) > 0
+	localHasJwks := localCert != nil && localCert.JwksUri != ""
+	localHasCerts := localCert != nil && len(localCert.Certificates) > 0
+
+	var patchOps []map[string]interface{}
+
+	// Remove first, then add (order matters for mutually exclusive fields)
+	if deployedHasJwks && !localHasJwks {
+		patchOps = append(patchOps, map[string]interface{}{
+			"operation": "REMOVE",
+			"path":      "/certificate/jwksUri",
+		})
+	}
+	if deployedHasCerts && !localHasCerts {
+		patchOps = append(patchOps, map[string]interface{}{
+			"operation": "REMOVE",
+			"path":      "/certificate/certificates/0",
+		})
+	}
+
+	if localHasJwks {
+		op := "ADD"
+		if deployedHasJwks {
+			op = "REPLACE"
+		}
+		patchOps = append(patchOps, map[string]interface{}{
+			"operation": op,
+			"path":      "/certificate/jwksUri",
+			"value":     localCert.JwksUri,
+		})
+	}
+	if localHasCerts {
+		op := "ADD"
+		if deployedHasCerts {
+			op = "REPLACE"
+		}
+		patchOps = append(patchOps, map[string]interface{}{
+			"operation": op,
+			"path":      "/certificate/certificates/0",
+			"value":     localCert.Certificates[0],
+		})
+	}
+
+	return patchOps, nil
+}
+
+func patchIdp(idpId string, patchOps []map[string]interface{}) error {
+
+	body, err := json.Marshal(patchOps)
+	if err != nil {
+		return fmt.Errorf("error marshalling patch operations for identity provider: %w", err)
+	}
+
+	resp, err := utils.SendPatchRequest(utils.IDENTITY_PROVIDERS, idpId, body)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
+}
+
+func init() {
+
+	utils.DataPreprocessFuncs[utils.IDENTITY_PROVIDERS] = preprocessIdpKeys
 }

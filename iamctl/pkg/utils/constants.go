@@ -126,7 +126,7 @@ var applicationArrayIdentifiers = map[string]string{
 	"applicationRoleMappingConfig":        "idPName",
 }
 
-var idpArrayIdentifiers = map[string]string{
+var idpExportAPIArrayIdentifiers = map[string]string{
 
 	"claimMappings":                 "localClaim.claimUri",
 	"idpClaims":                     "claimId",
@@ -137,6 +137,16 @@ var idpArrayIdentifiers = map[string]string{
 	"provisioningConnectorConfigs":  "name",
 	"federatedAuthenticatorConfigs": "name",
 	"provisioningProperties":        "name",
+}
+
+var idpGetAPIArrayIdentifiers = map[string]string{
+
+	"authenticators":     "name",
+	"connectors":         "name",
+	"properties":         "key",
+	"claimMappings":      "localClaim.uri",
+	"roleMappings":       "localRole",
+	"provisioningClaims": "claim.uri",
 }
 
 var userStoreArrayIdentifiers = map[string]string{
@@ -199,6 +209,17 @@ var claimArrayFields = []string{
 	"claims",
 }
 
+var idpArrayFields = []string{
+	"federatedAuthenticators.authenticators",
+	"provisioning.outboundConnectors.connectors",
+	"federatedAuthenticators.authenticators.properties",
+	"provisioning.outboundConnectors.connectors.properties",
+	"claims.mappings",
+	"roles.mappings",
+	"claims.provisioningClaims",
+	"certificate.certificates",
+}
+
 // XML root element tags for each resource type
 const (
 	XML_ROOT_OIDC_SCOPE           = "Scope"
@@ -209,4 +230,5 @@ const (
 	XML_ROOT_GOVERNANCE_CONNECTOR = "GovernanceConnector"
 	XML_ROOT_USERSTORE            = "UserStore"
 	XML_ROOT_CLAIM                = "DialectConfiguration"
+	XML_ROOT_IDENTITY_PROVIDER    = "IdentityProvider"
 )

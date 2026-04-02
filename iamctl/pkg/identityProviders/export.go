@@ -19,6 +19,7 @@
 package identityproviders
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -33,10 +34,8 @@ func ExportAll(exportFilePath string, format string) {
 
 	// Export all identity providers to the IdentityProviders folder.
 	log.Println("Exporting identity providers...")
-	if !utils.IsEntitySupportedInVersion(utils.IDENTITY_PROVIDERS) {
-		return
-	}
 	exportFilePath = filepath.Join(exportFilePath, utils.IDENTITY_PROVIDERS.String())
+	exportAPIExists := utils.ExportAPIExists(utils.IDENTITY_PROVIDERS)
 
 	if utils.IsResourceTypeExcluded(utils.IDENTITY_PROVIDERS) {
 		return
@@ -45,7 +44,10 @@ func ExportAll(exportFilePath string, format string) {
 		os.MkdirAll(exportFilePath, 0700)
 	} else {
 		if utils.TOOL_CONFIGS.AllowDelete {
-			deployedIdpNames := append(getDeployedIdpNames(), utils.RESIDENT_IDP_NAME)
+			deployedIdpNames := getDeployedIdpNames()
+			if exportAPIExists {
+				deployedIdpNames = append(deployedIdpNames, utils.RESIDENT_IDP_NAME)
+			}
 			utils.RemoveDeletedLocalResources(exportFilePath, deployedIdpNames)
 		}
 	}
@@ -59,7 +61,12 @@ func ExportAll(exportFilePath string, format string) {
 			if !utils.IsResourceExcluded(idp.Name, utils.TOOL_CONFIGS.IdpConfigs) {
 				log.Println("Exporting identity provider: ", idp.Name)
 
-				err := exportIdp(idp.Id, exportFilePath, format, excludeSecerts)
+				var err error
+				if exportAPIExists {
+					err = exportIdp(idp.Id, exportFilePath, format, excludeSecerts)
+				} else {
+					err = exportIdpWithCRUD(idp.Id, idp.Name, exportFilePath, format, excludeSecerts)
+				}
 				if err != nil {
 					utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, idp.Name)
 					log.Printf("Error while exporting identity providers: %s. %s", idp.Name, err)
@@ -70,7 +77,7 @@ func ExportAll(exportFilePath string, format string) {
 			}
 		}
 	}
-	if !utils.IsResourceExcluded(utils.RESIDENT_IDP_NAME, utils.TOOL_CONFIGS.IdpConfigs) {
+	if !utils.IsResourceExcluded(utils.RESIDENT_IDP_NAME, utils.TOOL_CONFIGS.IdpConfigs) && exportAPIExists {
 		log.Println("Exporting Resident identity provider")
 		err := exportIdp(utils.RESIDENT_IDP_NAME, exportFilePath, format, excludeSecerts)
 		if err != nil {
@@ -95,11 +102,11 @@ func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets
 	}
 
 	resp, err := utils.SendExportRequest(idpId, fileType, utils.IDENTITY_PROVIDERS, excludeSecrets)
-	defer resp.Body.Close()
-
 	if err != nil {
 		return fmt.Errorf("error while exporting the identity provider: %s", err)
 	}
+	defer resp.Body.Close()
+
 	var attachmentDetail = resp.Header.Get("Content-Disposition")
 	_, params, err := mime.ParseMediaType(attachmentDetail)
 	if err != nil {
@@ -126,4 +133,70 @@ func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets
 		return fmt.Errorf("error when writing the exported content to file: %w", err)
 	}
 	return nil
+}
+
+func exportIdpWithCRUD(idpId, idpName, outputDirPath, formatString string, excludeSecrets bool) error {
+
+	idpMap, err := getIdp(idpId, excludeSecrets)
+	if err != nil {
+		return fmt.Errorf("error while getting IDP: %w", err)
+	}
+
+	format := utils.FormatFromString(formatString)
+	exportedFileName := utils.GetExportedFilePath(outputDirPath, idpName, format)
+
+	idpKeywordMapping := getIdpKeywordMapping(idpName)
+	preproccessedIdp, err := preprocessIdpKeys(idpMap)
+	if err != nil {
+		return fmt.Errorf("error while preprocessing IDP keys: %w", err)
+	}
+	modifiedIdp, err := utils.ProcessExportedData(preproccessedIdp, exportedFileName, format, idpKeywordMapping, utils.IDENTITY_PROVIDERS)
+	if err != nil {
+		return fmt.Errorf("error while processing exported content: %w", err)
+	}
+	postprocessedIdp, err := postprocessIdpKeys(modifiedIdp)
+	if err != nil {
+		return fmt.Errorf("error while postprocessing IDP keys: %w", err)
+	}
+
+	modifiedFile, err := utils.Serialize(postprocessedIdp, format, utils.IDENTITY_PROVIDERS)
+	if err != nil {
+		return fmt.Errorf("error while serializing IDP: %w", err)
+	}
+
+	err = os.WriteFile(exportedFileName, modifiedFile, 0644)
+	if err != nil {
+		return fmt.Errorf("error when writing exported content to file: %w", err)
+	}
+
+	return nil
+}
+
+func getIdp(idpId string, excludeSecrets bool) (map[string]interface{}, error) {
+
+	body, err := utils.SendGetRequest(utils.IDENTITY_PROVIDERS, idpId)
+	if err != nil {
+		return nil, fmt.Errorf("error while retrieving IDP: %w", err)
+	}
+
+	var idpStruct idpConfig
+	if err := json.Unmarshal(body, &idpStruct); err != nil {
+		return nil, fmt.Errorf("error unmarshalling IDP response: %w", err)
+	}
+	var idpMap map[string]interface{}
+	if err := json.Unmarshal(body, &idpMap); err != nil {
+		return nil, fmt.Errorf("error unmarshalling IDP response to map: %w", err)
+	}
+
+	if err := processFederatedAuthenticators(idpId, idpStruct, idpMap, excludeSecrets); err != nil {
+		return nil, fmt.Errorf("error while processing federated authenticators of IDP: %w", err)
+	}
+	if err := processOutboundConnectors(idpId, idpStruct, idpMap, excludeSecrets); err != nil {
+		return nil, fmt.Errorf("error while processing outbound connectors of IDP: %w", err)
+	}
+	if err := processClaims(idpMap); err != nil {
+		return nil, fmt.Errorf("error while processing claims of IDP: %w", err)
+	}
+
+	return idpMap, nil
 }

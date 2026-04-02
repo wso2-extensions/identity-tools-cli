@@ -47,7 +47,7 @@ func ExportAll(exportFilePath string, format string) {
 		}
 	}
 
-	exportAPIExists := exportAPIexists()
+	exportAPIExists := utils.ExportAPIExists(utils.USERSTORES)
 	userstores, err := getUserStoreList()
 	if err != nil {
 		log.Println("Error: when exporting user stores.", err)
