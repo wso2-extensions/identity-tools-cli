@@ -75,7 +75,7 @@ func getConnectorListForCategory(categoryId string) ([]connector, error) {
 	return connectors, nil
 }
 
-func IsCategoryExists(catName string, categories []connectorCategory) *connectorCategory {
+func isCategoryExists(catName string, categories []connectorCategory) *connectorCategory {
 
 	for i := range categories {
 		if categories[i].Name == catName {

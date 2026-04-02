@@ -71,7 +71,7 @@ func ImportAll(inputDirPath string) {
 
 func importCategory(localCategoryPath, catName string, deployedCategories []connectorCategory) error {
 
-	catInfo := IsCategoryExists(catName, deployedCategories)
+	catInfo := isCategoryExists(catName, deployedCategories)
 	if catInfo == nil {
 		log.Printf("Governance connector category %s not found on server, skipping.", catName)
 		return nil
