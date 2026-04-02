@@ -142,6 +142,10 @@ func updateApplication(appName, importFilePath, modifiedFileData string) error {
 
 func importAppWithCRUD(appName string, appMap map[string]interface{}) error {
 
+	if appName == utils.CONSOLE || appName == utils.MY_ACCOUNT || appName == utils.CARBON_SP {
+		log.Printf("Application: %s is a system application. Skipping import.\n", appName)
+		return nil
+	}
 	log.Println("Creating new application: " + appName)
 
 	newSecretCreated, err := processInboundProtocolsForPost(appMap)
@@ -312,17 +316,17 @@ func removeDeletedDeployedApps(localFiles []os.FileInfo, deployedApps []Applicat
 
 func removeDeletedInboundProtocols(appId string, deployedRefs []inboundProtocolRef, localProtocols []map[string]interface{}) error {
 
-	localSelfURLs := make(map[string]struct{})
+	localTypes := make(map[string]struct{})
 	for _, p := range localProtocols {
-		self, ok := p["self"].(string)
+		t, ok := p["_type"].(string)
 		if !ok {
-			return fmt.Errorf("unexpected format for self URL")
+			return fmt.Errorf("unexpected format for _type in inbound protocol")
 		}
-		localSelfURLs[self] = struct{}{}
+		localTypes[t] = struct{}{}
 	}
 
 	for _, ref := range deployedRefs {
-		if _, existsLocally := localSelfURLs[ref.Self]; existsLocally {
+		if _, existsLocally := localTypes[path.Base(ref.Self)]; existsLocally {
 			continue
 		}
 		protocolPath := path.Base(ref.Self)
