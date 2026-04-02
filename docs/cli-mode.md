@@ -8,13 +8,6 @@ Usages:
 * Deploy new resources from resource configuration files to a WSO2 IS.
 * Have a backup of resources in a local directory.
 
-Currently, the supported resource types are:
-* Applications
-* Identity Providers
-* Claims
-* User Stores
-* OIDC Scopes
-
 ## Run the tool in CLI mode
 To run the tool in CLI mode, follow the steps given below.
 
@@ -78,6 +71,7 @@ Server configurations are the configurations needed for connecting to the target
 * Client ID of a management application in the target IS
 * Client Secret of a management application in the target IS
 * Tenant Domain (optional)
+* Version of the target identity server
 
 These configurations differ from each environment and therefore should be maintained separately.  
 #### Load server configurations from a file
@@ -90,12 +84,10 @@ Example configurations:
    "CLIENT_ID" : "********",
    "CLIENT_SECRET" : "********",
    "TENANT_DOMAIN" : "carbon.super",
-   "SERVER_VERSION" : "7.2.0"
+   "SERVER_VERSION" : "5.11"
 }
 ```
 > **Note:** The CLI tool uses management rest apis of the IS to export and import resources. In order to perform these API requests, the client ID and client secret of a management application is required.
-> 1. [Create an application](https://is.docs.wso2.com/en/6.1.0/guides/applications/register-sp) with **Management Application** enabled in the target IS.
-> 2. Update Oauth inbound authentication configuration with a dummy callback URL and use the client ID and client secret for the above configurations.
 
 > **Note:** Provide the required tenant domain from which the resources should be exported or imported. If the tenant domain is not provided, the tool uses the super tenant domain (carbon.super) by default.
 
@@ -133,7 +125,7 @@ export CLIENT_SECRET="********"
 export TENANT_DOMAIN="carbon.super"
 ```
 ```
-export SERVER_VERSION="7.2.0"
+export SERVER_VERSION="5.11"
 ```
 ```
 export TOOL_CONFIG_PATH="<path to the configs folder>/dev/toolConfig.json"
@@ -153,7 +145,7 @@ You can also explicitly specify the use of environment variables for certain con
   "CLIENT_SECRET": "${DEV_CLIENT_SECRET}",
   "SERVER_URL": "https://localhost:9443",
   "TENANT_DOMAIN": "carbon.super",
-  "SERVER_VERSION" : "7.2.0"
+  "SERVER_VERSION" : "5.11"
 }
 ```
 The tool will search for the keyword with the name given inside the placeholder in the environment and use its value instead.
