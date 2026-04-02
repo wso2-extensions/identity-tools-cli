@@ -22,9 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
-	"os"
-	"path/filepath"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -156,30 +153,3 @@ func getEmailTemplateKeywordMapping(typeName string) map[string]interface{} {
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
 
-func removeDeletedLocalTypeDirectories(parentDir string, deployedTypeNames []string) {
-
-	localEntries, err := os.ReadDir(parentDir)
-	if err != nil {
-		log.Println("Error loading directory:", err)
-		return
-	}
-
-	deployedNames := make(map[string]struct{})
-	for _, name := range deployedTypeNames {
-		deployedNames[name] = struct{}{}
-	}
-
-	for _, entry := range localEntries {
-		if !entry.IsDir() {
-			continue
-		}
-		if _, exists := deployedNames[entry.Name()]; !exists {
-			typeDir := filepath.Join(parentDir, entry.Name())
-			if err := os.RemoveAll(typeDir); err != nil {
-				log.Printf("Error when removing the directory %s: %s", entry.Name(), err)
-			} else {
-				log.Println("Removed the directory:", entry.Name())
-			}
-		}
-	}
-}

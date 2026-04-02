@@ -114,6 +114,34 @@ func AreSecretsExcluded(resourceConfigs map[string]interface{}) bool {
 	return TOOL_CONFIGS.ExcludeSecrets
 }
 
+func RemoveDeletedLocalDirectories(parentDir string, deployedDirNames []string) {
+
+	deployedNames := make(map[string]struct{})
+	for _, name := range deployedDirNames {
+		deployedNames[name] = struct{}{}
+	}
+
+	localEntries, err := os.ReadDir(parentDir)
+	if err != nil {
+		log.Println("Error loading directory:", err)
+		return
+	}
+
+	for _, entry := range localEntries {
+		if !entry.IsDir() {
+			continue
+		}
+		if _, exists := deployedNames[entry.Name()]; !exists {
+			dirPath := filepath.Join(parentDir, entry.Name())
+			if err := os.RemoveAll(dirPath); err != nil {
+				log.Printf("Error when removing the directory %s: %s", entry.Name(), err)
+			} else {
+				log.Println("Removed the directory:", entry.Name())
+			}
+		}
+	}
+}
+
 func RemoveDeletedLocalResources(filePath string, deployedResourceNames []string) {
 
 	// Remove local files of resources that do not exist in the remote during export.
