@@ -170,6 +170,7 @@ func GetXMLRootTag(resourceType ResourceType) string {
 		USERSTORES:            XML_ROOT_USERSTORE,
 		CLAIMS:                XML_ROOT_CLAIM,
 		IDENTITY_PROVIDERS:    XML_ROOT_IDENTITY_PROVIDER,
+		APPLICATIONS:          XML_ROOT_APPLICATION,
 	}
 	return xmlRootTags[resourceType]
 }
@@ -214,6 +215,8 @@ func GetArrayFieldPaths(resourceType ResourceType) []string {
 		return claimArrayFields
 	case IDENTITY_PROVIDERS:
 		return idpArrayFields
+	case APPLICATIONS:
+		return appArrayFields
 	default:
 		return []string{}
 	}

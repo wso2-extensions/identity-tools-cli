@@ -26,9 +26,9 @@ package utils
  */
 var ResourceOrder = []ResourceType{
 	CLAIMS,
-	IDENTITY_PROVIDERS,
 	USERSTORES,
-	APPLICATIONS,
+	IDENTITY_PROVIDERS, // Dependency: Claims, Userstores
+	APPLICATIONS,       // Dependency: Claims, Userstores, Identity Providers
 	OIDC_SCOPES,
 	ROLES, // Dependency: Applications
 	CHALLENGE_QUESTIONS,

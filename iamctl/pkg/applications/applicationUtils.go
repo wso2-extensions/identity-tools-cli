@@ -24,7 +24,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
+	"path"
 	"regexp"
 	"strings"
 	"text/tabwriter"
@@ -33,9 +33,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type inboundProtocolRef struct {
+	Self string `json:"self"`
+}
+
 type Application struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
+	Id               string               `json:"id"`
+	Name             string               `json:"name"`
+	InboundProtocols []inboundProtocolRef `json:"inboundProtocols"`
 }
 
 type AppList struct {
@@ -43,8 +48,16 @@ type AppList struct {
 	Applications []Application `json:"applications"`
 }
 
-type AppConfig struct {
-	ApplicationName string `yaml:"applicationName"`
+var protocolPathToKey = map[string]string{
+	"saml":        "saml",
+	"oidc":        "oidc",
+	"passive-sts": "passiveSts",
+	"ws-trust":    "wsTrust",
+}
+
+var unsupportedInboundProtocols = map[string]struct{}{
+	"kerberos": {},
+	"openid":   {},
 }
 
 type AuthConfig struct {
@@ -144,6 +157,16 @@ func getAppKeywordMapping(appName string) map[string]interface{} {
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
 
+func getAppId(appName string, appList []Application) string {
+
+	for _, app := range appList {
+		if app.Name == appName {
+			return app.Id
+		}
+	}
+	return ""
+}
+
 func isOauthApp(fileData string) (bool, error) {
 
 	config, err := unmarshalAuthConfig([]byte(fileData))
@@ -178,25 +201,24 @@ func maskOAuthConsumerSecret(fileContent []byte) []byte {
 	return []byte(maskedContent)
 }
 
-func isToolMgtApp(file os.FileInfo, importFilePath string) (bool, error) {
+func isToolMgtApp(appId string) (bool, error) {
 
-	appFilePath := filepath.Join(importFilePath, file.Name())
-	fileData, err := ioutil.ReadFile(appFilePath)
+	body, err := utils.SendGetRequest(utils.APPLICATIONS, appId+"/inbound-protocols/oidc")
 	if err != nil {
-		return false, fmt.Errorf("failed to read file: %s", err.Error())
-	}
-
-	config, err := unmarshalAuthConfig(fileData)
-	if err != nil {
-		return false, fmt.Errorf(err.Error())
-	}
-
-	for _, requestConfig := range config.InboundAuthenticationConfig.InboundAuthenticationRequestConfigs {
-		if requestConfig.InboundAuthKey == utils.SERVER_CONFIGS.ClientId {
-			appName := strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))
-			log.Printf("Info: Tool Management App: %s is excluded from deletion.\n", appName)
-			return true, nil
+		// 404 means no OIDC config — not the tool management app
+		if strings.Contains(err.Error(), "Resource not found") {
+			return false, nil
 		}
+		return false, err
+	}
+	var oidcConfig map[string]interface{}
+	if err := json.Unmarshal(body, &oidcConfig); err != nil {
+		return false, fmt.Errorf("error unmarshalling OIDC config: %w", err)
+	}
+
+	clientId, _ := oidcConfig["clientId"].(string)
+	if clientId == utils.SERVER_CONFIGS.ClientId {
+		return true, nil
 	}
 	return false, nil
 }
@@ -216,4 +238,193 @@ func isOauthSecretGiven(modifiedFileData string) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func processInboundProtocolConfigs(appId string, inboundProtocols []inboundProtocolRef, appMap map[string]interface{}, excludeSecrets bool) error {
+
+	result := make(map[string]interface{})
+	var customProtocols []interface{}
+	var skippedProtocols []string
+
+	for _, protocol := range inboundProtocols {
+		self := protocol.Self
+		protocolPath := path.Base(self)
+
+		if _, skip := unsupportedInboundProtocols[protocolPath]; skip {
+			skippedProtocols = append(skippedProtocols, protocolPath)
+			continue
+		}
+
+		body, err := utils.SendGetRequest(utils.APPLICATIONS, appId+"/inbound-protocols/"+protocolPath)
+		if err != nil {
+			return fmt.Errorf("error retrieving inbound protocol %s: %w", protocolPath, err)
+		}
+		var protocolConfig map[string]interface{}
+		if err := json.Unmarshal(body, &protocolConfig); err != nil {
+			return fmt.Errorf("error unmarshalling inbound protocol %s: %w", protocolPath, err)
+		}
+
+		if protocolPath == "oidc" && excludeSecrets {
+			maskOIDCClientSecret(protocolConfig)
+		}
+		if protocolPath == "saml" {
+			protocolConfig = map[string]interface{}{
+				"manualConfiguration": protocolConfig,
+			}
+		}
+
+		protocolConfig["self"] = self
+		if key, known := protocolPathToKey[protocolPath]; known {
+			result[key] = protocolConfig
+		} else {
+			customProtocols = append(customProtocols, protocolConfig)
+		}
+	}
+
+	if len(customProtocols) > 0 {
+		result["custom"] = customProtocols
+	}
+	if len(skippedProtocols) > 0 {
+		log.Printf("Warn: Skipped unsupported inbound protocols: %v", skippedProtocols)
+	}
+
+	delete(appMap, "inboundProtocols")
+	appMap["inboundProtocolConfiguration"] = result
+	return nil
+}
+
+func maskOIDCClientSecret(oidcConfig map[string]interface{}) {
+
+	oidcConfig["clientSecret"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+}
+
+func processInboundProtocolsForPost(appMap map[string]interface{}) (newSecretCreated bool, err error) {
+
+	inboundConfig, ok := appMap["inboundProtocolConfiguration"].(map[string]interface{})
+	if !ok {
+		return false, fmt.Errorf("unexpected format for inboundProtocolConfiguration")
+	}
+
+	for key, config := range inboundConfig {
+		if key == "custom" {
+			customArr, ok := config.([]interface{})
+			if !ok {
+				return false, fmt.Errorf("unexpected format for custom inbound protocols")
+			}
+			for _, item := range customArr {
+				itemMap, ok := item.(map[string]interface{})
+				if !ok {
+					return false, fmt.Errorf("unexpected format for custom inbound protocol")
+				}
+				delete(itemMap, "self")
+			}
+			continue
+		}
+
+		configMap, ok := config.(map[string]interface{})
+		if !ok {
+			return false, fmt.Errorf("unexpected format for inbound protocol: %s", key)
+		}
+		delete(configMap, "self")
+
+		if key == "oidc" {
+			secret, _ := configMap["clientSecret"].(string)
+			if secret == "" {
+				newSecretCreated = true
+			}
+		}
+	}
+	return newSecretCreated, nil
+}
+
+func getDeployedInboundProtocols(appId string) ([]inboundProtocolRef, error) {
+
+	body, err := utils.SendGetRequest(utils.APPLICATIONS, appId+"/inbound-protocols")
+	if err != nil {
+		return nil, err
+	}
+	var deployedRefs []inboundProtocolRef
+	if err := json.Unmarshal(body, &deployedRefs); err != nil {
+		return nil, fmt.Errorf("error unmarshalling deployed inbound protocols: %w", err)
+	}
+	return deployedRefs, nil
+}
+
+func flattenInboundProtocols(localProtocolConfig map[string]interface{}) ([]map[string]interface{}, error) {
+
+	var result []map[string]interface{}
+	for key, config := range localProtocolConfig {
+		if key == "custom" {
+			customArr, ok := config.([]interface{})
+			if !ok {
+				return nil, fmt.Errorf("unexpected format for custom inbound protocols")
+			}
+			for _, item := range customArr {
+				itemMap, ok := item.(map[string]interface{})
+				if !ok {
+					return nil, fmt.Errorf("unexpected format for custom inbound protocol")
+				}
+				result = append(result, itemMap)
+			}
+		} else {
+			configMap, ok := config.(map[string]interface{})
+			if !ok {
+				return nil, fmt.Errorf("unexpected format for inbound protocol: %s", key)
+			}
+			result = append(result, configMap)
+		}
+	}
+	return result, nil
+}
+
+func processInboundProtocolForUpdate(appId string, protocolMap map[string]interface{}) (protocolPath string, err error) {
+
+	self, ok := protocolMap["self"].(string)
+	if !ok {
+		return "", fmt.Errorf("self URL not found")
+	}
+	protocolPath = path.Base(self)
+	delete(protocolMap, "self")
+
+	if protocolPath == "oidc" || protocolPath == "passive-sts" {
+		if err := injectDeployedReadOnlyFields(appId, protocolPath, protocolMap); err != nil {
+			return "", err
+		}
+	}
+	return protocolPath, nil
+}
+
+func injectDeployedReadOnlyFields(appId, protocolPath string, localConfig map[string]interface{}) error {
+
+	body, err := utils.SendGetRequest(utils.APPLICATIONS, appId+"/inbound-protocols/"+protocolPath)
+	if err != nil {
+		return fmt.Errorf("error retrieving deployed %s config: %w", protocolPath, err)
+	}
+	var deployedConfig map[string]interface{}
+	if err := json.Unmarshal(body, &deployedConfig); err != nil {
+		return fmt.Errorf("error unmarshalling deployed %s config: %w", protocolPath, err)
+	}
+
+	switch protocolPath {
+	case "oidc":
+		clientId, ok := deployedConfig["clientId"].(string)
+		if !ok {
+			return fmt.Errorf("clientId not found in deployed oidc config")
+		}
+		localConfig["clientId"] = clientId
+
+		deployedSecret, ok := deployedConfig["clientSecret"].(string)
+		if !ok {
+			return fmt.Errorf("clientSecret not found in deployed oidc config")
+		}
+		localConfig["clientSecret"] = deployedSecret
+
+	case "passive-sts":
+		realm, ok := deployedConfig["realm"].(string)
+		if !ok {
+			return fmt.Errorf("realm not found in deployed passive-sts config")
+		}
+		localConfig["realm"] = realm
+	}
+	return nil
 }
