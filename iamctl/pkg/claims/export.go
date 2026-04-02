@@ -33,6 +33,9 @@ func ExportAll(exportFilePath string, format string) {
 
 	// Export all claim dialects with related claims.
 	log.Println("Exporting claims...")
+	if !utils.IsEntitySupportedInVersion(utils.CLAIMS) {
+		return
+	}
 	if utils.IsSubOrganization() {
 		log.Println("Exporting claims for sub organization not supported.")
 		return

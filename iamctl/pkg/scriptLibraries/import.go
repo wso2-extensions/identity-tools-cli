@@ -49,6 +49,7 @@ func ImportAll(inputDirPath string) {
 	files, err := os.ReadDir(importFilePath)
 	if err != nil {
 		log.Println("Error importing script libraries: ", err)
+		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {
 		removeDeletedDeployedScriptLibraries(files, existingList)
