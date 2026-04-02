@@ -299,7 +299,6 @@ func SendDeleteRequest(resourceId string, resourceType ResourceType) error {
 
 	statusCode := resp.StatusCode
 	if statusCode == 204 {
-		log.Println("Resource deleted successfully.")
 		return nil
 	} else if error, ok := ErrorCodes[statusCode]; ok {
 		return fmt.Errorf("error response for the delete request: %s", error)

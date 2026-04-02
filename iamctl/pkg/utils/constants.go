@@ -195,6 +195,10 @@ var userStoreArrayFields = []string{
 	"properties",
 }
 
+var claimArrayFields = []string{
+	"claims",
+}
+
 // XML root element tags for each resource type
 const (
 	XML_ROOT_OIDC_SCOPE           = "Scope"
@@ -204,4 +208,5 @@ const (
 	XML_ROOT_SCRIPT_LIBRARY       = "ScriptLibrary"
 	XML_ROOT_GOVERNANCE_CONNECTOR = "GovernanceConnector"
 	XML_ROOT_USERSTORE            = "UserStore"
+	XML_ROOT_CLAIM                = "DialectConfiguration"
 )

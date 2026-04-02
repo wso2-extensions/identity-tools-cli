@@ -22,10 +22,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
 	"regexp"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
-	"gopkg.in/yaml.v3"
 )
 
 type claimDialect struct {
@@ -67,6 +69,20 @@ func getClaimDialectsList() ([]claimDialect, error) {
 	return nil, fmt.Errorf("unexpected error while retrieving claim dialect list")
 }
 
+func getClaimsList(dialectId string) ([]map[string]interface{}, error) {
+
+	body, err := utils.SendGetRequest(utils.CLAIMS, dialectId+"/claims")
+	if err != nil {
+		return nil, fmt.Errorf("error while getting claims for dialect. %w", err)
+	}
+
+	var list []map[string]interface{}
+	if err := json.Unmarshal(body, &list); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling claims list. %w", err)
+	}
+	return list, nil
+}
+
 func getClaimKeywordMapping(claimDialectName string) map[string]interface{} {
 
 	if utils.KEYWORD_CONFIGS.ClaimConfigs != nil {
@@ -75,12 +91,7 @@ func getClaimKeywordMapping(claimDialectName string) map[string]interface{} {
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
 
-func getDeployedClaimDialectNames() []string {
-
-	claimDialects, err := getClaimDialectsList()
-	if err != nil {
-		return []string{}
-	}
+func getDeployedDialectFileNames(claimDialects []claimDialect) []string {
 
 	var claimDialectNames []string
 	for _, claimDialect := range claimDialects {
@@ -88,6 +99,52 @@ func getDeployedClaimDialectNames() []string {
 		claimDialectNames = append(claimDialectNames, formattedName)
 	}
 	return claimDialectNames
+}
+
+func parseClaims(data []byte, format utils.Format) ([]map[string]interface{}, error) {
+
+	result, err := utils.Deserialize(data, format, utils.CLAIMS)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling claim dialect data: %w", err)
+	}
+	dialectMap, ok := utils.ConvertToStringKeyMap(result).(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected format for claim dialect file")
+	}
+	rawClaims, ok := dialectMap["claims"].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected format: missing or invalid 'claims' array in claim dialect file")
+	}
+	var claims []map[string]interface{}
+	for _, c := range rawClaims {
+		m, ok := c.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("unexpected format: claim entry is not a map")
+		}
+		claims = append(claims, m)
+	}
+	return claims, nil
+}
+
+func getDialectURIFromFile(filePath string) (string, error) {
+
+	format, err := utils.FormatFromExtension(filepath.Ext(filePath))
+	if err != nil {
+		return "", fmt.Errorf("unsupported file format: %w", err)
+	}
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", fmt.Errorf("error reading file: %w", err)
+	}
+
+	var dialectConfig ClaimDialectConfigurations
+	if _, err := utils.Deserialize(data, format, utils.CLAIMS, &dialectConfig); err != nil {
+		return "", fmt.Errorf("error deserializing file: %w", err)
+	}
+	if dialectConfig.URI == "" {
+		return "", fmt.Errorf("dialectURI not found in file")
+	}
+	return dialectConfig.URI, nil
 }
 
 func formatFileName(fileName string) string {
@@ -99,29 +156,74 @@ func formatFileName(fileName string) string {
 	return formattedFileName
 }
 
-func getClaimDialectId(claimDialectFilePath string) (string, error) {
-
-	fileContent, err := ioutil.ReadFile(claimDialectFilePath)
-	if err != nil {
-		return "", fmt.Errorf("error when reading the file: %s. %s", claimDialectFilePath, err)
-	}
-
-	var claimDialectConfig ClaimDialectConfigurations
-	err = yaml.Unmarshal(fileContent, &claimDialectConfig)
-	if err != nil {
-		return "", fmt.Errorf("invalid file content at: %s. %s", claimDialectFilePath, err)
-	}
-
-	existingClaimDialectList, err := getClaimDialectsList()
-	if err != nil {
-		return "", fmt.Errorf("error when retrieving the deployed claim dialect list: %s", err)
-	}
+func getClaimDialectId(dialectURI string, existingClaimDialectList []claimDialect) string {
 
 	for _, dialect := range existingClaimDialectList {
-		if dialect.Id == claimDialectConfig.ID {
-			return dialect.Id, nil
+		if dialect.DialectURI == dialectURI {
+			return dialect.Id
 		}
 	}
-	// Claim dialect does not exist, returning an empty user ID
-	return "", nil
+	return ""
+}
+
+func getClaimDialect(dialectId string) (interface{}, error) {
+
+	dialectData, err := utils.GetResourceData(utils.CLAIMS, dialectId)
+	if err != nil {
+		return nil, fmt.Errorf("error while retrieving claim dialect. %w", err)
+	}
+	dialectMap, ok := dialectData.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected format for claim dialect response")
+	}
+
+	claims, err := utils.GetResourceData(utils.CLAIMS, dialectId+"/claims")
+	if err != nil {
+		return nil, fmt.Errorf("error while retrieving claims for dialect. %w", err)
+	}
+	dialectMap["claims"] = claims
+
+	return dialectMap, nil
+}
+
+func createClaimReqBody(claim map[string]interface{}) ([]byte, error) {
+
+	claimCopy := make(map[string]interface{}, len(claim))
+	for k, v := range claim {
+		if k != "id" && k != "claimDialectURI" {
+			claimCopy[k] = v
+		}
+	}
+	return json.Marshal(claimCopy)
+}
+
+func getClaimID(c map[string]interface{}) string {
+
+	id, _ := c["id"].(string)
+	return id
+}
+
+func getClaimURI(c map[string]interface{}) string {
+
+	uri, _ := c["claimURI"].(string)
+	return uri
+}
+
+func claimChanged(local, deployed map[string]interface{}) bool {
+
+	localJSON, _ := createClaimReqBody(local)
+	deployedJSON, _ := createClaimReqBody(deployed)
+	return string(localJSON) != string(deployedJSON)
+}
+
+func exportAPIExists() bool {
+
+	res, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_CLAIMS_EXPORT_API)
+	if err != nil {
+		// Use the export API when the server version is not properly configured for backward compatibility
+		log.Println("Warn: Server version is not properly configured. For IS versions below 6.1, configure the server version properly to avoid failures.")
+		return true
+	}
+
+	return res >= 0
 }
