@@ -43,6 +43,7 @@ func ImportAll(inputDirPath string) {
 		files, err = ioutil.ReadDir(importFilePath)
 		if err != nil {
 			log.Println("Error importing user stores: ", err)
+			return
 		}
 		if utils.TOOL_CONFIGS.AllowDelete {
 			removeDeletedDeployedUserstores(files)

@@ -50,11 +50,13 @@ func ImportAll(inputDirPath string) {
 	existingClaimDialectList, err := getClaimDialectsList()
 	if err != nil {
 		log.Printf("error when retrieving the deployed claim dialect list. %s", err)
+		return
 	}
 
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
 		log.Println("Error importing claim dialects: ", err)
+		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {
 		removeDeletedDeployedClaimdialect(files, existingClaimDialectList)

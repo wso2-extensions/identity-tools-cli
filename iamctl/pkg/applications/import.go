@@ -48,6 +48,7 @@ func ImportAll(inputDirPath string) {
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
 		log.Println("Error importing applications: ", err)
+		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {
 		removeDeletedDeployedApps(files, deployedApps)

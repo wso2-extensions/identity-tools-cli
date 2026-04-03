@@ -50,6 +50,7 @@ func ImportAll(inputDirPath string) {
 	files, err = os.ReadDir(importFilePath)
 	if err != nil {
 		log.Println("Error importing OIDC scopes: ", err)
+		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {
 		removeDeletedDeployedScopes(files, existingScopeList)

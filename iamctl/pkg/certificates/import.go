@@ -54,6 +54,7 @@ func ImportAll(inputDirPath string) {
 	files, err = os.ReadDir(importFilePath)
 	if err != nil {
 		log.Println("Error importing certificates: ", err)
+		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {
 		removeDeletedDeployedCertificates(files, existingCertList)
