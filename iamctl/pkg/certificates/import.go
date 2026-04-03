@@ -54,6 +54,7 @@ func ImportAll(inputDirPath string) {
 	files, err = os.ReadDir(importFilePath)
 	if err != nil {
 		log.Println("Error importing certificates: ", err)
+		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {
 		removeDeletedDeployedCertificates(files, existingCertList)
@@ -134,7 +135,7 @@ func removeDeletedDeployedCertificates(localFiles []os.DirEntry, deployedCerts [
 		if _, existsLocally := localResourceNames[cert.Alias]; existsLocally {
 			continue
 		}
-		if utils.IsResourceExcluded(cert.Alias, utils.TOOL_CONFIGS.CertificateConfigs) {
+		if utils.IsResourceExcluded(cert.Alias, utils.TOOL_CONFIGS.CertificateConfigs) || cert.Alias == utils.SERVER_CONFIGS.TenantDomain {
 			log.Println("Certificate is excluded from deletion:", cert.Alias)
 			continue
 		}

@@ -47,11 +47,13 @@ func ImportAll(inputDirPath string) {
 	existingIdpList, err := getIdpList()
 	if err != nil {
 		log.Printf("error when retrieving the deployed identity provider list. %s", err)
+		return
 	}
 
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
 		log.Println("Error importing identity providers: ", err)
+		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {
 		removeDeletedDeployedIdps(files, existingIdpList)
