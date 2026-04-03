@@ -72,6 +72,11 @@ func ImportAll(inputDirPath string) {
 
 func importApp(appId, appName, importFilePath string, exportAPIExists bool) error {
 
+	if appName == utils.CONSOLE || appName == utils.MY_ACCOUNT || appName == utils.CARBON_SP {
+		log.Printf("Application: %s is a system application. Skipping import.\n", appName)
+		return nil
+	}
+
 	fileBytes, err := ioutil.ReadFile(importFilePath)
 	if err != nil {
 		return fmt.Errorf("error when reading the file for application: %s", err)
@@ -143,10 +148,6 @@ func updateApplication(appName, importFilePath, modifiedFileData string) error {
 
 func importAppWithCRUD(appName string, appMap map[string]interface{}) error {
 
-	if appName == utils.CONSOLE || appName == utils.MY_ACCOUNT || appName == utils.CARBON_SP {
-		log.Printf("Application: %s is a system application. Skipping import.\n", appName)
-		return nil
-	}
 	log.Println("Creating new application: " + appName)
 
 	newSecretCreated, err := processInboundProtocolsForPost(appMap)
@@ -175,10 +176,6 @@ func importAppWithCRUD(appName string, appMap map[string]interface{}) error {
 
 func updateAppWithCRUD(appId, appName string, appMap map[string]interface{}) error {
 
-	if appName == utils.CONSOLE || appName == utils.MY_ACCOUNT {
-		log.Printf("Application: %s is a system application. Skipping update.\n", appName)
-		return nil
-	}
 	log.Println("Updating application: " + appName)
 
 	localProtocolConfig, ok := appMap["inboundProtocolConfiguration"].(map[string]interface{})

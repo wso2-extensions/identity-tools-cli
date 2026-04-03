@@ -74,6 +74,11 @@ func ImportAll(inputDirPath string) {
 
 func importRole(displayName string, roleExists bool, importFilePath string, existingRoles []role) error {
 
+	if displayName == utils.ADMIN {
+		log.Println("Role: admin is a system role. Skipping import.")
+		return nil
+	}
+
 	format, err := utils.FormatFromExtension(filepath.Ext(importFilePath))
 	if err != nil {
 		return fmt.Errorf("unsupported file format for role: %w", err)
