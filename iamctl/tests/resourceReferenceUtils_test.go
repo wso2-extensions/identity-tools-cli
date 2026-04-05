@@ -9,7 +9,7 @@ import (
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
-func TestAddToResourceIdentifierMap(t *testing.T) {
+func TestExtractAndRegisterIdentifier(t *testing.T) {
 
 	testCases := []struct {
 		description  string
