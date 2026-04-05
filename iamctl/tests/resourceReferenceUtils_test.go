@@ -89,7 +89,7 @@ func TestAddToResourceIdentifierMap(t *testing.T) {
 			utils.RESOURCE_IDENTIFIER_METADATA = tc.metadata
 			utils.ResetResourceIdentifierMap()
 
-			utils.AddToResourceIdentifierMap(tc.resourceType, tc.resourceData, tc.operation)
+			utils.ExtractAndRegisterIdentifier(tc.resourceType, tc.resourceData, tc.operation)
 
 			result := utils.GetResourceIdentifierMap(tc.resourceType)
 			if !reflect.DeepEqual(result, tc.expectedMap) {
@@ -402,16 +402,16 @@ func TestReplaceReferences(t *testing.T) {
 	allItems := utils.ALL_ITEMS
 
 	testCases := []struct {
-		description          string
-		resourceType         utils.ResourceType
-		referencedType       utils.ResourceType
-		refMetadata          map[utils.ResourceType][]utils.ResourceReferenceMeta
-		identifierMeta       map[utils.ResourceType]utils.ResourceIdentifierMeta
-		identifierData       []interface{}
-		operation            string
-		resourceData         interface{}
-		expectedData         interface{}
-		expectError          bool
+		description    string
+		resourceType   utils.ResourceType
+		referencedType utils.ResourceType
+		refMetadata    map[utils.ResourceType][]utils.ResourceReferenceMeta
+		identifierMeta map[utils.ResourceType]utils.ResourceIdentifierMeta
+		identifierData []interface{}
+		operation      string
+		resourceData   interface{}
+		expectedData   interface{}
+		expectError    bool
 	}{
 		{
 			description:  "Resource type with no reference metadata: returns data unchanged",
@@ -555,7 +555,7 @@ func TestReplaceReferences(t *testing.T) {
 			utils.ResetResourceIdentifierMap()
 
 			for _, data := range tc.identifierData {
-				utils.AddToResourceIdentifierMap(tc.referencedType, data, tc.operation)
+				utils.ExtractAndRegisterIdentifier(tc.referencedType, data, tc.operation)
 			}
 
 			result, err := utils.ReplaceReferences(tc.resourceType, tc.resourceData)

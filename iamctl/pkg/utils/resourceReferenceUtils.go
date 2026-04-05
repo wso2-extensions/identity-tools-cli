@@ -28,11 +28,12 @@ type ResourceIdentifierMap map[ResourceType]map[string]string
 
 var resourceIdentifierMap = make(ResourceIdentifierMap)
 
-func AddToResourceIdentifierMap(resourceType ResourceType, resourceData interface{}, operation string) error {
+func ExtractAndRegisterIdentifier(resourceType ResourceType, resourceData interface{}, operation string) {
 
 	resourceMeta, exists := RESOURCE_IDENTIFIER_METADATA[resourceType]
 	if !exists {
-		return nil
+		log.Println("Warning: No identifier metadata found for resource type. Skipping resource identifier map entry.")
+		return
 	}
 
 	idValue := GetValue(resourceData, resourceMeta.IdentifierPath)
@@ -40,8 +41,13 @@ func AddToResourceIdentifierMap(resourceType ResourceType, resourceData interfac
 
 	if idValue == "" || uniqueValue == "" {
 		log.Println("Warning: Could not extract identifier or unique value. Skipping resource identifier map entry.")
-		return nil
+		return
 	}
+
+	AddToIdentifierMap(resourceType, idValue, uniqueValue, operation)
+}
+
+func AddToIdentifierMap(resourceType ResourceType, idValue, uniqueValue, operation string) {
 
 	if resourceIdentifierMap[resourceType] == nil {
 		resourceIdentifierMap[resourceType] = make(map[string]string)
@@ -53,8 +59,6 @@ func AddToResourceIdentifierMap(resourceType ResourceType, resourceData interfac
 	case IMPORT:
 		resourceIdentifierMap[resourceType][uniqueValue] = idValue
 	}
-
-	return nil
 }
 
 func ReplaceReferences(resourceType ResourceType, resourceData interface{}) (interface{}, error) {
