@@ -147,7 +147,7 @@ func TestRemoveXMLRootTag(t *testing.T) {
 		},
 		{
 			description:  "No root tag defined - returns map as-is",
-			resourceType: utils.APPLICATIONS,
+			resourceType: utils.ResourceType("unknown"),
 			xmlMap: map[string]interface{}{
 				"claims": "roles",
 				"name":   "test",
@@ -223,7 +223,7 @@ func TestAddXMLRootTag(t *testing.T) {
 		},
 		{
 			description:  "No root tag defined - returns data as-is",
-			resourceType: utils.APPLICATIONS,
+			resourceType: utils.ResourceType("unknown"),
 			data: map[string]interface{}{
 				"claims": "roles",
 				"name":   "test",
