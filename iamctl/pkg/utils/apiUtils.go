@@ -21,6 +21,7 @@ package utils
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -84,6 +85,27 @@ func PrepareMultipartFormBody(data []byte, format Format, resourceType ResourceT
 	}
 
 	return body.Bytes(), writer.FormDataContentType(), nil
+}
+
+func ParseResponseBody(resp *http.Response, target ...interface{}) (interface{}, error) {
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response body: %w", err)
+	}
+
+	if len(target) > 0 {
+		if err := json.Unmarshal(body, target[0]); err != nil {
+			return nil, fmt.Errorf("error unmarshalling response body: %w", err)
+		}
+		return target[0], nil
+	}
+
+	var result interface{}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("error unmarshalling response body: %w", err)
+	}
+	return result, nil
 }
 
 func RemoveResponseFields(response interface{}, fieldsToRemove ...string) (interface{}, error) {
@@ -535,6 +557,10 @@ func getResourcePath(resourceType ResourceType) string {
 		return "identity-governance"
 	case CERTIFICATES:
 		return "keystores/certs"
+	case WORKFLOWS:
+		return "workflows"
+	case WORKFLOW_ASSOCIATIONS:
+		return "workflow-associations"
 	}
 	return ""
 }
