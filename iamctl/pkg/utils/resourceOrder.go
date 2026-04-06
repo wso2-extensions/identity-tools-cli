@@ -37,5 +37,4 @@ var ResourceOrder = []ResourceType{
 	GOVERNANCE_CONNECTORS,
 	CERTIFICATES,
 	WORKFLOWS,
-	WORKFLOW_ASSOCIATIONS, // Dependency: Workflows
 }

@@ -51,17 +51,14 @@ func ExportAll(exportFilePath string, format string) {
 	}
 
 	for _, assoc := range associations {
-		if !utils.IsResourceExcluded(assoc.Name, utils.TOOL_CONFIGS.WorkflowAssociationConfigs) {
-			log.Println("Exporting workflow association:", assoc.Name)
-			err := exportWorkflowAssociation(assoc.ID, assoc.Name, exportFilePath, format)
-			if err != nil {
-				utils.UpdateFailureSummary(utils.WORKFLOW_ASSOCIATIONS, assoc.Name)
-				log.Printf("Error while exporting workflow association: %s. %s", assoc.Name, err)
-			} else {
-				utils.UpdateSuccessSummary(utils.WORKFLOW_ASSOCIATIONS, utils.EXPORT)
-				log.Println("Workflow association exported successfully:", assoc.Name)
-			}
+		err := exportWorkflowAssociation(assoc.ID, assoc.Name, exportFilePath, format)
+		if err != nil {
+			utils.UpdateFailureSummary(utils.WORKFLOW_ASSOCIATIONS, assoc.Name)
+			log.Printf("Error while exporting workflow association %s of workflow %s: %s", assoc.Name, assoc.WorkflowName, err)
+		} else {
+			utils.UpdateSuccessSummary(utils.WORKFLOW_ASSOCIATIONS, utils.EXPORT)
 		}
+
 	}
 }
 

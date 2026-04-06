@@ -33,7 +33,6 @@ import (
 	scriptLibraries "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/scriptLibraries"
 	userstores "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/userStores"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
-	workflowAssociations "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/workflowAssociations"
 	workflows "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/workflows"
 )
 
@@ -63,7 +62,6 @@ var importAllCmd = &cobra.Command{
 			utils.GOVERNANCE_CONNECTORS: governanceConnectors.ImportAll,
 			utils.CERTIFICATES:          certificates.ImportAll,
 			utils.WORKFLOWS:             workflows.ImportAll,
-			utils.WORKFLOW_ASSOCIATIONS: workflowAssociations.ImportAll,
 		}
 
 		for _, resourceType := range utils.ResourceOrder {

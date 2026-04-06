@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/workflows/workflowAssociations"
 )
 
 func ExportAll(exportFilePath string, format string) {
@@ -63,6 +64,8 @@ func ExportAll(exportFilePath string, format string) {
 			}
 		}
 	}
+
+	workflowAssociations.ExportAll(exportFilePath, format)
 }
 
 func exportWorkflow(workflowId string, workflowName string, outputDirPath string, formatString string) error {

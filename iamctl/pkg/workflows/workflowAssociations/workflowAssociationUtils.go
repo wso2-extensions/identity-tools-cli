@@ -27,8 +27,9 @@ import (
 )
 
 type workflowAssociation struct {
-	ID   string `json:"id"`
-	Name string `json:"associationName"`
+	ID           string `json:"id"`
+	Name         string `json:"associationName"`
+	WorkflowName string `json:"workflowName"`
 }
 
 type workflowAssociationListResponse struct {
@@ -76,8 +77,10 @@ func getDeployedWorkflowAssociationNames(associations []workflowAssociation) []s
 
 func getWorkflowAssociationKeywordMapping(associationName string) map[string]interface{} {
 
-	if utils.KEYWORD_CONFIGS.WorkflowAssociationConfigs != nil {
-		return utils.ResolveAdvancedKeywordMapping(associationName, utils.KEYWORD_CONFIGS.WorkflowAssociationConfigs)
+	if utils.KEYWORD_CONFIGS.WorkflowConfigs != nil {
+		if wfAssocConfig, ok := utils.KEYWORD_CONFIGS.WorkflowConfigs["WORKFLOW_ASSOCIATIONS"].(map[string]interface{}); ok {
+			return utils.ResolveAdvancedKeywordMapping(associationName, wfAssocConfig)
+		}
 	}
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }

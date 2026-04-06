@@ -60,13 +60,11 @@ func ImportAll(inputDirPath string) {
 		fileInfo := utils.GetFileInfo(assocFilePath)
 		associationName := fileInfo.ResourceName
 
-		if !utils.IsResourceExcluded(associationName, utils.TOOL_CONFIGS.WorkflowAssociationConfigs) {
-			associationId := getAssociationId(associationName, existingAssociations)
-			err := importWorkflowAssociation(associationName, associationId, assocFilePath)
-			if err != nil {
-				log.Println("Error importing workflow association:", err)
-				utils.UpdateFailureSummary(utils.WORKFLOW_ASSOCIATIONS, associationName)
-			}
+		associationId := getAssociationId(associationName, existingAssociations)
+		err := importWorkflowAssociation(associationName, associationId, assocFilePath)
+		if err != nil {
+			log.Println("Error importing workflow association:", err)
+			utils.UpdateFailureSummary(utils.WORKFLOW_ASSOCIATIONS, associationName)
 		}
 	}
 }
@@ -98,8 +96,6 @@ func importWorkflowAssociation(associationName string, associationId string, imp
 
 func createAssociation(requestBody []byte, format utils.Format, associationName string) error {
 
-	log.Println("Creating new workflow association:", associationName)
-
 	resp, err := utils.SendPostRequest(utils.WORKFLOW_ASSOCIATIONS, requestBody)
 	if err != nil {
 		return fmt.Errorf("error when importing workflow association: %w", err)
@@ -107,13 +103,10 @@ func createAssociation(requestBody []byte, format utils.Format, associationName 
 	defer resp.Body.Close()
 
 	utils.UpdateSuccessSummary(utils.WORKFLOW_ASSOCIATIONS, utils.IMPORT)
-	log.Println("Workflow association imported successfully.")
 	return nil
 }
 
 func updateAssociation(associationId string, requestBody []byte, format utils.Format, associationName string) error {
-
-	log.Println("Updating workflow association:", associationName)
 
 	resp, err := utils.SendPatchRequest(utils.WORKFLOW_ASSOCIATIONS, associationId, requestBody)
 	if err != nil {
@@ -122,7 +115,6 @@ func updateAssociation(associationId string, requestBody []byte, format utils.Fo
 	defer resp.Body.Close()
 
 	utils.UpdateSuccessSummary(utils.WORKFLOW_ASSOCIATIONS, utils.UPDATE)
-	log.Println("Workflow association updated successfully.")
 	return nil
 }
 
@@ -142,12 +134,6 @@ func removeDeletedDeployedAssociations(localFiles []os.DirEntry, deployedAssocia
 		if _, existsLocally := localResourceNames[assoc.Name]; existsLocally {
 			continue
 		}
-		if utils.IsResourceExcluded(assoc.Name, utils.TOOL_CONFIGS.WorkflowAssociationConfigs) {
-			log.Println("Workflow association is excluded from deletion:", assoc.Name)
-			continue
-		}
-
-		log.Printf("Workflow association: %s not found locally. Deleting association.\n", assoc.Name)
 		if err := utils.SendDeleteRequest(assoc.ID, utils.WORKFLOW_ASSOCIATIONS); err != nil {
 			utils.UpdateFailureSummary(utils.WORKFLOW_ASSOCIATIONS, assoc.Name)
 			log.Println("Error deleting workflow association:", assoc.Name, err)

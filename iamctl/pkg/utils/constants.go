@@ -56,6 +56,7 @@ const TOKEN_CONFIG = "TOKEN"
 // Resource types
 type ResourceType string
 
+// Main resource types
 const (
 	APPLICATIONS          ResourceType = "Applications"
 	IDENTITY_PROVIDERS    ResourceType = "IdentityProviders"
@@ -69,8 +70,10 @@ const (
 	GOVERNANCE_CONNECTORS ResourceType = "GovernanceConnectors"
 	CERTIFICATES          ResourceType = "Certificates"
 	WORKFLOWS             ResourceType = "Workflows"
-	WORKFLOW_ASSOCIATIONS ResourceType = "WorkflowAssociations"
 )
+
+// Sub resource types
+const WORKFLOW_ASSOCIATIONS ResourceType = "WorkflowAssociations"
 
 // Config file names
 const SERVER_CONFIG_FILE = "serverConfig.json"

@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/workflows/workflowAssociations"
 )
 
 func ImportAll(inputDirPath string) {
@@ -69,6 +70,8 @@ func ImportAll(inputDirPath string) {
 			}
 		}
 	}
+
+	workflowAssociations.ImportAll(importFilePath)
 }
 
 func importWorkflow(workflowName string, workflowId string, importFilePath string) error {

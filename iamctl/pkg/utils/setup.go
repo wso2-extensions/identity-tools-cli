@@ -66,7 +66,6 @@ type ToolConfigs struct {
 	GovernanceConnectorConfigs map[string]interface{} `json:"GOVERNANCE_CONNECTORS"`
 	CertificateConfigs         map[string]interface{} `json:"CERTIFICATES"`
 	WorkflowConfigs            map[string]interface{} `json:"WORKFLOWS"`
-	WorkflowAssociationConfigs map[string]interface{} `json:"WORKFLOW_ASSOCIATIONS"`
 }
 
 type KeywordConfigs struct {
@@ -83,7 +82,6 @@ type KeywordConfigs struct {
 	GovernanceConnectorConfigs map[string]interface{} `json:"GOVERNANCE_CONNECTORS"`
 	CertificateConfigs         map[string]interface{} `json:"CERTIFICATES"`
 	WorkflowConfigs            map[string]interface{} `json:"WORKFLOWS"`
-	WorkflowAssociationConfigs map[string]interface{} `json:"WORKFLOW_ASSOCIATIONS"`
 }
 
 var SERVER_CONFIGS ServerConfigs
