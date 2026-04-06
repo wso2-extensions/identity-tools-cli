@@ -21,7 +21,7 @@ package emailTemplates
 import (
 	"encoding/json"
 	"fmt"
-	"io"
+	"io/ioutil"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -47,7 +47,7 @@ func getEmailTemplateTypeList() ([]emailTemplateType, error) {
 
 	statusCode := resp.StatusCode
 	if statusCode == 200 {
-		body, err := io.ReadAll(resp.Body)
+		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("error when reading the retrieved email template type list. %w", err)
 		}
@@ -112,7 +112,7 @@ func createEmailTemplateType(displayName string) (*emailTemplateType, error) {
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error reading create type response: %w", err)
 	}

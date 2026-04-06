@@ -20,6 +20,7 @@ package roles
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -92,7 +93,7 @@ func exportRole(r role, outputDirPath string, formatString string) error {
 		return fmt.Errorf("error while serializing role: %w", err)
 	}
 
-	err = os.WriteFile(exportedFileName, modifiedFile, 0644)
+	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 	if err != nil {
 		return fmt.Errorf("error when writing exported content to file: %w", err)
 	}

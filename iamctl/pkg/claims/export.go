@@ -146,7 +146,7 @@ func exportClaimDialectWithCRUD(dialectId, dialectUri, outputDirPath, formatStri
 		return fmt.Errorf("error while serializing claim dialect: %w", err)
 	}
 
-	err = os.WriteFile(exportedFileName, modifiedFile, 0644)
+	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 	if err != nil {
 		return fmt.Errorf("error when writing exported content to file: %w", err)
 	}

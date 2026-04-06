@@ -20,6 +20,7 @@ package governanceConnectors
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -117,7 +118,7 @@ func exportConnector(connectorId, connectorName, categoryId, categoryDir string,
 		return fmt.Errorf("error while serializing connector: %w", err)
 	}
 
-	err = os.WriteFile(exportedFileName, modifiedFile, 0644)
+	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 	if err != nil {
 		return fmt.Errorf("error writing exported content to file: %w", err)
 	}

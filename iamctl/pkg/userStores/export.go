@@ -147,7 +147,7 @@ func exportUserStoreWithCRUD(userStoreId, userStoreName, outputDirPath, formatSt
 		return fmt.Errorf("error while serializing user store: %w", err)
 	}
 
-	err = os.WriteFile(exportedFileName, modifiedFile, 0644)
+	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 	if err != nil {
 		return fmt.Errorf("error when writing exported content to file: %w", err)
 	}

@@ -20,6 +20,7 @@ package governanceConnectors
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -46,7 +47,7 @@ func ImportAll(inputDirPath string) {
 		return
 	}
 
-	localCategoryDirs, err := os.ReadDir(importFilePath)
+	localCategoryDirs, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
 		log.Println("Error reading governance connectors directory:", err)
 		return
@@ -82,7 +83,7 @@ func importCategory(localCategoryPath, catName string, deployedCategories []conn
 		return fmt.Errorf("error retrieving connector list: %w", err)
 	}
 
-	localFiles, err := os.ReadDir(localCategoryPath)
+	localFiles, err := ioutil.ReadDir(localCategoryPath)
 	if err != nil {
 		return fmt.Errorf("error reading local connector files: %w", err)
 	}
@@ -119,7 +120,7 @@ func importConnector(connectorId, categoryId, filePath string, keywordMapping ma
 		return fmt.Errorf("unsupported file format for connector: %w", err)
 	}
 
-	fileBytes, err := os.ReadFile(filePath)
+	fileBytes, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("error when reading the file for connector: %w", err)
 	}

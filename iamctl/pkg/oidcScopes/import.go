@@ -20,6 +20,7 @@ package oidcScopes
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -35,7 +36,7 @@ func ImportAll(inputDirPath string) {
 	if utils.IsResourceTypeExcluded(utils.OIDC_SCOPES) {
 		return
 	}
-	var files []os.DirEntry
+	var files []os.FileInfo
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
 		log.Println("No OIDC scopes to import.")
 		return
@@ -47,7 +48,7 @@ func ImportAll(inputDirPath string) {
 		return
 	}
 
-	files, err = os.ReadDir(importFilePath)
+	files, err = ioutil.ReadDir(importFilePath)
 	if err != nil {
 		log.Println("Error importing OIDC scopes: ", err)
 		return
@@ -79,7 +80,7 @@ func importOidcScope(scopeName string, scopeExists bool, importFilePath string) 
 		return fmt.Errorf("unsupported file format for OIDC scope: %w", err)
 	}
 
-	fileBytes, err := os.ReadFile(importFilePath)
+	fileBytes, err := ioutil.ReadFile(importFilePath)
 	if err != nil {
 		return fmt.Errorf("error when reading the file for OIDC scope: %w", err)
 	}
@@ -133,7 +134,7 @@ func updateScope(scopeId string, requestBody []byte, format utils.Format, scopeN
 	return nil
 }
 
-func removeDeletedDeployedScopes(localFiles []os.DirEntry, deployedScopes []oidcScope) {
+func removeDeletedDeployedScopes(localFiles []os.FileInfo, deployedScopes []oidcScope) {
 
 	if len(deployedScopes) == 0 {
 		return

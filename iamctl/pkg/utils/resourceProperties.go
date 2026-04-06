@@ -121,7 +121,7 @@ func RemoveDeletedLocalDirectories(parentDir string, deployedDirNames []string) 
 		deployedNames[name] = struct{}{}
 	}
 
-	localEntries, err := os.ReadDir(parentDir)
+	localEntries, err := ioutil.ReadDir(parentDir)
 	if err != nil {
 		log.Println("Error loading directory:", err)
 		return

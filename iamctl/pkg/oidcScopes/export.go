@@ -20,6 +20,7 @@ package oidcScopes
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -86,7 +87,7 @@ func exportOidcScope(scopeName string, outputDirPath string, formatString string
 		return fmt.Errorf("error while serializing scope: %w", err)
 	}
 
-	err = os.WriteFile(exportedFileName, modifiedFile, 0644)
+	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 	if err != nil {
 		return fmt.Errorf("error when writing exported content to file: %w", err)
 	}
