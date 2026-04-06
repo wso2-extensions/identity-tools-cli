@@ -20,6 +20,7 @@ package challengeQuestions
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -86,7 +87,7 @@ func exportChallengeSet(setId string, outputDirPath string, formatString string)
 		return fmt.Errorf("error while serializing challenge question set: %w", err)
 	}
 
-	if err = os.WriteFile(exportedFileName, modifiedFile, 0644); err != nil {
+	if err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644); err != nil {
 		return fmt.Errorf("error when writing exported content to file: %w", err)
 	}
 

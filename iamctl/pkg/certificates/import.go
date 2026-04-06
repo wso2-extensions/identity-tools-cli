@@ -20,6 +20,7 @@ package certificates
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -39,7 +40,7 @@ func ImportAll(inputDirPath string) {
 	if utils.IsResourceTypeExcluded(utils.CERTIFICATES) {
 		return
 	}
-	var files []os.DirEntry
+	var files []os.FileInfo
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
 		log.Println("No certificates to import.")
 		return
@@ -51,7 +52,7 @@ func ImportAll(inputDirPath string) {
 		return
 	}
 
-	files, err = os.ReadDir(importFilePath)
+	files, err = ioutil.ReadDir(importFilePath)
 	if err != nil {
 		log.Println("Error importing certificates: ", err)
 		return
@@ -83,7 +84,7 @@ func importCertificate(alias string, certExists bool, importFilePath string) err
 		return fmt.Errorf("unsupported file format for certificate: %w", err)
 	}
 
-	fileBytes, err := os.ReadFile(importFilePath)
+	fileBytes, err := ioutil.ReadFile(importFilePath)
 	if err != nil {
 		return fmt.Errorf("error when reading the file for certificate: %w", err)
 	}
@@ -119,7 +120,7 @@ func createCertificate(requestBody []byte, format utils.Format, alias string) er
 	return nil
 }
 
-func removeDeletedDeployedCertificates(localFiles []os.DirEntry, deployedCerts []certificate) {
+func removeDeletedDeployedCertificates(localFiles []os.FileInfo, deployedCerts []certificate) {
 
 	if len(deployedCerts) == 0 {
 		return

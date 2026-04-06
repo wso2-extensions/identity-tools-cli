@@ -20,6 +20,7 @@ package emailTemplates
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -116,7 +117,7 @@ func exportEmailTemplate(typeId, templateId, typeDir string, format utils.Format
 		return fmt.Errorf("error while serializing email template: %w", err)
 	}
 
-	err = os.WriteFile(exportedFileName, modifiedFile, 0644)
+	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 	if err != nil {
 		return fmt.Errorf("error when writing exported content to file: %w", err)
 	}

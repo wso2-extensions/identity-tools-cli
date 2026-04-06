@@ -20,6 +20,7 @@ package emailTemplates
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -46,7 +47,7 @@ func ImportAll(inputDirPath string) {
 		return
 	}
 
-	localTypeDirs, err := os.ReadDir(importFilePath)
+	localTypeDirs, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
 		log.Println("Error reading email templates directory:", err)
 		return
@@ -93,7 +94,7 @@ func importEmailTemplateType(localTypePath, displayName string, deployedTypes []
 		return fmt.Errorf("error getting deployed templates: %w", err)
 	}
 
-	localFiles, err := os.ReadDir(localTypePath)
+	localFiles, err := ioutil.ReadDir(localTypePath)
 	if err != nil {
 		return fmt.Errorf("error reading local template files: %w", err)
 	}
@@ -137,7 +138,7 @@ func importEmailTemplate(typeId, templateId, filePath string, keywordMapping map
 		return fmt.Errorf("unsupported file format for email template: %w", err)
 	}
 
-	fileBytes, err := os.ReadFile(filePath)
+	fileBytes, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("error when reading the file for email template: %w", err)
 	}
@@ -182,7 +183,7 @@ func updateTemplate(typeId, templateId string, requestBody []byte, format utils.
 	return nil
 }
 
-func removeDeletedDeployedTypes(localDirs []os.DirEntry, deployedTypes []emailTemplateType) {
+func removeDeletedDeployedTypes(localDirs []os.FileInfo, deployedTypes []emailTemplateType) {
 
 	if len(deployedTypes) == 0 {
 		return
@@ -213,7 +214,7 @@ func removeDeletedDeployedTypes(localDirs []os.DirEntry, deployedTypes []emailTe
 	}
 }
 
-func removeDeletedDeployedTemplates(typeId string, localFiles []os.DirEntry, deployedTemplates []emailTemplate) error {
+func removeDeletedDeployedTemplates(typeId string, localFiles []os.FileInfo, deployedTemplates []emailTemplate) error {
 
 	if len(deployedTemplates) == 0 {
 		return nil

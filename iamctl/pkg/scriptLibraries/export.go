@@ -20,6 +20,7 @@ package scriptLibraries
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -86,7 +87,7 @@ func exportScriptLibrary(libraryName string, outputDirPath string, formatString 
 		return fmt.Errorf("error while serializing script library: %w", err)
 	}
 
-	err = os.WriteFile(exportedFileName, modifiedFile, 0644)
+	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 	if err != nil {
 		return fmt.Errorf("error when writing exported content to file: %w", err)
 	}

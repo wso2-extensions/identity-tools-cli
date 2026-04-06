@@ -20,6 +20,7 @@ package roles
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -46,7 +47,7 @@ func ImportAll(inputDirPath string) {
 		return
 	}
 
-	files, err := os.ReadDir(importFilePath)
+	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
 		log.Println("Error importing roles:", err)
 		return
@@ -84,7 +85,7 @@ func importRole(displayName string, roleExists bool, importFilePath string, exis
 		return fmt.Errorf("unsupported file format for role: %w", err)
 	}
 
-	fileBytes, err := os.ReadFile(importFilePath)
+	fileBytes, err := ioutil.ReadFile(importFilePath)
 	if err != nil {
 		return fmt.Errorf("error when reading the file for role: %w", err)
 	}
@@ -140,7 +141,7 @@ func updateRole(roleId string, requestBody []byte, format utils.Format, displayN
 	return nil
 }
 
-func removeDeletedDeployedRoles(localFiles []os.DirEntry, deployedRoles []role) {
+func removeDeletedDeployedRoles(localFiles []os.FileInfo, deployedRoles []role) {
 
 	if len(deployedRoles) == 0 {
 		return

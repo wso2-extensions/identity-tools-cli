@@ -149,7 +149,7 @@ func exportAppWithCRUD(appId, appName, outputDirPath, formatString string, exclu
 		return fmt.Errorf("error while serializing application: %w", err)
 	}
 
-	err = os.WriteFile(exportedFileName, modifiedFile, 0644)
+	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 	if err != nil {
 		return fmt.Errorf("error when writing exported content to file: %w", err)
 	}
@@ -180,7 +180,7 @@ func exportResidentApp(outputDirPath, formatString string) error {
 		return fmt.Errorf("error while serializing application: %w", err)
 	}
 
-	err = os.WriteFile(exportedFileName, modifiedFile, 0644)
+	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 	if err != nil {
 		return fmt.Errorf("error when writing exported content to file: %w", err)
 	}

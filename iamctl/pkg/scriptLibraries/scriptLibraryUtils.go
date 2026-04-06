@@ -21,7 +21,7 @@ package scriptLibraries
 import (
 	"encoding/json"
 	"fmt"
-	"io"
+	"io/ioutil"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -45,7 +45,7 @@ func getScriptLibraryList() ([]scriptLibrary, error) {
 
 	statusCode := resp.StatusCode
 	if statusCode == 200 {
-		body, err := io.ReadAll(resp.Body)
+		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("error when reading the retrieved script library list. %w", err)
 		}

@@ -20,6 +20,7 @@ package scriptLibraries
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -46,7 +47,7 @@ func ImportAll(inputDirPath string) {
 		return
 	}
 
-	files, err := os.ReadDir(importFilePath)
+	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
 		log.Println("Error importing script libraries: ", err)
 		return
@@ -78,7 +79,7 @@ func importScriptLibrary(libraryName string, libraryExists bool, importFilePath 
 		return fmt.Errorf("unsupported file format for script library: %w", err)
 	}
 
-	fileBytes, err := os.ReadFile(importFilePath)
+	fileBytes, err := ioutil.ReadFile(importFilePath)
 	if err != nil {
 		return fmt.Errorf("error when reading the file for script library: %w", err)
 	}
@@ -132,7 +133,7 @@ func updateScriptLibrary(name string, data []byte, format utils.Format) error {
 	return nil
 }
 
-func removeDeletedDeployedScriptLibraries(localFiles []os.DirEntry, deployedLibraries []scriptLibrary) {
+func removeDeletedDeployedScriptLibraries(localFiles []os.FileInfo, deployedLibraries []scriptLibrary) {
 
 	if len(deployedLibraries) == 0 {
 		return

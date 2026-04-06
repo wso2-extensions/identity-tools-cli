@@ -20,6 +20,7 @@ package challengeQuestions
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -46,7 +47,7 @@ func ImportAll(inputDirPath string) {
 		return
 	}
 
-	files, err := os.ReadDir(importFilePath)
+	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
 		log.Println("Error importing challenge question sets:", err)
 		return
@@ -78,7 +79,7 @@ func importChallengeSet(setId string, setExists bool, importFilePath string) err
 		return fmt.Errorf("unsupported file format for challenge question set: %w", err)
 	}
 
-	fileBytes, err := os.ReadFile(importFilePath)
+	fileBytes, err := ioutil.ReadFile(importFilePath)
 	if err != nil {
 		return fmt.Errorf("error when reading the file for challenge question set: %w", err)
 	}
@@ -136,7 +137,7 @@ func updateChallengeSet(setId string, requestBody []byte, format utils.Format) e
 	return nil
 }
 
-func removeDeletedDeployedChallengeSets(localFiles []os.DirEntry, deployedSets []challengeSet) {
+func removeDeletedDeployedChallengeSets(localFiles []os.FileInfo, deployedSets []challengeSet) {
 
 	if len(deployedSets) == 0 {
 		return

@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"regexp"
 
@@ -131,7 +130,7 @@ func getDialectURIFromFile(filePath string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("unsupported file format: %w", err)
 	}
-	data, err := os.ReadFile(filePath)
+	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return "", fmt.Errorf("error reading file: %w", err)
 	}

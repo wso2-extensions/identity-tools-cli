@@ -21,7 +21,7 @@ package roles
 import (
 	"encoding/json"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
@@ -61,7 +61,7 @@ func getRoleList() ([]role, error) {
 		return nil, fmt.Errorf("error while retrieving roles list. Status: %d", resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error when reading the retrieved roles list: %w", err)
 	}
