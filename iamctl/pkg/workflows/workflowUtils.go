@@ -301,13 +301,9 @@ func prepareAssociationRequestBody(assocMap map[string]interface{}, workflowId s
 
 func disableAssociation(resp *http.Response, requestBody []byte) error {
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("error reading create association response: %w", err)
-	}
 	var created workflowAssociation
-	if err := json.Unmarshal(body, &created); err != nil {
-		return fmt.Errorf("error parsing create association response: %w", err)
+	if _, err := utils.ParseResponseBody(resp, &created); err != nil {
+		return fmt.Errorf("error reading create association response: %w", err)
 	}
 
 	patchResp, err := utils.SendPatchRequest(utils.WORKFLOW_ASSOCIATIONS, created.ID, requestBody)

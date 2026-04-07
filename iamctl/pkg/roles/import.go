@@ -19,7 +19,6 @@
 package roles
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -116,13 +115,9 @@ func createRole(requestBody []byte, format utils.Format, displayName string) err
 	}
 	defer resp.Body.Close()
 
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("error reading role response: %w", err)
-	}
 	var created role
-	if err := json.Unmarshal(respBody, &created); err != nil {
-		return fmt.Errorf("error parsing create role response: %w", err)
+	if _, err := utils.ParseResponseBody(resp, &created); err != nil {
+		return fmt.Errorf("error reading create role response: %w", err)
 	}
 	utils.AddToIdentifierMap(utils.ROLES, created.Id, created.DisplayName, utils.IMPORT)
 

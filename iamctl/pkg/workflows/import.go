@@ -19,7 +19,6 @@
 package workflows
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -133,14 +132,9 @@ func createWorkflow(requestBody []byte, workflowName string, associations []map[
 	}
 	defer resp.Body.Close()
 
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("error reading create workflow response: %w", err)
-	}
-
 	var created workflow
-	if err := json.Unmarshal(respBody, &created); err != nil {
-		return fmt.Errorf("error parsing create workflow response: %w", err)
+	if _, err := utils.ParseResponseBody(resp, &created); err != nil {
+		return fmt.Errorf("error reading create workflow response: %w", err)
 	}
 	if err := syncWorkflowAssociations(created.ID, associations, existingAssoc); err != nil {
 		return fmt.Errorf("error syncing workflow associations: %w", err)
