@@ -19,13 +19,14 @@
 package workflows
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
-	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/workflows/workflowAssociations"
 )
 
 func ImportAll(inputDirPath string) {
@@ -46,14 +47,30 @@ func ImportAll(inputDirPath string) {
 		log.Println("Error retrieving the deployed workflow list:", err)
 		return
 	}
-	files, err := os.ReadDir(importFilePath)
+	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
 		log.Println("Error importing workflows:", err)
 		return
 	}
-
 	if utils.TOOL_CONFIGS.AllowDelete {
 		removeDeletedDeployedWorkflows(files, existingWorkflows)
+	}
+
+	localAssoc, err := readLocalAssociationNames(importFilePath)
+	if err != nil {
+		log.Println("Error reading local workflow associations list:", err)
+		utils.UpdateFailureSummary(utils.WORKFLOWS, utils.WORKFLOW_ASSOCIATIONS.String())
+		return
+	}
+	existingAssoc, err := getWorkflowAssociationsList()
+	if err != nil {
+		log.Println("Error retrieving the deployed workflow association list:", err)
+		utils.UpdateFailureSummary(utils.WORKFLOWS, utils.WORKFLOW_ASSOCIATIONS.String())
+		return
+	}
+	var failedWorkflows map[string]struct{}
+	if utils.TOOL_CONFIGS.AllowDelete {
+		failedWorkflows = removeDeletedDeployedWfAssociations(localAssoc, existingAssoc)
 	}
 
 	for _, file := range files {
@@ -61,45 +78,51 @@ func ImportAll(inputDirPath string) {
 		fileInfo := utils.GetFileInfo(wfFilePath)
 		workflowName := fileInfo.ResourceName
 
+		if workflowName == "WorkflowAssociations" {
+			continue
+		}
+		if _, failed := failedWorkflows[workflowName]; failed {
+			log.Printf("Skipping workflow %s: deleting stale workflow associations failed", workflowName)
+			utils.UpdateFailureSummary(utils.WORKFLOWS, workflowName)
+			continue
+		}
+
 		if !utils.IsResourceExcluded(workflowName, utils.TOOL_CONFIGS.WorkflowConfigs) {
 			workflowId := getWorkflowId(workflowName, existingWorkflows)
-			err := importWorkflow(workflowName, workflowId, wfFilePath)
-			if err != nil {
+			if err := importWorkflow(workflowName, workflowId, wfFilePath, existingAssoc); err != nil {
 				log.Println("Error importing workflow:", err)
 				utils.UpdateFailureSummary(utils.WORKFLOWS, workflowName)
 			}
 		}
 	}
-
-	workflowAssociations.ImportAll(importFilePath)
 }
 
-func importWorkflow(workflowName string, workflowId string, importFilePath string) error {
+func importWorkflow(workflowName string, workflowId string, importFilePath string, existingAssoc []workflowAssociation) error {
 
 	format, err := utils.FormatFromExtension(filepath.Ext(importFilePath))
 	if err != nil {
 		return fmt.Errorf("unsupported file format for workflow: %w", err)
 	}
-
-	fileBytes, err := os.ReadFile(importFilePath)
+	fileBytes, err := ioutil.ReadFile(importFilePath)
 	if err != nil {
 		return fmt.Errorf("error when reading the file for workflow: %w", err)
 	}
 
 	keywordMapping := getWorkflowKeywordMapping(workflowName)
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), keywordMapping)
-	requestBody, err := utils.PrepareJSONRequestBody([]byte(modifiedFileData), format, utils.WORKFLOWS, "id")
+
+	requestBody, associations, err := prepareWorkflowRequestBody([]byte(modifiedFileData), format)
 	if err != nil {
 		return err
 	}
 
 	if workflowId == "" {
-		return createWorkflow(requestBody, format, workflowName)
+		return createWorkflow(requestBody, workflowName, associations, existingAssoc)
 	}
-	return updateWorkflow(workflowId, requestBody, format, workflowName)
+	return updateWorkflow(workflowId, requestBody, workflowName, associations, existingAssoc)
 }
 
-func createWorkflow(requestBody []byte, format utils.Format, workflowName string) error {
+func createWorkflow(requestBody []byte, workflowName string, associations []map[string]interface{}, existingAssoc []workflowAssociation) error {
 
 	log.Println("Creating new workflow:", workflowName)
 
@@ -109,11 +132,17 @@ func createWorkflow(requestBody []byte, format utils.Format, workflowName string
 	}
 	defer resp.Body.Close()
 
-	parsed, err := utils.ParseResponseBody(resp)
+	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Warning: Error parsing response body. Skipping resource identifier map entry.")
-	} else {
-		utils.ExtractAndRegisterIdentifier(utils.WORKFLOWS, parsed, utils.IMPORT)
+		return fmt.Errorf("error reading create workflow response: %w", err)
+	}
+
+	var created workflow
+	if err := json.Unmarshal(respBody, &created); err != nil {
+		return fmt.Errorf("error parsing create workflow response: %w", err)
+	}
+	if err := syncWorkflowAssociations(created.ID, associations, existingAssoc); err != nil {
+		return fmt.Errorf("error syncing workflow associations: %w", err)
 	}
 
 	utils.UpdateSuccessSummary(utils.WORKFLOWS, utils.IMPORT)
@@ -121,7 +150,7 @@ func createWorkflow(requestBody []byte, format utils.Format, workflowName string
 	return nil
 }
 
-func updateWorkflow(workflowId string, requestBody []byte, format utils.Format, workflowName string) error {
+func updateWorkflow(workflowId string, requestBody []byte, workflowName string, associations []map[string]interface{}, existingAssoc []workflowAssociation) error {
 
 	log.Println("Updating workflow:", workflowName)
 
@@ -131,13 +160,63 @@ func updateWorkflow(workflowId string, requestBody []byte, format utils.Format, 
 	}
 	defer resp.Body.Close()
 
-	utils.AddToIdentifierMap(utils.WORKFLOWS, workflowId, workflowName, utils.IMPORT)
+	if err := syncWorkflowAssociations(workflowId, associations, existingAssoc); err != nil {
+		return fmt.Errorf("error syncing workflow associations: %w", err)
+	}
+
 	utils.UpdateSuccessSummary(utils.WORKFLOWS, utils.UPDATE)
 	log.Println("Workflow updated successfully.")
 	return nil
 }
 
-func removeDeletedDeployedWorkflows(localFiles []os.DirEntry, deployedWorkflows []workflow) {
+func syncWorkflowAssociations(workflowId string, associations []map[string]interface{}, deployedAssoc []workflowAssociation) error {
+
+	for _, assocMap := range associations {
+		assocName, ok := assocMap["associationName"].(string)
+		if !ok {
+			return fmt.Errorf("invalid format for associationName")
+		}
+		requestBody, err := prepareAssociationRequestBody(assocMap, workflowId)
+		if err != nil {
+			return fmt.Errorf("error preparing request body for association %s: %w", assocName, err)
+		}
+
+		if assocId := getWfAssocId(assocName, deployedAssoc); assocId != "" {
+			if err := updateAssociation(assocId, requestBody, assocName); err != nil {
+				return err
+			}
+		} else {
+			if err := createAssociation(requestBody, assocName); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func createAssociation(requestBody []byte, associationName string) error {
+
+	resp, err := utils.SendPostRequest(utils.WORKFLOW_ASSOCIATIONS, requestBody)
+	if err != nil {
+		return fmt.Errorf("error when creating workflow association %s: %w", associationName, err)
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+func updateAssociation(associationId string, requestBody []byte, associationName string) error {
+
+	resp, err := utils.SendPatchRequest(utils.WORKFLOW_ASSOCIATIONS, associationId, requestBody)
+	if err != nil {
+		return fmt.Errorf("error when updating workflow association %s: %w", associationName, err)
+	}
+	defer resp.Body.Close()
+
+	return nil
+}
+
+func removeDeletedDeployedWorkflows(localFiles []os.FileInfo, deployedWorkflows []workflow) {
 
 	if len(deployedWorkflows) == 0 {
 		return
@@ -166,4 +245,31 @@ func removeDeletedDeployedWorkflows(localFiles []os.DirEntry, deployedWorkflows 
 			utils.UpdateSuccessSummary(utils.WORKFLOWS, utils.DELETE)
 		}
 	}
+}
+
+func removeDeletedDeployedWfAssociations(localNames []string, deployedAssociations []workflowAssociation) map[string]struct{} {
+
+	failedWorkflows := make(map[string]struct{})
+	if len(deployedAssociations) == 0 {
+		return failedWorkflows
+	}
+
+	localSet := make(map[string]struct{})
+	for _, name := range localNames {
+		localSet[name] = struct{}{}
+	}
+
+	for _, assoc := range deployedAssociations {
+		if _, existsLocally := localSet[assoc.Name]; existsLocally {
+			continue
+		}
+		if utils.IsResourceExcluded(assoc.WorkflowName, utils.TOOL_CONFIGS.WorkflowConfigs) {
+			continue
+		}
+		if err := utils.SendDeleteRequest(assoc.ID, utils.WORKFLOW_ASSOCIATIONS); err != nil {
+			log.Printf("Error deleting workflow association %s of workflow %s: %v", assoc.Name, assoc.WorkflowName, err)
+			failedWorkflows[assoc.WorkflowName] = struct{}{}
+		}
+	}
+	return failedWorkflows
 }

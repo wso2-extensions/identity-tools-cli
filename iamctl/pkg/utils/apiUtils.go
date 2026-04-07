@@ -48,6 +48,7 @@ const PATCH = "patch"
 type sendConfig struct {
 	contentType string
 	pathSuffix  string
+	queryParams map[string]string
 }
 
 type SendOption func(*sendConfig)
@@ -351,6 +352,10 @@ func WithPathSuffix(suffix string) SendOption {
 	return func(c *sendConfig) { c.pathSuffix = suffix }
 }
 
+func WithQueryParams(params map[string]string) SendOption {
+	return func(c *sendConfig) { c.queryParams = params }
+}
+
 func applySendOptions(opts []SendOption) *sendConfig {
 	cfg := &sendConfig{contentType: MEDIA_TYPE_JSON}
 	for _, opt := range opts {
@@ -510,8 +515,9 @@ func SendPatchRequest(resourceType ResourceType, resourceId string, requestBody 
 	return resp, nil
 }
 
-func SendGetListRequest(resourceType ResourceType, resourceLimit int) (*http.Response, error) {
+func SendGetListRequest(resourceType ResourceType, resourceLimit int, opts ...SendOption) (*http.Response, error) {
 
+	cfg := applySendOptions(opts)
 	var reqUrl = buildRequestUrl(LIST, resourceType, "")
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
@@ -519,11 +525,14 @@ func SendGetListRequest(resourceType ResourceType, resourceLimit int) (*http.Res
 	req.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
 	req.Header.Set("accept", "*/*")
 
+	query := req.URL.Query()
 	if resourceLimit != -1 {
-		query := req.URL.Query()
 		query.Add("limit", strconv.Itoa(resourceLimit))
-		req.URL.RawQuery = query.Encode()
 	}
+	for k, v := range cfg.queryParams {
+		query.Add(k, v)
+	}
+	req.URL.RawQuery = query.Encode()
 	defer req.Body.Close()
 
 	httpClient := &http.Client{}

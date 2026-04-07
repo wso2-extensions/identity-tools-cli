@@ -31,7 +31,6 @@ const SCRIPT_LIBRARIES_CONFIG = "SCRIPT_LIBRARIES"
 const GOVERNANCE_CONNECTORS_CONFIG = "GOVERNANCE_CONNECTORS"
 const CERTIFICATES_CONFIG = "CERTIFICATES"
 const WORKFLOWS_CONFIG = "WORKFLOWS"
-const WORKFLOW_ASSOCIATIONS_CONFIG = "WORKFLOW_ASSOCIATIONS"
 
 // Tool configs
 const EXCLUDE_CONFIG = "EXCLUDE"
@@ -193,8 +192,9 @@ var challengeQuestionsArrayIdentifiers = map[string]string{
 
 var workflowArrayIdentifiers = map[string]string{
 
-	"steps":   "step",
-	"options": "entity",
+	"steps":        "step",
+	"options":      "entity",
+	"associations": "id",
 }
 
 type ResourceIdentifierMeta struct {

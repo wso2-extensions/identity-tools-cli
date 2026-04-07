@@ -20,12 +20,12 @@ package workflows
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
-	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/workflows/workflowAssociations"
 )
 
 func ExportAll(exportFilePath string, format string) {
@@ -51,6 +51,9 @@ func ExportAll(exportFilePath string, format string) {
 		}
 	}
 
+	exportedAssociationNames = []string{}
+	successCount := 0
+
 	for _, wf := range workflows {
 		if !utils.IsResourceExcluded(wf.Name, utils.TOOL_CONFIGS.WorkflowConfigs) {
 			log.Println("Exporting workflow:", wf.Name)
@@ -59,18 +62,22 @@ func ExportAll(exportFilePath string, format string) {
 				utils.UpdateFailureSummary(utils.WORKFLOWS, wf.Name)
 				log.Printf("Error while exporting workflow: %s. %s", wf.Name, err)
 			} else {
-				utils.UpdateSuccessSummary(utils.WORKFLOWS, utils.EXPORT)
+				successCount++
 				log.Println("Workflow exported successfully:", wf.Name)
 			}
 		}
 	}
 
-	workflowAssociations.ExportAll(exportFilePath, format)
+	err = writeWorkflowAssociationsList(exportFilePath, format)
+	updateWorkflowExportSummary(err == nil, successCount)
+	if err != nil {
+		log.Println("Error writing workflow associations list:", err)
+	}
 }
 
 func exportWorkflow(workflowId string, workflowName string, outputDirPath string, formatString string) error {
 
-	wf, err := utils.GetResourceData(utils.WORKFLOWS, workflowId)
+	wf, err := getWorkflowData(workflowId)
 	if err != nil {
 		return fmt.Errorf("error while getting workflow: %w", err)
 	}
@@ -89,10 +96,31 @@ func exportWorkflow(workflowId string, workflowName string, outputDirPath string
 		return fmt.Errorf("error while serializing workflow: %w", err)
 	}
 
-	err = os.WriteFile(exportedFileName, modifiedFile, 0644)
+	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 	if err != nil {
 		return fmt.Errorf("error when writing exported content to file: %w", err)
 	}
 
 	return nil
+}
+
+func getWorkflowData(workflowId string) (interface{}, error) {
+
+	wf, err := utils.GetResourceData(utils.WORKFLOWS, workflowId)
+	if err != nil {
+		return nil, fmt.Errorf("error while getting workflow: %w", err)
+	}
+
+	wfMap, ok := wf.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected format for workflow data")
+	}
+
+	associations, err := getAssociationsOfWorkflow(workflowId)
+	if err != nil {
+		return nil, fmt.Errorf("error while getting workflow associations: %w", err)
+	}
+	wfMap["associations"] = associations
+
+	return wfMap, nil
 }

@@ -21,7 +21,8 @@ package workflows
 import (
 	"encoding/json"
 	"fmt"
-	"io"
+	"io/ioutil"
+	"path/filepath"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -34,6 +35,22 @@ type workflow struct {
 type workflowListResponse struct {
 	Workflows []workflow `json:"workflows"`
 }
+
+type workflowAssociation struct {
+	ID           string `json:"id"`
+	Name         string `json:"associationName"`
+	WorkflowName string `json:"workflowName"`
+}
+
+type workflowAssociationListResponse struct {
+	WorkflowAssociations []workflowAssociation `json:"workflowAssociations"`
+}
+
+type associationsOfWorkflowResponse struct {
+	WorkflowAssociations []interface{} `json:"workflowAssociations"`
+}
+
+var exportedAssociationNames []string
 
 func getWorkflowList() ([]workflow, error) {
 
@@ -51,7 +68,7 @@ func getWorkflowList() ([]workflow, error) {
 		return nil, fmt.Errorf("error while retrieving workflow list. Status code: %d", statusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error when reading the retrieved workflow list: %w", err)
 	}
@@ -63,6 +80,35 @@ func getWorkflowList() ([]workflow, error) {
 	}
 
 	return listResponse.Workflows, nil
+}
+
+func getWorkflowAssociationsList() ([]workflowAssociation, error) {
+
+	resp, err := utils.SendGetListRequest(utils.WORKFLOW_ASSOCIATIONS, -1)
+	if err != nil {
+		return nil, fmt.Errorf("error while retrieving workflow association list: %w", err)
+	}
+	defer resp.Body.Close()
+
+	statusCode := resp.StatusCode
+	if statusCode != 200 {
+		if errMsg, ok := utils.ErrorCodes[statusCode]; ok {
+			return nil, fmt.Errorf("error while retrieving workflow association list. Status code: %d, Error: %s", statusCode, errMsg)
+		}
+		return nil, fmt.Errorf("error while retrieving workflow association list. Status code: %d", statusCode)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error when reading the retrieved workflow association list: %w", err)
+	}
+
+	var listResponse workflowAssociationListResponse
+	if err := json.Unmarshal(body, &listResponse); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling the retrieved workflow association list: %w", err)
+	}
+
+	return listResponse.WorkflowAssociations, nil
 }
 
 func getDeployedWorkflowNames(workflows []workflow) []string {
@@ -90,4 +136,160 @@ func getWorkflowId(name string, list []workflow) string {
 		}
 	}
 	return ""
+}
+
+func getWfAssocId(name string, list []workflowAssociation) string {
+
+	for _, assoc := range list {
+		if assoc.Name == name {
+			return assoc.ID
+		}
+	}
+	return ""
+}
+
+func getAssociationsOfWorkflow(workflowId string) ([]interface{}, error) {
+
+	resp, err := utils.SendGetListRequest(utils.WORKFLOW_ASSOCIATIONS, -1,
+		utils.WithQueryParams(map[string]string{"filter": "workflowId eq " + workflowId}))
+	if err != nil {
+		return nil, fmt.Errorf("error while retrieving associations: %w", err)
+	}
+	defer resp.Body.Close()
+
+	statusCode := resp.StatusCode
+	if statusCode != 200 {
+		if errMsg, ok := utils.ErrorCodes[statusCode]; ok {
+			return nil, fmt.Errorf("error while retrieving associations. Status code: %d, Error: %s", statusCode, errMsg)
+		}
+		return nil, fmt.Errorf("error while retrieving associations for workflow. Status code: %d", statusCode)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error when reading associations: %w", err)
+	}
+	var listResp associationsOfWorkflowResponse
+	if err := json.Unmarshal(body, &listResp); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling associations: %w", err)
+	}
+
+	for _, association := range listResp.WorkflowAssociations {
+		if err := processWorkflowAssociation(association); err != nil {
+			return nil, err
+		}
+	}
+
+	return listResp.WorkflowAssociations, nil
+}
+
+func processWorkflowAssociation(association interface{}) error {
+
+	assocMap, ok := association.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for association")
+	}
+	name, ok := assocMap["associationName"].(string)
+	if !ok {
+		return fmt.Errorf("unexpected format for associationName in association")
+	}
+	exportedAssociationNames = append(exportedAssociationNames, name)
+	delete(assocMap, "workflowName")
+	return nil
+}
+
+func prepareWorkflowRequestBody(data []byte, format utils.Format) ([]byte, []map[string]interface{}, error) {
+
+	wfMap, err := utils.DeserializeToMap(data, format, utils.WORKFLOWS, "id")
+	if err != nil {
+		return nil, nil, fmt.Errorf("error deserializing workflow file: %w", err)
+	}
+
+	assocRaw, ok := wfMap["associations"].([]interface{})
+	if !ok {
+		return nil, nil, fmt.Errorf("unexpected format for workflow associations")
+	}
+
+	var associations []map[string]interface{}
+	for _, item := range assocRaw {
+		assocMap, ok := item.(map[string]interface{})
+		if !ok {
+			return nil, nil, fmt.Errorf("unexpected format for association item in workflow file")
+		}
+		associations = append(associations, assocMap)
+	}
+
+	delete(wfMap, "associations")
+	requestBody, err := utils.Serialize(wfMap, utils.FormatJSON, utils.WORKFLOWS)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error serializing workflow request body: %w", err)
+	}
+	return requestBody, associations, nil
+}
+
+func prepareAssociationRequestBody(assocMap map[string]interface{}, workflowId string) ([]byte, error) {
+
+	delete(assocMap, "id")
+	delete(assocMap, "workflowName")
+	assocMap["workflowId"] = workflowId
+
+	body, err := json.Marshal(assocMap)
+	if err != nil {
+		return nil, fmt.Errorf("error serializing request body: %w", err)
+	}
+	return body, nil
+}
+
+func readLocalAssociationNames(importDirPath string) ([]string, error) {
+
+	matches, err := filepath.Glob(filepath.Join(importDirPath, "WorkflowAssociations.*"))
+	if err != nil {
+		return nil, fmt.Errorf("error searching for file: %w", err)
+	}
+	if len(matches) == 0 {
+		return []string{}, nil
+	}
+
+	fileBytes, err := ioutil.ReadFile(matches[0])
+	if err != nil {
+		return nil, fmt.Errorf("error reading file: %w", err)
+	}
+
+	format, err := utils.FormatFromExtension(filepath.Ext(matches[0]))
+	if err != nil {
+		return nil, fmt.Errorf("unsupported format for file: %w", err)
+	}
+
+	var names []string
+	if _, err := utils.Deserialize(fileBytes, format, utils.WORKFLOW_ASSOCIATIONS, &names); err != nil {
+		return nil, fmt.Errorf("error deserializing file: %w", err)
+	}
+	return names, nil
+}
+
+func writeWorkflowAssociationsList(outputDirPath string, formatString string) error {
+
+	format := utils.FormatFromString(formatString)
+	exportedFileName := utils.GetExportedFilePath(outputDirPath, "WorkflowAssociations", format)
+
+	data, err := utils.Serialize(exportedAssociationNames, format, utils.WORKFLOW_ASSOCIATIONS)
+	if err != nil {
+		return fmt.Errorf("error serializing workflow associations list: %w", err)
+	}
+
+	if err := ioutil.WriteFile(exportedFileName, data, 0644); err != nil {
+		return fmt.Errorf("error writing workflow associations list: %w", err)
+	}
+	return nil
+}
+
+func updateWorkflowExportSummary(success bool, successCount int) {
+
+	if !success {
+		utils.UpdateFailureSummary(utils.WORKFLOW_ASSOCIATIONS, utils.WORKFLOW_ASSOCIATIONS.String())
+		return
+	}
+	for i := 0; i < successCount; i++ {
+		utils.UpdateSuccessSummary(utils.WORKFLOWS, utils.EXPORT)
+	}
 }
