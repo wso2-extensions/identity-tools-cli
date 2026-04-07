@@ -122,5 +122,12 @@ func getWorkflowData(workflowId string) (interface{}, error) {
 	}
 	wfMap["associations"] = associations
 
+	if err := removeUserStepOptions(wfMap); err != nil {
+		return nil, fmt.Errorf("error removing users from workflow steps: %w", err)
+	}
+	if _, err := utils.ReplaceReferences(utils.WORKFLOWS, wfMap); err != nil {
+		return nil, err
+	}
+
 	return wfMap, nil
 }

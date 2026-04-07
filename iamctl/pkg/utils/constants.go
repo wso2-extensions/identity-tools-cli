@@ -208,14 +208,12 @@ type ResourceReferenceMeta struct {
 }
 
 // Maps resource types to their identifier metadata.
-var RESOURCE_IDENTIFIER_METADATA = map[ResourceType]ResourceIdentifierMeta{
-	WORKFLOWS: {IdentifierPath: "id", UniqueValuePath: "name"},
-}
+var RESOURCE_IDENTIFIER_METADATA = map[ResourceType]ResourceIdentifierMeta{}
 
 // Maps resource types to the resources they reference.
 var RESOURCE_REFERENCE_METADATA = map[ResourceType][]ResourceReferenceMeta{
-	WORKFLOW_ASSOCIATIONS: {
-		{ReferencedResourceType: WORKFLOWS, ReferencePaths: []string{"workflowName"}},
+	WORKFLOWS: {
+		{ReferencedResourceType: ROLES, ReferencePaths: []string{"template.steps.[step=all_items].options.[entity=roles].values"}},
 	},
 }
 

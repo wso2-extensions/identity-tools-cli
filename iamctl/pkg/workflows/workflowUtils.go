@@ -198,11 +198,55 @@ func processWorkflowAssociation(association interface{}) error {
 	return nil
 }
 
+func removeUserStepOptions(wfMap map[string]interface{}) error {
+
+	template, ok := wfMap["template"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for workflow template")
+	}
+	steps, ok := template["steps"].([]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for workflow template steps")
+	}
+
+	for _, stepRaw := range steps {
+		step, ok := stepRaw.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for workflow step")
+		}
+		options, ok := step["options"].([]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for options in workflow step")
+		}
+
+		var filtered []interface{}
+		for _, optRaw := range options {
+			opt, ok := optRaw.(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("unexpected format for option in workflow step")
+			}
+			entity, ok := opt["entity"].(string)
+			if !ok {
+				return fmt.Errorf("unexpected format for entity in workflow step option")
+			}
+			if entity != "users" {
+				filtered = append(filtered, opt)
+			}
+		}
+		step["options"] = filtered
+	}
+	return nil
+}
+
 func prepareWorkflowRequestBody(data []byte, format utils.Format) ([]byte, []map[string]interface{}, error) {
 
 	wfMap, err := utils.DeserializeToMap(data, format, utils.WORKFLOWS, "id")
 	if err != nil {
 		return nil, nil, fmt.Errorf("error deserializing workflow file: %w", err)
+	}
+
+	if _, err := utils.ReplaceReferences(utils.WORKFLOWS, wfMap); err != nil {
+		return nil, nil, err
 	}
 
 	assocRaw, ok := wfMap["associations"].([]interface{})
