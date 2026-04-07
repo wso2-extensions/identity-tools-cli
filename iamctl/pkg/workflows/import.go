@@ -177,7 +177,7 @@ func syncWorkflowAssociations(workflowId string, associations []map[string]inter
 		if !ok {
 			return fmt.Errorf("invalid format for associationName")
 		}
-		requestBody, err := prepareAssociationRequestBody(assocMap, workflowId)
+		requestBody, isEnabled, err := prepareAssociationRequestBody(assocMap, workflowId)
 		if err != nil {
 			return fmt.Errorf("error preparing request body for association %s: %w", assocName, err)
 		}
@@ -187,7 +187,7 @@ func syncWorkflowAssociations(workflowId string, associations []map[string]inter
 				return err
 			}
 		} else {
-			if err := createAssociation(requestBody, assocName); err != nil {
+			if err := createAssociation(requestBody, assocName, isEnabled); err != nil {
 				return err
 			}
 		}
@@ -195,7 +195,7 @@ func syncWorkflowAssociations(workflowId string, associations []map[string]inter
 	return nil
 }
 
-func createAssociation(requestBody []byte, associationName string) error {
+func createAssociation(requestBody []byte, associationName string, isEnabled bool) error {
 
 	resp, err := utils.SendPostRequest(utils.WORKFLOW_ASSOCIATIONS, requestBody)
 	if err != nil {
@@ -203,6 +203,11 @@ func createAssociation(requestBody []byte, associationName string) error {
 	}
 	defer resp.Body.Close()
 
+	if !isEnabled {
+		if err := disableAssociation(resp, requestBody); err != nil {
+			return fmt.Errorf("error when disabling workflow association %s: %w", associationName, err)
+		}
+	}
 	return nil
 }
 

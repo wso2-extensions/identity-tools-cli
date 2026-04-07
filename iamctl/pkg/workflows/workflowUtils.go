@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"path/filepath"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
@@ -248,7 +249,7 @@ func removeUserStepOptions(wfMap map[string]interface{}) error {
 	return nil
 }
 
-func prepareWorkflowRequestBody(data []byte, format utils.Format) ([]byte, []map[string]interface{}, error) {
+func prepareWorkflowRequestBody(data []byte, format utils.Format) (requestBody []byte, associations []map[string]interface{}, err error) {
 
 	wfMap, err := utils.DeserializeToMap(data, format, utils.WORKFLOWS, "id")
 	if err != nil {
@@ -264,7 +265,6 @@ func prepareWorkflowRequestBody(data []byte, format utils.Format) ([]byte, []map
 		return nil, nil, fmt.Errorf("unexpected format for workflow associations")
 	}
 
-	var associations []map[string]interface{}
 	for _, item := range assocRaw {
 		assocMap, ok := item.(map[string]interface{})
 		if !ok {
@@ -274,24 +274,49 @@ func prepareWorkflowRequestBody(data []byte, format utils.Format) ([]byte, []map
 	}
 
 	delete(wfMap, "associations")
-	requestBody, err := utils.Serialize(wfMap, utils.FormatJSON, utils.WORKFLOWS)
+	requestBody, err = utils.Serialize(wfMap, utils.FormatJSON, utils.WORKFLOWS)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error serializing workflow request body: %w", err)
 	}
 	return requestBody, associations, nil
 }
 
-func prepareAssociationRequestBody(assocMap map[string]interface{}, workflowId string) ([]byte, error) {
+func prepareAssociationRequestBody(assocMap map[string]interface{}, workflowId string) (requestBody []byte, isEnabled bool, err error) {
 
 	delete(assocMap, "id")
 	delete(assocMap, "workflowName")
 	assocMap["workflowId"] = workflowId
 
+	isEnabled, ok := assocMap["isEnabled"].(bool)
+	if !ok {
+		return nil, false, fmt.Errorf("unexpected format for isEnabled field")
+	}
+
 	body, err := json.Marshal(assocMap)
 	if err != nil {
-		return nil, fmt.Errorf("error serializing request body: %w", err)
+		return nil, false, fmt.Errorf("error serializing request body: %w", err)
 	}
-	return body, nil
+	return body, isEnabled, nil
+}
+
+func disableAssociation(resp *http.Response, requestBody []byte) error {
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error reading create association response: %w", err)
+	}
+	var created workflowAssociation
+	if err := json.Unmarshal(body, &created); err != nil {
+		return fmt.Errorf("error parsing create association response: %w", err)
+	}
+
+	patchResp, err := utils.SendPatchRequest(utils.WORKFLOW_ASSOCIATIONS, created.ID, requestBody)
+	if err != nil {
+		return fmt.Errorf("error updating association: %w", err)
+	}
+	defer patchResp.Body.Close()
+
+	return nil
 }
 
 func readLocalAssociationNames(importDirPath string) ([]string, error) {
