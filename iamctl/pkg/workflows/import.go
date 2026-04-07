@@ -247,9 +247,9 @@ func removeDeletedDeployedWorkflows(localFiles []os.FileInfo, deployedWorkflows 
 	}
 }
 
-func removeDeletedDeployedWfAssociations(localNames []string, deployedAssociations []workflowAssociation) map[string]struct{} {
+func removeDeletedDeployedWfAssociations(localNames []string, deployedAssociations []workflowAssociation) (failedWorkflows map[string]struct{}) {
 
-	failedWorkflows := make(map[string]struct{})
+	failedWorkflows = make(map[string]struct{})
 	if len(deployedAssociations) == 0 {
 		return failedWorkflows
 	}

@@ -361,7 +361,7 @@ func writeWorkflowAssociationsList(outputDirPath string, formatString string) er
 func updateWorkflowExportSummary(success bool, successCount int) {
 
 	if !success {
-		utils.UpdateFailureSummary(utils.WORKFLOW_ASSOCIATIONS, utils.WORKFLOW_ASSOCIATIONS.String())
+		utils.UpdateFailureSummary(utils.WORKFLOWS, utils.WORKFLOW_ASSOCIATIONS.String())
 		return
 	}
 	for i := 0; i < successCount; i++ {

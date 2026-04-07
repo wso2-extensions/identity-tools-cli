@@ -521,7 +521,10 @@ func SendGetListRequest(resourceType ResourceType, resourceLimit int, opts ...Se
 	var reqUrl = buildRequestUrl(LIST, resourceType, "")
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	req, _ := http.NewRequest("GET", reqUrl, bytes.NewBuffer(nil))
+	req, err := http.NewRequest("GET", reqUrl, bytes.NewBuffer(nil))
+	if err != nil {
+		return nil, fmt.Errorf("error creating Get List request: %w", err)
+	}
 	req.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
 	req.Header.Set("accept", "*/*")
 
@@ -538,7 +541,7 @@ func SendGetListRequest(resourceType ResourceType, resourceLimit int, opts ...Se
 	httpClient := &http.Client{}
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve available userstore list. %w", err)
+		return nil, fmt.Errorf("failed to retrieve available resource list. %w", err)
 	}
 	return resp, nil
 }
