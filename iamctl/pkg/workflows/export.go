@@ -73,6 +73,7 @@ func ExportAll(exportFilePath string, format string) {
 	if err != nil {
 		log.Println("Error writing workflow associations list:", err)
 	}
+	log.Println("Warn: Users associated with workflow steps are not exported")
 }
 
 func exportWorkflow(workflowId string, workflowName string, outputDirPath string, formatString string) error {

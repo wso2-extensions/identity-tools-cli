@@ -95,6 +95,7 @@ func ImportAll(inputDirPath string) {
 			}
 		}
 	}
+	log.Println("Warn: Users associated with workflow steps are removed during import")
 }
 
 func importWorkflow(workflowName string, workflowId string, importFilePath string, existingAssoc []workflowAssociation) error {

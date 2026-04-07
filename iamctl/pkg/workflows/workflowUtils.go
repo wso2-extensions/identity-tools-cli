@@ -209,6 +209,7 @@ func removeUserStepOptions(wfMap map[string]interface{}) error {
 		return fmt.Errorf("unexpected format for workflow template steps")
 	}
 
+	var filteredSteps []interface{}
 	for _, stepRaw := range steps {
 		step, ok := stepRaw.(map[string]interface{})
 		if !ok {
@@ -233,8 +234,17 @@ func removeUserStepOptions(wfMap map[string]interface{}) error {
 				filtered = append(filtered, opt)
 			}
 		}
-		step["options"] = filtered
+
+		if len(filtered) > 0 {
+			step["options"] = filtered
+			filteredSteps = append(filteredSteps, step)
+		}
 	}
+
+	if len(filteredSteps) == 0 {
+		return fmt.Errorf("no valid steps remain after removing user options from workflow")
+	}
+	template["steps"] = filteredSteps
 	return nil
 }
 
