@@ -116,7 +116,10 @@ func ParseVersion(version string) ([3]int, error) {
 
 func ExportAPIExists(resourceType ResourceType) bool {
 
-	minVersion := ExportAPIMinVersionRequirements[resourceType]
+	minVersion, exists := ExportAPIMinVersionRequirements[resourceType]
+	if !exists {
+		return false
+	}
 	res, err := CompareVersions(SERVER_CONFIGS.ServerVersion, minVersion)
 	if err != nil {
 		// Use the export API when the server version is not properly configured for backward compatibility
