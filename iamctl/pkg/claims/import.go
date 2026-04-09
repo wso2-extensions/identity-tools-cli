@@ -104,7 +104,7 @@ func importClaimDialect(dialectId, dialectUri, importFilePath string) error {
 	claimKeywordMapping := getClaimKeywordMapping(dialectUri)
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), claimKeywordMapping)
 
-	// Min version requiremnt for claims export api is removed. CRUD apis used for all versions
+	// Min version requirement for claims export api is removed. CRUD apis used for all versions
 	if utils.ExportAPIExists(utils.CLAIMS) {
 		if dialectId == "" {
 			return importDialect(dialectUri, importFilePath, modifiedFileData)
@@ -181,7 +181,7 @@ func updateClaimDialectWithCRUD(dialectId, dialectURI string, localClaims []map[
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {
 		if dialectId == utils.LOCAL_CLAIM_DIALECT {
-			localClaimDialectSummary.DialectUri = dialectURI
+			localClaimDialectSummary.DialectURI = dialectURI
 			localClaimDialectSummary.LocalClaims = localClaims
 			localClaimDialectSummary.DeployedClaims = deployedClaims
 		} else {

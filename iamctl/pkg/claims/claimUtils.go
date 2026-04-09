@@ -41,7 +41,7 @@ type ClaimDialectConfigurations struct {
 
 type LocalClaimDialectSummary struct {
 	Success        bool
-	DialectUri     string
+	DialectURI     string
 	LocalClaims    []map[string]interface{}
 	DeployedClaims []map[string]interface{}
 }
@@ -233,8 +233,8 @@ func removeStaleClaimsFromLocalDialect() {
 	log.Println("Removing deleted claims from local claim dialect")
 
 	if err := removeDeletedDeployedClaims(utils.LOCAL_CLAIM_DIALECT, localClaimDialectSummary.DeployedClaims, localClaimDialectSummary.LocalClaims); err != nil {
-		log.Println("error removing deleted local claims: %w", err)
-		utils.UpdateFailureSummary(utils.CLAIMS, localClaimDialectSummary.DialectUri)
+		log.Println("error removing deleted local claims: ", err)
+		utils.UpdateFailureSummary(utils.CLAIMS, localClaimDialectSummary.DialectURI)
 		return
 	}
 	utils.UpdateSuccessSummary(utils.CLAIMS, utils.UPDATE)
