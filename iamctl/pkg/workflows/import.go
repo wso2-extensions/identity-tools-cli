@@ -33,7 +33,7 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing workflows...")
 	importFilePath := filepath.Join(inputDirPath, utils.WORKFLOWS.String())
 
-	if utils.IsResourceTypeExcluded(utils.WORKFLOWS) {
+	if !utils.IsEntitySupportedInVersion(utils.WORKFLOWS) || utils.IsResourceTypeExcluded(utils.WORKFLOWS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {

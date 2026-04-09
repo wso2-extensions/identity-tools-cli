@@ -33,7 +33,7 @@ func ExportAll(exportFilePath string, format string) {
 	log.Println("Exporting workflows...")
 	exportFilePath = filepath.Join(exportFilePath, utils.WORKFLOWS.String())
 
-	if utils.IsResourceTypeExcluded(utils.WORKFLOWS) {
+	if !utils.IsEntitySupportedInVersion(utils.WORKFLOWS) || utils.IsResourceTypeExcluded(utils.WORKFLOWS) {
 		return
 	}
 	workflows, err := getWorkflowList()
