@@ -60,6 +60,7 @@ func ExportAll(exportFilePath string, format string) {
 				utils.UpdateFailureSummary(utils.ROLES, r.DisplayName)
 				log.Printf("Error while exporting role: %s. %s", r.DisplayName, err)
 			} else {
+				utils.AddToIdentifierMap(utils.ROLES, r.Id, r.DisplayName, utils.EXPORT)
 				utils.UpdateSuccessSummary(utils.ROLES, utils.EXPORT)
 				log.Println("Role exported successfully:", r.DisplayName)
 			}
