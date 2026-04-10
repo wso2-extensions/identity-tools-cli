@@ -52,6 +52,7 @@ func ExportAll(exportFilePath string, format string) {
 		}
 	}
 
+	// Min version requirement for claims export api is removed. CRUD apis used for all versions
 	exportAPIExists := utils.ExportAPIExists(utils.CLAIMS)
 	if err != nil {
 		log.Println("Error while retrieving Claim Dialect list.", err)

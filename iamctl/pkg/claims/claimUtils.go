@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"path/filepath"
 	"regexp"
 
@@ -37,6 +38,15 @@ type ClaimDialectConfigurations struct {
 	URI string `yaml:"dialectURI"`
 	ID  string `yaml:"id"`
 }
+
+type LocalClaimDialectSummary struct {
+	Success        bool
+	DialectURI     string
+	LocalClaims    []map[string]interface{}
+	DeployedClaims []map[string]interface{}
+}
+
+var localClaimDialectSummary LocalClaimDialectSummary
 
 func getClaimDialectsList() ([]claimDialect, error) {
 
@@ -184,13 +194,14 @@ func getClaimDialect(dialectId string) (interface{}, error) {
 	return dialectMap, nil
 }
 
-func createClaimReqBody(claim map[string]interface{}) ([]byte, error) {
+func createClaimReqBody(dialectId string, claim map[string]interface{}) ([]byte, error) {
 
 	claimCopy := make(map[string]interface{}, len(claim))
 	for k, v := range claim {
-		if k != "id" && k != "claimDialectURI" {
-			claimCopy[k] = v
+		if k == "id" || k == "claimDialectURI" || k == "dialectURI" || (k == "properties" && dialectId != utils.LOCAL_CLAIM_DIALECT) {
+			continue
 		}
+		claimCopy[k] = v
 	}
 	return json.Marshal(claimCopy)
 }
@@ -207,9 +218,24 @@ func getClaimURI(c map[string]interface{}) string {
 	return uri
 }
 
-func claimChanged(local, deployed map[string]interface{}) bool {
+func claimChanged(dialectId string, local, deployed map[string]interface{}) bool {
 
-	localJSON, _ := createClaimReqBody(local)
-	deployedJSON, _ := createClaimReqBody(deployed)
+	localJSON, _ := createClaimReqBody(dialectId, local)
+	deployedJSON, _ := createClaimReqBody(dialectId, deployed)
 	return string(localJSON) != string(deployedJSON)
+}
+
+func removeStaleClaimsFromLocalDialect() {
+
+	if !localClaimDialectSummary.Success {
+		return
+	}
+	log.Println("Removing deleted claims from local claim dialect")
+
+	if err := removeDeletedDeployedClaims(utils.LOCAL_CLAIM_DIALECT, localClaimDialectSummary.DeployedClaims, localClaimDialectSummary.LocalClaims); err != nil {
+		log.Println("error removing deleted local claims: ", err)
+		utils.UpdateFailureSummary(utils.CLAIMS, localClaimDialectSummary.DialectURI)
+		return
+	}
+	utils.UpdateSuccessSummary(utils.CLAIMS, utils.UPDATE)
 }

@@ -96,6 +96,7 @@ const CONSOLE = "Console"
 const MY_ACCOUNT = "My Account"
 const CARBON_SP = "wso2carbon-local-sp"
 const RESIDENT_APP = "Resident"
+const LOCAL_CLAIM_DIALECT = "local"
 const ADMIN = "admin"
 const OAUTH2 = "oauth2"
 const ALL_ITEMS = "all_items" // Wildcard to match all elements in an array

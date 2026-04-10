@@ -26,6 +26,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -64,11 +65,12 @@ func ImportAll(inputDirPath string) {
 
 	// Move the local claims file to the front of the array to import it first
 	for i, file := range files {
-		if file.Name() == "http_wso2_org_claims.yml" {
+		if strings.Contains(file.Name(), "http_wso2_org_claims.") {
 			files[0], files[i] = files[i], files[0]
 			break
 		}
 	}
+	localClaimDialectSummary = LocalClaimDialectSummary{}
 
 	for _, file := range files {
 		claimFilePath := filepath.Join(importFilePath, file.Name())
@@ -88,6 +90,7 @@ func ImportAll(inputDirPath string) {
 			}
 		}
 	}
+	removeStaleClaimsFromLocalDialect()
 }
 
 func importClaimDialect(dialectId, dialectUri, importFilePath string) error {
@@ -101,6 +104,7 @@ func importClaimDialect(dialectId, dialectUri, importFilePath string) error {
 	claimKeywordMapping := getClaimKeywordMapping(dialectUri)
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), claimKeywordMapping)
 
+	// Min version requirement for claims export api is removed. CRUD apis used for all versions
 	if utils.ExportAPIExists(utils.CLAIMS) {
 		if dialectId == "" {
 			return importDialect(dialectUri, importFilePath, modifiedFileData)
@@ -176,8 +180,15 @@ func updateClaimDialectWithCRUD(dialectId, dialectURI string, localClaims []map[
 		return fmt.Errorf("error retrieving deployed claims for dialect: %w", err)
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {
-		if err := removeDeletedDeployedClaims(dialectId, deployedClaims, localClaims); err != nil {
-			return fmt.Errorf("error removing deleted claims of dialect: %w", err)
+		if dialectId == utils.LOCAL_CLAIM_DIALECT {
+			localClaimDialectSummary.DialectURI = dialectURI
+			localClaimDialectSummary.LocalClaims = localClaims
+			localClaimDialectSummary.DeployedClaims = deployedClaims
+		} else {
+			err := removeDeletedDeployedClaims(dialectId, deployedClaims, localClaims)
+			if err != nil {
+				return fmt.Errorf("error removing deleted claims of dialect: %w", err)
+			}
 		}
 	}
 
@@ -185,7 +196,11 @@ func updateClaimDialectWithCRUD(dialectId, dialectURI string, localClaims []map[
 		return fmt.Errorf("error updating changed claims of dialect: %w", err)
 	}
 
-	utils.UpdateSuccessSummary(utils.CLAIMS, utils.UPDATE)
+	if dialectId == utils.LOCAL_CLAIM_DIALECT && utils.TOOL_CONFIGS.AllowDelete {
+		localClaimDialectSummary.Success = true
+	} else {
+		utils.UpdateSuccessSummary(utils.CLAIMS, utils.UPDATE)
+	}
 	log.Println("Claim dialect updated successfully.")
 	return nil
 }
@@ -220,7 +235,7 @@ func updateChangedClaims(dialectId string, localClaims, deployedClaims []map[str
 	for _, claim := range localClaims {
 		uri := getClaimURI(claim)
 		if deployed, exists := deployedByURI[uri]; exists {
-			if !claimChanged(claim, deployed) {
+			if !claimChanged(dialectId, claim, deployed) {
 				continue
 			}
 			if err := updateClaim(dialectId, getClaimID(deployed), claim); err != nil {
@@ -237,7 +252,7 @@ func updateChangedClaims(dialectId string, localClaims, deployedClaims []map[str
 
 func createClaim(dialectId string, claim map[string]interface{}) error {
 
-	claimJSON, err := createClaimReqBody(claim)
+	claimJSON, err := createClaimReqBody(dialectId, claim)
 	if err != nil {
 		return fmt.Errorf("error when marshalling claim %s: %w", getClaimURI(claim), err)
 	}
@@ -252,7 +267,7 @@ func createClaim(dialectId string, claim map[string]interface{}) error {
 
 func updateClaim(dialectId, claimId string, claim map[string]interface{}) error {
 
-	claimJSON, err := createClaimReqBody(claim)
+	claimJSON, err := createClaimReqBody(dialectId, claim)
 	if err != nil {
 		return fmt.Errorf("error when marshalling claim %s: %w", getClaimURI(claim), err)
 	}
