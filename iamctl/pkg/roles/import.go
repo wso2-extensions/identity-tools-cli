@@ -32,6 +32,7 @@ func ImportAll(inputDirPath string) {
 
 	log.Println("Importing roles...")
 	importFilePath := filepath.Join(inputDirPath, utils.ROLES.String())
+	setRolesV2ApiExists()
 
 	if utils.IsResourceTypeExcluded(utils.ROLES) {
 		return
@@ -75,8 +76,8 @@ func ImportAll(inputDirPath string) {
 
 func importRole(displayName string, roleId string, importFilePath string) error {
 
-	if displayName == utils.ADMIN {
-		log.Println("Role: admin is a system role. Skipping import.")
+	if displayName == utils.ADMIN_ROLE || (utils.RolesV2ApiExists && displayName == utils.ADMINISTRATOR_ROLE) {
+		log.Printf("Role: %s is a system role. Skipping import.", displayName)
 		utils.AddToIdentifierMap(utils.ROLES, roleId, displayName, utils.IMPORT)
 		return nil
 	}
@@ -104,7 +105,7 @@ func createRole(requestBody []byte, format utils.Format, displayName string) err
 
 	log.Println("Creating new role:", displayName)
 
-	jsonBody, err := utils.PrepareJSONRequestBody(requestBody, format, utils.ROLES)
+	jsonBody, err := utils.PrepareJSONRequestBody(requestBody, format, utils.ROLES, "id")
 	if err != nil {
 		return err
 	}
@@ -165,7 +166,11 @@ func removeDeletedDeployedRoles(localFiles []os.FileInfo, deployedRoles []role) 
 		if _, existsLocally := localResourceNames[fileName]; existsLocally {
 			continue
 		}
-		if utils.IsResourceExcluded(r.DisplayName, utils.TOOL_CONFIGS.RoleConfigs) || r.DisplayName == utils.ADMIN {
+		if utils.IsResourceExcluded(r.DisplayName, utils.TOOL_CONFIGS.RoleConfigs) || r.DisplayName == utils.ADMIN_ROLE {
+			log.Println("Role is excluded from deletion:", r.DisplayName)
+			continue
+		}
+		if utils.RolesV2ApiExists && (r.DisplayName == utils.ADMINISTRATOR_ROLE || r.DisplayName == utils.IMPERSONATOR_ROLE) {
 			log.Println("Role is excluded from deletion:", r.DisplayName)
 			continue
 		}

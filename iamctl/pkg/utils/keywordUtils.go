@@ -192,6 +192,8 @@ func GetArrayIdentifiers(resourceType ResourceType) map[string]string {
 		return userStoreArrayIdentifiers
 	case CLAIMS:
 		return claimArrayIdentifiers
+	case ROLES:
+		return roleArrayIdentifiers
 	case CHALLENGE_QUESTIONS:
 		return challengeQuestionsArrayIdentifiers
 	case WORKFLOWS:

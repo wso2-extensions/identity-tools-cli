@@ -589,7 +589,11 @@ func getResourceBaseUrl(resourceType ResourceType) string {
 		basePath += "/o"
 	}
 	if resourceType == ROLES {
-		basePath += "/scim2/Roles/"
+		if RolesV2ApiExists {
+			basePath += "/scim2/v2/Roles/"
+		} else {
+			basePath += "/scim2/Roles/"
+		}
 	} else {
 		basePath += "/api/server/v1/" + getResourcePath(resourceType) + "/"
 	}
@@ -646,7 +650,7 @@ func addQueryParams(reqURL string, resourceType ResourceType, operation string) 
 		}
 	case ROLES:
 		if operation == GET {
-			queryParams.Set("excludedAttributes", "meta,users,groups")
+			queryParams.Set("excludedAttributes", "meta,users,groups,associatedApplications")
 		}
 	case CERTIFICATES:
 		if operation == GET {

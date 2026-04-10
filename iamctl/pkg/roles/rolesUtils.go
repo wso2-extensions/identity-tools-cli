@@ -138,6 +138,30 @@ func buildRolePermissionsPatchBody(fileBytes []byte, format utils.Format) ([]byt
 	return utils.Serialize(patchBody, utils.FormatJSON, utils.ROLES)
 }
 
+func processPermissions(roleData interface{}) (interface{}, error) {
+
+	dataMap, ok := roleData.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unepected format for response")
+	}
+	permList, ok := dataMap["permissions"].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected format for permissions")
+	}
+
+	for i, perm := range permList {
+		permMap, ok := perm.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("unexpected format for permission in list")
+		}
+		delete(permMap, "$ref")
+		permList[i] = permMap
+	}
+
+	dataMap["permissions"] = permList
+	return dataMap, nil
+}
+
 func escapeRoleName(filepath string) string {
 
 	return strings.ReplaceAll(filepath, "Application/", "Application%2F")
@@ -146,4 +170,16 @@ func escapeRoleName(filepath string) string {
 func unescapeName(sanitizedFileName string) string {
 
 	return strings.ReplaceAll(sanitizedFileName, "Application%2F", "Application/")
+}
+
+func setRolesV2ApiExists() {
+
+	res, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSRION_ROLES_V2_API)
+
+	// Use the V2 API when the server version is not properly configured
+	if err != nil || res >= 0 {
+		utils.RolesV2ApiExists = true
+	} else {
+		utils.RolesV2ApiExists = false
+	}
 }
