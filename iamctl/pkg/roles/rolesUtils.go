@@ -24,6 +24,7 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/organizations"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
@@ -138,13 +139,22 @@ func buildRolePermissionsPatchBody(fileBytes []byte, format utils.Format) ([]byt
 	return utils.Serialize(patchBody, utils.FormatJSON, utils.ROLES)
 }
 
-func processPermissions(roleData interface{}) (interface{}, error) {
+func processExportedRole(roleData interface{}) (processedData interface{}, err error) {
 
 	dataMap, ok := roleData.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("unepected format for response")
 	}
-	permList, ok := dataMap["permissions"].([]interface{})
+
+	if dataMap, err = processPermissionsForExport(dataMap); err != nil {
+		return nil, err
+	}
+	return processAudienceForExport(dataMap)
+}
+
+func processPermissionsForExport(roleMap map[string]interface{}) (map[string]interface{}, error) {
+
+	permList, ok := roleMap["permissions"].([]interface{})
 	if !ok {
 		return nil, fmt.Errorf("unexpected format for permissions")
 	}
@@ -157,9 +167,52 @@ func processPermissions(roleData interface{}) (interface{}, error) {
 		delete(permMap, "$ref")
 		permList[i] = permMap
 	}
+	roleMap["permissions"] = permList
+	return roleMap, nil
+}
 
-	dataMap["permissions"] = permList
-	return dataMap, nil
+func processAudienceForExport(roleMap map[string]interface{}) (map[string]interface{}, error) {
+
+	audience, ok := roleMap["audience"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected format for audience")
+	}
+	delete(audience, "value")
+	roleMap["audience"] = audience
+	return roleMap, nil
+}
+
+func processAudienceForImport(roleMap map[string]interface{}) (interface{}, error) {
+
+	audience, ok := roleMap["audience"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected format for audience")
+	}
+	audType, ok := audience["type"].(string)
+	if !ok {
+		return nil, fmt.Errorf("unexpected format for audience type")
+	}
+
+	switch audType {
+	case "organization":
+		superOrgId, err := organizations.GetSuperOrganizationId()
+		if err != nil {
+			return nil, fmt.Errorf("error while retrieving super organization ID: %w", err)
+		}
+		audience["value"] = superOrgId
+		roleMap["audience"] = audience
+		return roleMap, nil
+	case "application":
+		display, ok := audience["display"].(string)
+		if !ok {
+			return nil, fmt.Errorf("unexpected format for display key in audience")
+		}
+		audience["value"] = display
+		roleMap["audience"] = audience
+		return utils.ReplaceReferences(utils.ROLES, roleMap)
+	default:
+		return nil, fmt.Errorf("unsupported audience type")
+	}
 }
 
 func escapeRoleName(filepath string) string {

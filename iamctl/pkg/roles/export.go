@@ -77,7 +77,7 @@ func exportRole(r role, outputDirPath string, formatString string) error {
 		return fmt.Errorf("error while getting role: %w", err)
 	}
 	if utils.RolesV2ApiExists {
-		roleData, err = processPermissions(roleData)
+		roleData, err = processExportedRole(roleData)
 		if err != nil {
 			return fmt.Errorf("error while processing role permissions: %w", err)
 		}

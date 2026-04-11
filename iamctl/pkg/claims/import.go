@@ -131,7 +131,7 @@ func importClaimDialect(dialectId, dialectUri, importFilePath string) error {
 func importDialect(dialectUri, importFilePath, modifiedFileData string) error {
 
 	log.Println("Creating new claim dialect: " + dialectUri)
-	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.CLAIMS)
+	_, err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.CLAIMS)
 	if err != nil {
 		return fmt.Errorf("error when importing claim dialect: %s", err)
 	}

@@ -115,7 +115,7 @@ func importIdp(idpId string, idpName string, importFilePath string, exportAPIExi
 func importIdentityProvider(idpName, importFilePath, modifiedFileData string) error {
 
 	log.Println("Creating new identity provider: " + idpName)
-	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.IDENTITY_PROVIDERS)
+	_, err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.IDENTITY_PROVIDERS)
 	if err != nil {
 		return fmt.Errorf("error when importing identity provider: %s", err)
 	}
