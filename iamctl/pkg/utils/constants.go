@@ -73,6 +73,7 @@ const (
 	WORKFLOWS             ResourceType = "Workflows"
 	API_RESOURCES         ResourceType = "ApiResources"
 	VALIDATION_RULES      ResourceType = "ValidationRules"
+	ORGANIZATIONS         ResourceType = "Organizations"
 )
 
 // Sub resource types
@@ -241,6 +242,9 @@ var RESOURCE_IDENTIFIER_METADATA = map[ResourceType]ResourceIdentifierMeta{}
 var RESOURCE_REFERENCE_METADATA = map[ResourceType][]ResourceReferenceMeta{
 	WORKFLOWS: {
 		{ReferencedResourceType: ROLES, ReferencePaths: []string{"template.steps.[step=all_items].options.[entity=roles].values"}},
+	},
+	ROLES: {
+		{ReferencedResourceType: APPLICATIONS, ReferencePaths: []string{"audience.value"}},
 	},
 }
 

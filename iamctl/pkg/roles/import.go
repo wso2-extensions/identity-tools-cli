@@ -76,7 +76,7 @@ func ImportAll(inputDirPath string) {
 
 func importRole(displayName string, roleId string, importFilePath string) error {
 
-	if displayName == utils.ADMIN_ROLE || (utils.RolesV2ApiExists && displayName == utils.ADMINISTRATOR_ROLE) {
+	if displayName == utils.ADMIN_ROLE || (utils.RolesV2ApiExists && (displayName == utils.ADMINISTRATOR_ROLE || displayName == utils.IMPERSONATOR_ROLE)) {
 		log.Printf("Role: %s is a system role. Skipping import.", displayName)
 		utils.AddToIdentifierMap(utils.ROLES, roleId, displayName, utils.IMPORT)
 		return nil
@@ -105,9 +105,22 @@ func createRole(requestBody []byte, format utils.Format, displayName string) err
 
 	log.Println("Creating new role:", displayName)
 
-	jsonBody, err := utils.PrepareJSONRequestBody(requestBody, format, utils.ROLES, "id")
+	roleMap, err := utils.DeserializeToMap(requestBody, format, utils.ROLES, "id")
 	if err != nil {
-		return err
+		return fmt.Errorf("error deserializing role: %w", err)
+	}
+
+	var roleData interface{} = roleMap
+	if utils.RolesV2ApiExists {
+		roleData, err = processAudienceForImport(roleMap)
+		if err != nil {
+			return fmt.Errorf("error processing role audience: %w", err)
+		}
+	}
+
+	jsonBody, err := utils.Serialize(roleData, utils.FormatJSON, utils.ROLES)
+	if err != nil {
+		return fmt.Errorf("error serializing to JSON: %w", err)
 	}
 
 	resp, err := utils.SendPostRequest(utils.ROLES, jsonBody)
