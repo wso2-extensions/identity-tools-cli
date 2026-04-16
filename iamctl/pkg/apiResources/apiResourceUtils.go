@@ -33,9 +33,8 @@ type apiScope struct {
 }
 
 type apiResource struct {
-	ID         string        `json:"id"`
-	Identifier string        `json:"identifier"`
-	Scopes     []interface{} `json:"scopes"`
+	ID         string `json:"id"`
+	Identifier string `json:"identifier"`
 }
 
 type apiResourceListResponse struct {
@@ -91,10 +90,10 @@ func getApiResourceId(identifier string, list []apiResource) string {
 	return ""
 }
 
-func getApiResourceKeywordMapping(resourceIdentifer string) map[string]interface{} {
+func getApiResourceKeywordMapping(resourceIdentifier string) map[string]interface{} {
 
 	if utils.KEYWORD_CONFIGS.ApiResourceConfigs != nil {
-		return utils.ResolveAdvancedKeywordMapping(resourceIdentifer, utils.KEYWORD_CONFIGS.ApiResourceConfigs)
+		return utils.ResolveAdvancedKeywordMapping(resourceIdentifier, utils.KEYWORD_CONFIGS.ApiResourceConfigs)
 	}
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
