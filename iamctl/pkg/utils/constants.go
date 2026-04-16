@@ -31,6 +31,7 @@ const SCRIPT_LIBRARIES_CONFIG = "SCRIPT_LIBRARIES"
 const GOVERNANCE_CONNECTORS_CONFIG = "GOVERNANCE_CONNECTORS"
 const CERTIFICATES_CONFIG = "CERTIFICATES"
 const WORKFLOWS_CONFIG = "WORKFLOWS"
+const API_RESOURCES_CONFIG = "API_RESOURCES"
 
 // Tool configs
 const EXCLUDE_CONFIG = "EXCLUDE"
@@ -69,10 +70,12 @@ const (
 	GOVERNANCE_CONNECTORS ResourceType = "GovernanceConnectors"
 	CERTIFICATES          ResourceType = "Certificates"
 	WORKFLOWS             ResourceType = "Workflows"
+	API_RESOURCES         ResourceType = "ApiResources"
 )
 
 // Sub resource types
 const WORKFLOW_ASSOCIATIONS ResourceType = "WorkflowAssociations"
+const API_RESOURCE_SCOPES ResourceType = "ApiResourceScopes"
 
 // Config file names
 const SERVER_CONFIG_FILE = "serverConfig.json"
@@ -195,6 +198,13 @@ var workflowArrayIdentifiers = map[string]string{
 	"steps":        "step",
 	"options":      "entity",
 	"associations": "id",
+}
+
+var apiResourceArrayIdentifiers = map[string]string{
+
+	"scopes":                    "name",
+	"properties":                "name",
+	"authorizationDetailsTypes": "type",
 }
 
 type ResourceIdentifierMeta struct {

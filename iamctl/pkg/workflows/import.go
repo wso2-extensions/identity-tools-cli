@@ -77,7 +77,7 @@ func ImportAll(inputDirPath string) {
 		fileInfo := utils.GetFileInfo(wfFilePath)
 		workflowName := fileInfo.ResourceName
 
-		if workflowName == "WorkflowAssociations" {
+		if workflowName == utils.WORKFLOW_ASSOCIATIONS.String() {
 			continue
 		}
 		if _, failed := failedWorkflows[workflowName]; failed {

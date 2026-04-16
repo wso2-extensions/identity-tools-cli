@@ -37,4 +37,5 @@ var ResourceOrder = []ResourceType{
 	GOVERNANCE_CONNECTORS,
 	CERTIFICATES,
 	WORKFLOWS, // Dependency: Roles
+	API_RESOURCES,
 }
