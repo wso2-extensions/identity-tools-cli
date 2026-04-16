@@ -133,11 +133,16 @@ func updateApiResource(resourceId, resourceIdentifier string, requestBody []byte
 
 	log.Println("Updating API resource:", resourceIdentifier)
 
-	var resource apiResource
-	if _, err := utils.Deserialize(requestBody, format, utils.API_RESOURCES, &resource); err != nil {
+	dataMap, err := utils.DeserializeToMap(requestBody, format, utils.API_RESOURCES)
+	if err != nil {
 		return fmt.Errorf("error deserializing file: %w", err)
 	}
-	jsonBody, err := json.Marshal(resource.Scopes)
+	scopes, ok := dataMap["scopes"]
+	if !ok {
+		return fmt.Errorf("scopes array not found in API resource data")
+	}
+
+	jsonBody, err := json.Marshal(scopes)
 	if err != nil {
 		return fmt.Errorf("error serializing update scopes request body: %w", err)
 	}
