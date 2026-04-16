@@ -28,6 +28,7 @@ import (
 	emailTemplates "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/emailTemplates"
 	governanceConnectors "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/governanceConnectors"
 	identityproviders "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/identityProviders"
+	apiResources "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/apiResources"
 	oidcScopes "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/oidcScopes"
 	roles "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/roles"
 	scriptLibraries "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/scriptLibraries"
@@ -62,6 +63,7 @@ var importAllCmd = &cobra.Command{
 			utils.GOVERNANCE_CONNECTORS: governanceConnectors.ImportAll,
 			utils.CERTIFICATES:          certificates.ImportAll,
 			utils.WORKFLOWS:             workflows.ImportAll,
+			utils.API_RESOURCES:         apiResources.ImportAll,
 		}
 
 		for _, resourceType := range utils.ResourceOrder {
