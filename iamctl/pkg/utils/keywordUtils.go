@@ -188,6 +188,10 @@ func GetArrayIdentifiers(resourceType ResourceType) map[string]string {
 		return claimArrayIdentifiers
 	case CHALLENGE_QUESTIONS:
 		return challengeQuestionsArrayIdentifiers
+	case WORKFLOWS:
+		return workflowArrayIdentifiers
+	case API_RESOURCES:
+		return apiResourceArrayIdentifiers
 	default:
 		return make(map[string]string)
 	}

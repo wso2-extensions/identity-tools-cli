@@ -39,7 +39,10 @@ const SCOPE string = "internal_application_mgt_update internal_application_mgt_c
 	"internal_identity_mgt_view internal_identity_mgt_create internal_identity_mgt_update internal_identity_mgt_delete " +
 	"internal_email_mgt_view internal_email_mgt_create internal_email_mgt_update internal_email_mgt_delete " +
 	"internal_functional_lib_view internal_functional_lib_create internal_functional_lib_update internal_functional_lib_delete " +
-	"internal_keystore_view internal_keystore_update internal_keystore_create internal_keystore_delete"
+	"internal_keystore_view internal_keystore_update internal_keystore_create internal_keystore_delete " +
+	"internal_workflow_view internal_workflow_create internal_workflow_update internal_workflow_delete " +
+	"internal_workflow_association_view internal_workflow_association_create internal_workflow_association_update internal_workflow_association_delete " +
+	"internal_api_resource_view internal_api_resource_create internal_api_resource_update internal_api_resource_delete"
 
 const (
 	AppName       = "IAM-CTL"

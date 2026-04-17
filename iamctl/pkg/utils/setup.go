@@ -65,6 +65,8 @@ type ToolConfigs struct {
 	ScriptLibraryConfigs       map[string]interface{} `json:"SCRIPT_LIBRARIES"`
 	GovernanceConnectorConfigs map[string]interface{} `json:"GOVERNANCE_CONNECTORS"`
 	CertificateConfigs         map[string]interface{} `json:"CERTIFICATES"`
+	WorkflowConfigs            map[string]interface{} `json:"WORKFLOWS"`
+	ApiResourceConfigs         map[string]interface{} `json:"API_RESOURCES"`
 }
 
 type KeywordConfigs struct {
@@ -80,6 +82,8 @@ type KeywordConfigs struct {
 	ScriptLibraryConfigs       map[string]interface{} `json:"SCRIPT_LIBRARIES"`
 	GovernanceConnectorConfigs map[string]interface{} `json:"GOVERNANCE_CONNECTORS"`
 	CertificateConfigs         map[string]interface{} `json:"CERTIFICATES"`
+	WorkflowConfigs            map[string]interface{} `json:"WORKFLOWS"`
+	ApiResourceConfigs         map[string]interface{} `json:"API_RESOURCES"`
 }
 
 var SERVER_CONFIGS ServerConfigs

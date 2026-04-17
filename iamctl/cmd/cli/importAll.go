@@ -22,17 +22,19 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/applications"
+	certificates "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/certificates"
 	challengeQuestions "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/challengeQuestions"
 	claims "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/claims"
 	emailTemplates "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/emailTemplates"
 	governanceConnectors "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/governanceConnectors"
 	identityproviders "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/identityProviders"
-	certificates "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/certificates"
+	apiResources "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/apiResources"
 	oidcScopes "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/oidcScopes"
 	roles "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/roles"
 	scriptLibraries "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/scriptLibraries"
 	userstores "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/userStores"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
+	workflows "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/workflows"
 )
 
 var importAllCmd = &cobra.Command{
@@ -60,6 +62,8 @@ var importAllCmd = &cobra.Command{
 			utils.SCRIPT_LIBRARIES:      scriptLibraries.ImportAll,
 			utils.GOVERNANCE_CONNECTORS: governanceConnectors.ImportAll,
 			utils.CERTIFICATES:          certificates.ImportAll,
+			utils.WORKFLOWS:             workflows.ImportAll,
+			utils.API_RESOURCES:         apiResources.ImportAll,
 		}
 
 		for _, resourceType := range utils.ResourceOrder {

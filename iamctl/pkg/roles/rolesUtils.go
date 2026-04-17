@@ -93,17 +93,7 @@ func getRoleKeywordMapping(roleName string) map[string]interface{} {
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
 
-func isRoleExists(displayName string, existingRoleList []role) bool {
-
-	for _, r := range existingRoleList {
-		if r.DisplayName == displayName {
-			return true
-		}
-	}
-	return false
-}
-
-func getRoleIdByDisplayName(displayName string, roleList []role) string {
+func getRoleId(displayName string, roleList []role) string {
 
 	for _, r := range roleList {
 		if r.DisplayName == displayName {
