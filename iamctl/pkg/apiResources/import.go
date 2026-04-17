@@ -34,7 +34,7 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing API resources...")
 	importFilePath := filepath.Join(inputDirPath, utils.API_RESOURCES.String())
 
-	if utils.IsResourceTypeExcluded(utils.API_RESOURCES) {
+	if !utils.IsEntitySupportedInVersion(utils.API_RESOURCES) || utils.IsResourceTypeExcluded(utils.API_RESOURCES) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {

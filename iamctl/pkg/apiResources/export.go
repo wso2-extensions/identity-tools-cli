@@ -33,7 +33,7 @@ func ExportAll(exportFilePath string, format string) {
 	log.Println("Exporting API resources...")
 	exportFilePath = filepath.Join(exportFilePath, utils.API_RESOURCES.String())
 
-	if utils.IsResourceTypeExcluded(utils.API_RESOURCES) {
+	if !utils.IsEntitySupportedInVersion(utils.API_RESOURCES) || utils.IsResourceTypeExcluded(utils.API_RESOURCES) {
 		return
 	}
 	resources, err := getApiResourceList()
