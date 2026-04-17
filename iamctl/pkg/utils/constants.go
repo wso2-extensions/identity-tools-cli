@@ -32,6 +32,7 @@ const GOVERNANCE_CONNECTORS_CONFIG = "GOVERNANCE_CONNECTORS"
 const CERTIFICATES_CONFIG = "CERTIFICATES"
 const WORKFLOWS_CONFIG = "WORKFLOWS"
 const API_RESOURCES_CONFIG = "API_RESOURCES"
+const VALIDATION_RULES_CONFIG = "VALIDATION_RULES"
 
 // Tool configs
 const EXCLUDE_CONFIG = "EXCLUDE"
@@ -71,6 +72,7 @@ const (
 	CERTIFICATES          ResourceType = "Certificates"
 	WORKFLOWS             ResourceType = "Workflows"
 	API_RESOURCES         ResourceType = "ApiResources"
+	VALIDATION_RULES      ResourceType = "ValidationRules"
 )
 
 // Sub resource types
@@ -205,6 +207,13 @@ var apiResourceArrayIdentifiers = map[string]string{
 	"scopes":                    "name",
 	"properties":                "name",
 	"authorizationDetailsTypes": "type",
+}
+
+var validationRuleArrayIdentifiers = map[string]string{
+
+	"ValidationRules": "field",
+	"rules":           "validator",
+	"properties":      "key",
 }
 
 type ResourceIdentifierMeta struct {
