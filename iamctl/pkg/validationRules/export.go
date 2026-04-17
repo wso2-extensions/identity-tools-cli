@@ -33,7 +33,7 @@ func ExportAll(exportFilePath string, format string) {
 	log.Println("Exporting validation rules...")
 	exportFilePath = filepath.Join(exportFilePath, utils.VALIDATION_RULES.String())
 
-	if utils.IsResourceTypeExcluded(utils.VALIDATION_RULES) {
+	if !utils.IsEntitySupportedInVersion(utils.VALIDATION_RULES) || utils.IsResourceTypeExcluded(utils.VALIDATION_RULES) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {

@@ -33,7 +33,7 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing validation rules...")
 	importFilePath := filepath.Join(inputDirPath, utils.VALIDATION_RULES.String())
 
-	if utils.IsResourceTypeExcluded(utils.VALIDATION_RULES) {
+	if !utils.IsEntitySupportedInVersion(utils.VALIDATION_RULES) || utils.IsResourceTypeExcluded(utils.VALIDATION_RULES) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
