@@ -576,6 +576,8 @@ func getResourcePath(resourceType ResourceType) string {
 		return "workflow-associations"
 	case API_RESOURCES:
 		return "api-resources"
+	case VALIDATION_RULES:
+		return "validation-rules"
 	}
 	return ""
 }
