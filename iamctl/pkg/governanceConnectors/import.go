@@ -127,7 +127,7 @@ func importConnector(connectorId, categoryId, filePath string, keywordMapping ma
 
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), keywordMapping)
 
-	patchBody, err := buildPatchRequestBody([]byte(modifiedFileData), format)
+	patchBody, err := buildPatchRequestBody([]byte(modifiedFileData), format, connectorId)
 	if err != nil {
 		return err
 	}
