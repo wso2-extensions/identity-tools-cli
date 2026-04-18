@@ -22,9 +22,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
+
+const passwordExpiryConnectorId = "cGFzc3dvcmRFeHBpcnk"
 
 type connectorCategory struct {
 	Id   string `json:"id"`
@@ -126,11 +129,76 @@ func getGovernanceCategoryKeywordMapping(categoryName string) map[string]interfa
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
 
-func buildPatchRequestBody(requestBody []byte, format utils.Format) ([]byte, error) {
+func processPasswordExpiryConnector(data interface{}) error {
+
+	connectorMap, ok := data.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for connector data")
+	}
+	props, ok := connectorMap["properties"].([]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for properties")
+	}
+
+	roleMap := utils.GetResourceIdentifierMap(utils.ROLES)
+	var filtered []interface{}
+
+	for _, item := range props {
+		propMap, ok := item.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for property")
+		}
+
+		name, ok := propMap["name"].(string)
+		if !ok {
+			return fmt.Errorf("unexpected format for property name")
+		}
+		if !strings.HasPrefix(name, "passwordExpiry.rule") {
+			filtered = append(filtered, item)
+			continue
+		}
+
+		value, ok := propMap["value"].(string)
+		if !ok {
+			return fmt.Errorf("unexpected format for property value in property: %s", name)
+		}
+		parts := strings.Split(value, ",")
+		if len(parts) < 5 {
+			return fmt.Errorf("unexpected format for rule in property %s: expected 5 fields", name)
+		}
+
+		switch parts[2] {
+		case "groups":
+			continue
+		case "roles":
+			identifier := parts[4]
+			replacement, exists := roleMap[identifier]
+			if !exists {
+				return fmt.Errorf("referenced Role with identifier '%s' has not been exported", identifier)
+			}
+			parts[4] = replacement
+			propMap["value"] = strings.Join(parts, ",")
+			filtered = append(filtered, item)
+		default:
+			return fmt.Errorf("unexpected rule type %s in property: %s", parts[2], name)
+		}
+	}
+
+	connectorMap["properties"] = filtered
+	return nil
+}
+
+func buildPatchRequestBody(requestBody []byte, format utils.Format, connectorId string) ([]byte, error) {
 
 	connectorMap, err := utils.DeserializeToMap(requestBody, format, utils.GOVERNANCE_CONNECTORS)
 	if err != nil {
 		return nil, fmt.Errorf("error deserializing connector file: %w", err)
+	}
+
+	if connectorId == passwordExpiryConnectorId {
+		if err := processPasswordExpiryConnector(connectorMap); err != nil {
+			return nil, fmt.Errorf("error processing password expiry connector: %w", err)
+		}
 	}
 
 	properties, ok := connectorMap["properties"]
