@@ -185,12 +185,13 @@ func processPasswordExpiryConnector(data interface{}, deployedRuleNames []string
 		case "groups":
 			continue
 		case "roles":
-			identifier := parts[4]
-			replacement, exists := roleMap[identifier]
-			if !exists {
-				return fmt.Errorf("referenced Role with identifier '%s' has not been exported", identifier)
+			for i := 4; i < len(parts); i++ {
+				replacement, exists := roleMap[parts[i]]
+				if !exists {
+					return fmt.Errorf("referenced Role with identifier '%s' has not been exported", parts[i])
+				}
+				parts[i] = replacement
 			}
-			parts[4] = replacement
 			propMap["value"] = strings.Join(parts, ",")
 			filtered = append(filtered, item)
 		default:
