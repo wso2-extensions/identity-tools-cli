@@ -174,7 +174,6 @@ func processPasswordExpiryConnector(data interface{}, deployedRuleNames []string
 			return fmt.Errorf("unexpected format for property value in property: %s", name)
 		}
 		if value == "" {
-			filtered = append(filtered, item)
 			continue
 		}
 		parts := strings.Split(value, ",")
