@@ -30,6 +30,9 @@ const EMAIL_TEMPLATES_CONFIG = "EMAIL_TEMPLATES"
 const SCRIPT_LIBRARIES_CONFIG = "SCRIPT_LIBRARIES"
 const GOVERNANCE_CONNECTORS_CONFIG = "GOVERNANCE_CONNECTORS"
 const CERTIFICATES_CONFIG = "CERTIFICATES"
+const WORKFLOWS_CONFIG = "WORKFLOWS"
+const API_RESOURCES_CONFIG = "API_RESOURCES"
+const VALIDATION_RULES_CONFIG = "VALIDATION_RULES"
 
 // Tool configs
 const EXCLUDE_CONFIG = "EXCLUDE"
@@ -54,6 +57,7 @@ const TOKEN_CONFIG = "TOKEN"
 // Resource types
 type ResourceType string
 
+// Main resource types
 const (
 	APPLICATIONS          ResourceType = "Applications"
 	IDENTITY_PROVIDERS    ResourceType = "IdentityProviders"
@@ -66,7 +70,14 @@ const (
 	SCRIPT_LIBRARIES      ResourceType = "ScriptLibraries"
 	GOVERNANCE_CONNECTORS ResourceType = "GovernanceConnectors"
 	CERTIFICATES          ResourceType = "Certificates"
+	WORKFLOWS             ResourceType = "Workflows"
+	API_RESOURCES         ResourceType = "ApiResources"
+	VALIDATION_RULES      ResourceType = "ValidationRules"
 )
+
+// Sub resource types
+const WORKFLOW_ASSOCIATIONS ResourceType = "WorkflowAssociations"
+const API_RESOURCE_SCOPES ResourceType = "ApiResourceScopes"
 
 // Config file names
 const SERVER_CONFIG_FILE = "serverConfig.json"
@@ -184,6 +195,27 @@ var challengeQuestionsArrayIdentifiers = map[string]string{
 	"questions": "questionId",
 }
 
+var workflowArrayIdentifiers = map[string]string{
+
+	"steps":        "step",
+	"options":      "entity",
+	"associations": "id",
+}
+
+var apiResourceArrayIdentifiers = map[string]string{
+
+	"scopes":                    "name",
+	"properties":                "name",
+	"authorizationDetailsTypes": "type",
+}
+
+var validationRuleArrayIdentifiers = map[string]string{
+
+	"ValidationRules": "field",
+	"rules":           "validator",
+	"properties":      "key",
+}
+
 type ResourceIdentifierMeta struct {
 	IdentifierPath  string // Path to the ID field in the resource object
 	UniqueValuePath string // Path to the unique identifier field
@@ -198,7 +230,11 @@ type ResourceReferenceMeta struct {
 var RESOURCE_IDENTIFIER_METADATA = map[ResourceType]ResourceIdentifierMeta{}
 
 // Maps resource types to the resources they reference.
-var RESOURCE_REFERENCE_METADATA = map[ResourceType][]ResourceReferenceMeta{}
+var RESOURCE_REFERENCE_METADATA = map[ResourceType][]ResourceReferenceMeta{
+	WORKFLOWS: {
+		{ReferencedResourceType: ROLES, ReferencePaths: []string{"template.steps.[step=all_items].options.[entity=roles].values"}},
+	},
+}
 
 // Array field paths for each resource type
 var oidcScopeArrayFields = []string{
