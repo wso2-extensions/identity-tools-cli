@@ -201,6 +201,17 @@ func maskOAuthConsumerSecret(fileContent []byte) []byte {
 	return []byte(maskedContent)
 }
 
+func removeAssociatedRoles(fileContent []byte) []byte {
+
+	yamlPattern := regexp.MustCompile(`(?m)(^\s+roles:)[^\n]*\n(\s+-[^\n]*\n)*`)
+	result := yamlPattern.ReplaceAllString(string(fileContent), "${1} []\n")
+
+	jsonPattern := regexp.MustCompile(`("roles"\s*:\s*)\[(?:\s*\{[^}]*\}\s*,?\s*)*\]`)
+	result = jsonPattern.ReplaceAllString(result, `${1}[]`)
+
+	return []byte(result)
+}
+
 func isToolMgtApp(appId string) (bool, error) {
 
 	body, err := utils.SendGetRequest(utils.APPLICATIONS, appId+"/inbound-protocols/oidc")

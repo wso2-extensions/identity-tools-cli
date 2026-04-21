@@ -79,6 +79,10 @@ func ExportAll(exportFilePath string, format string) {
 			log.Println("Resident application exported successfully.")
 		}
 	}
+
+	if utils.IsResourceTypeExcluded(utils.ROLES) && exportAPIExists {
+		log.Println("Warn: Roles are excluded from export. Export Roles to persist Role audiences of applications.")
+	}
 }
 
 func exportApp(appId string, outputDirPath string, format string, excludeSecrets bool) error {
