@@ -68,6 +68,10 @@ func ImportAll(inputDirPath string) {
 			}
 		}
 	}
+
+	if utils.IsResourceTypeExcluded(utils.ROLES) && exportAPIExists {
+		log.Println("Warn: Roles are excluded from import. Import Roles to persist Role audiences of applications.")
+	}
 }
 
 func importApp(appId, appName, importFilePath string, exportAPIExists bool) error {
@@ -87,6 +91,7 @@ func importApp(appId, appName, importFilePath string, exportAPIExists bool) erro
 	modifiedFileData := utils.RemoveSecretMasks(fileDataWithReplacedKeywords)
 
 	if exportAPIExists && appName != utils.RESIDENT_APP {
+		modifiedFileData = string(removeAssociatedRoles([]byte(modifiedFileData)))
 		if appId == "" {
 			return importApplication(appName, importFilePath, modifiedFileData)
 		}

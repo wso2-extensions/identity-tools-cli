@@ -32,7 +32,7 @@ func ExtractAndRegisterIdentifier(resourceType ResourceType, resourceData interf
 
 	resourceMeta, exists := RESOURCE_IDENTIFIER_METADATA[resourceType]
 	if !exists {
-		log.Println("Warning: No identifier metadata found for resource type. Skipping resource identifier map entry.")
+		log.Println("Warn: No identifier metadata found for resource type. Skipping resource identifier map entry.")
 		return
 	}
 
@@ -40,7 +40,7 @@ func ExtractAndRegisterIdentifier(resourceType ResourceType, resourceData interf
 	uniqueValue := GetValue(resourceData, resourceMeta.UniqueValuePath)
 
 	if idValue == "" || uniqueValue == "" {
-		log.Println("Warning: Could not extract identifier or unique value. Skipping resource identifier map entry.")
+		log.Println("Warn: Could not extract identifier or unique value. Skipping resource identifier map entry.")
 		return
 	}
 
