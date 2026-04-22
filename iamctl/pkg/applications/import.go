@@ -100,7 +100,7 @@ func importApp(appId, appName, importFilePath string, exportAPIExists bool) erro
 		if appId == "" {
 			return importApplication(appName, importFilePath, modifiedFileData, format)
 		}
-		return updateApplication(appId, appName, importFilePath, modifiedFileData)
+		return updateApplication(appId, appName, importFilePath, modifiedFileData, format)
 	}
 
 	appMap, err := utils.DeserializeToMap([]byte(modifiedFileData), format, utils.APPLICATIONS)
@@ -149,10 +149,15 @@ func importApplication(appName, importFilePath, modifiedFileData string, format 
 	return nil
 }
 
-func updateApplication(appId, appName, importFilePath, modifiedFileData string) error {
+func updateApplication(appId, appName, importFilePath, modifiedFileData string, format utils.Format) error {
 
 	log.Println("Updating application: " + appName)
-	err := utils.SendUpdateRequest(appId, importFilePath, modifiedFileData, utils.APPLICATIONS)
+	fileData, err := injectDeployedOAuthCredentials(appId, modifiedFileData, format)
+	if err != nil {
+		return fmt.Errorf("error injecting deployed OAuth credentials: %w", err)
+	}
+
+	err = utils.SendUpdateRequest(appId, importFilePath, fileData, utils.APPLICATIONS)
 	if err != nil {
 		return fmt.Errorf("error when updating application: %s", err)
 	}
