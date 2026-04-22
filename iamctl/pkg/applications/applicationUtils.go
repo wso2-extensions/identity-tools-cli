@@ -253,24 +253,19 @@ func injectDeployedOAuthCredentials(appId, fileData string, format utils.Format)
 
 func isToolMgtApp(appId string) (bool, error) {
 
-	body, err := utils.SendGetRequest(utils.APPLICATIONS, appId+"/inbound-protocols/oidc")
+	oidcConfig, err := getDeployedInboundProtocolConfig(appId, "oidc")
 	if err != nil {
-		// 404 means no OIDC config — not the tool management app
-		if strings.Contains(err.Error(), "Resource not found") {
-			return false, nil
-		}
 		return false, err
 	}
-	var oidcConfig map[string]interface{}
-	if err := json.Unmarshal(body, &oidcConfig); err != nil {
-		return false, fmt.Errorf("error unmarshalling OIDC config: %w", err)
+	if oidcConfig == nil {
+		return false, nil
 	}
 
-	clientId, _ := oidcConfig["clientId"].(string)
-	if clientId == utils.SERVER_CONFIGS.ClientId {
-		return true, nil
+	clientId, ok := oidcConfig["clientId"].(string)
+	if !ok {
+		return false, fmt.Errorf("clientId not found in deployed oidc config")
 	}
-	return false, nil
+	return clientId == utils.SERVER_CONFIGS.ClientId, nil
 }
 
 func isOauthSecretGiven(modifiedFileData string, format utils.Format) (bool, error) {
