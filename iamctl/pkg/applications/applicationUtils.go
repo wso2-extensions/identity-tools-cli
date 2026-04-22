@@ -194,9 +194,11 @@ func unmarshalAuthConfig(data []byte) (AuthConfig, error) {
 func maskOAuthConsumerSecret(fileContent []byte) []byte {
 
 	// Find and replace the value of oauthConsumerSecret with a mask.
-	pattern := "(?m)(^\\s*oauthConsumerSecret:\\s*)null\\s*$"
-	re := regexp.MustCompile(pattern)
-	maskedContent := re.ReplaceAllString(string(fileContent), "${1}"+utils.SENSITIVE_FIELD_MASK)
+	yamlPattern := regexp.MustCompile(`(?m)(^\s*oauthConsumerSecret:\s*)null\s*$`)
+	maskedContent := yamlPattern.ReplaceAllString(string(fileContent), "${1}"+utils.SENSITIVE_FIELD_MASK)
+
+	jsonPattern := regexp.MustCompile(`("oauthConsumerSecret":\s*)null`)
+	maskedContent = jsonPattern.ReplaceAllString(maskedContent, `${1}"`+utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES+`"`)
 
 	return []byte(maskedContent)
 }
