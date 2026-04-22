@@ -213,6 +213,44 @@ func removeAssociatedRoles(fileContent []byte) []byte {
 	return []byte(result)
 }
 
+func injectDeployedOAuthCredentials(appId, fileData string, format utils.Format) (string, error) {
+
+	oidcConfig, err := getDeployedInboundProtocolConfig(appId, "oidc")
+	if err != nil {
+		return fileData, err
+	}
+	if oidcConfig == nil {
+		return fileData, nil
+	}
+	clientSecret, ok := oidcConfig["clientSecret"].(string)
+	if !ok {
+		return fileData, fmt.Errorf("clientSecret not found in deployed oidc config")
+	}
+	clientId, ok := oidcConfig["clientId"].(string)
+	if !ok {
+		return fileData, fmt.Errorf("clientId not found in deployed oidc config")
+	}
+	result := fileData
+
+	switch format {
+	case utils.FormatYAML:
+		re := regexp.MustCompile(`(?m)(^\s*oauthConsumerSecret:\s*)[^\n]*$`)
+		result = re.ReplaceAllString(result, "${1}"+clientSecret)
+		re = regexp.MustCompile(`(?m)(^\s*oauthConsumerKey:\s*)[^\n]*$`)
+		result = re.ReplaceAllString(result, "${1}"+clientId)
+		re = regexp.MustCompile(`(?m)(^\s*inboundAuthKey:\s*)[^\n]*$`)
+		result = re.ReplaceAllString(result, "${1}"+clientId)
+	case utils.FormatJSON:
+		re := regexp.MustCompile(`("oauthConsumerSecret":\s*)(?:null|"[^"]*")`)
+		result = re.ReplaceAllString(result, `${1}"`+clientSecret+`"`)
+		re = regexp.MustCompile(`("oauthConsumerKey":\s*)"[^"]*"`)
+		result = re.ReplaceAllString(result, `${1}"`+clientId+`"`)
+		re = regexp.MustCompile(`("inboundAuthKey":\s*)"[^"]*"`)
+		result = re.ReplaceAllString(result, `${1}"`+clientId+`"`)
+	}
+	return result, nil
+}
+
 func isToolMgtApp(appId string) (bool, error) {
 
 	body, err := utils.SendGetRequest(utils.APPLICATIONS, appId+"/inbound-protocols/oidc")
@@ -405,18 +443,30 @@ func processInboundProtocolForUpdate(appId string, protocolMap map[string]interf
 	return protocolPath, nil
 }
 
-func injectDeployedReadOnlyFields(appId, protocolPath string, localConfig map[string]interface{}) error {
+func getDeployedInboundProtocolConfig(appId, protocolPath string) (map[string]interface{}, error) {
 
 	body, err := utils.SendGetRequest(utils.APPLICATIONS, appId+"/inbound-protocols/"+protocolPath)
 	if err != nil {
 		if strings.Contains(err.Error(), "Resource not found") {
-			return nil
+			return nil, nil
 		}
-		return fmt.Errorf("error retrieving deployed %s config: %w", protocolPath, err)
+		return nil, fmt.Errorf("error retrieving deployed %s config: %w", protocolPath, err)
 	}
 	var deployedConfig map[string]interface{}
 	if err := json.Unmarshal(body, &deployedConfig); err != nil {
-		return fmt.Errorf("error unmarshalling deployed %s config: %w", protocolPath, err)
+		return nil, fmt.Errorf("error unmarshalling deployed %s config: %w", protocolPath, err)
+	}
+	return deployedConfig, nil
+}
+
+func injectDeployedReadOnlyFields(appId, protocolPath string, localConfig map[string]interface{}) error {
+
+	deployedConfig, err := getDeployedInboundProtocolConfig(appId, protocolPath)
+	if err != nil {
+		return err
+	}
+	if deployedConfig == nil {
+		return nil
 	}
 
 	switch protocolPath {
