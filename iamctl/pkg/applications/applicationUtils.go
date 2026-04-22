@@ -30,7 +30,6 @@ import (
 	"text/tabwriter"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
-	"gopkg.in/yaml.v3"
 )
 
 type inboundProtocolRef struct {
@@ -63,13 +62,13 @@ var unsupportedInboundProtocols = map[string]struct{}{
 type AuthConfig struct {
 	InboundAuthenticationConfig struct {
 		InboundAuthenticationRequestConfigs []struct {
-			InboundAuthType              string `yaml:"inboundAuthType"`
-			InboundAuthKey               string `yaml:"inboundAuthKey"`
+			InboundAuthType              string `yaml:"inboundAuthType" json:"inboundAuthType"`
+			InboundAuthKey               string `yaml:"inboundAuthKey" json:"inboundAuthKey"`
 			InboundConfigurationProtocol struct {
-				OauthConsumerSecret string `yaml:"oauthConsumerSecret"`
-			} `yaml:"inboundConfigurationProtocol"`
-		} `yaml:"inboundAuthenticationRequestConfigs"`
-	} `yaml:"inboundAuthenticationConfig"`
+				OauthConsumerSecret string `yaml:"oauthConsumerSecret" json:"oauthConsumerSecret"`
+			} `yaml:"inboundConfigurationProtocol" json:"inboundConfigurationProtocol"`
+		} `yaml:"inboundAuthenticationRequestConfigs" json:"inboundAuthenticationRequestConfigs"`
+	} `yaml:"inboundAuthenticationConfig" json:"inboundAuthenticationConfig"`
 }
 
 func getDeployedAppNames() []string {
@@ -167,9 +166,9 @@ func getAppId(appName string, appList []Application) string {
 	return ""
 }
 
-func isOauthApp(fileData string) (bool, error) {
+func isOauthApp(fileData string, format utils.Format) (bool, error) {
 
-	config, err := unmarshalAuthConfig([]byte(fileData))
+	config, err := unmarshalAuthConfig([]byte(fileData), format)
 	if err != nil {
 		return false, err
 	}
@@ -182,10 +181,10 @@ func isOauthApp(fileData string) (bool, error) {
 	return false, nil
 }
 
-func unmarshalAuthConfig(data []byte) (AuthConfig, error) {
+func unmarshalAuthConfig(data []byte, format utils.Format) (AuthConfig, error) {
 
 	var config AuthConfig
-	if err := yaml.Unmarshal(data, &config); err != nil {
+	if _, err := utils.Deserialize(data, format, utils.APPLICATIONS, &config); err != nil {
 		return AuthConfig{}, fmt.Errorf("failed to unmarshal auth config: %s", err.Error())
 	}
 	return config, nil
@@ -236,9 +235,9 @@ func isToolMgtApp(appId string) (bool, error) {
 	return false, nil
 }
 
-func isOauthSecretGiven(modifiedFileData string) (bool, error) {
+func isOauthSecretGiven(modifiedFileData string, format utils.Format) (bool, error) {
 
-	config, err := unmarshalAuthConfig([]byte(modifiedFileData))
+	config, err := unmarshalAuthConfig([]byte(modifiedFileData), format)
 	if err != nil {
 		return false, fmt.Errorf(err.Error())
 	}

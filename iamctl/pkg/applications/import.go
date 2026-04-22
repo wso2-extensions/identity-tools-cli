@@ -90,18 +90,19 @@ func importApp(appId, appName, importFilePath string, exportAPIExists bool) erro
 	fileDataWithReplacedKeywords := utils.ReplaceKeywords(string(fileBytes), appKeywordMapping)
 	modifiedFileData := utils.RemoveSecretMasks(fileDataWithReplacedKeywords)
 
-	if exportAPIExists && appName != utils.RESIDENT_APP {
-		modifiedFileData = string(removeAssociatedRoles([]byte(modifiedFileData)))
-		if appId == "" {
-			return importApplication(appName, importFilePath, modifiedFileData)
-		}
-		return updateApplication(appId, appName, importFilePath, modifiedFileData)
-	}
-
 	format, err := utils.FormatFromExtension(filepath.Ext(importFilePath))
 	if err != nil {
 		return fmt.Errorf("unsupported file format for application: %w", err)
 	}
+
+	if exportAPIExists && appName != utils.RESIDENT_APP {
+		modifiedFileData = string(removeAssociatedRoles([]byte(modifiedFileData)))
+		if appId == "" {
+			return importApplication(appName, importFilePath, modifiedFileData, format)
+		}
+		return updateApplication(appId, appName, importFilePath, modifiedFileData)
+	}
+
 	appMap, err := utils.DeserializeToMap([]byte(modifiedFileData), format, utils.APPLICATIONS)
 	if err != nil {
 		return fmt.Errorf("error deserializing application: %w", err)
@@ -118,7 +119,7 @@ func importApp(appId, appName, importFilePath string, exportAPIExists bool) erro
 	return updateAppWithCRUD(appId, appName, appMap)
 }
 
-func importApplication(appName, importFilePath, modifiedFileData string) error {
+func importApplication(appName, importFilePath, modifiedFileData string, format utils.Format) error {
 
 	log.Println("Creating new application: " + appName)
 	resp, err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.APPLICATIONS)
@@ -127,9 +128,9 @@ func importApplication(appName, importFilePath, modifiedFileData string) error {
 	}
 	defer resp.Body.Close()
 
-	if oauthApp, err := isOauthApp(modifiedFileData); err != nil {
+	if oauthApp, err := isOauthApp(modifiedFileData, format); err != nil {
 		fmt.Println("Failed to check if the applications is an OAuth app:", err.Error())
-	} else if oauthSecretGiven, err := isOauthSecretGiven(modifiedFileData); err != nil {
+	} else if oauthSecretGiven, err := isOauthSecretGiven(modifiedFileData, format); err != nil {
 		fmt.Println("Failed to check if oauthConsumerSecret is given:", err.Error())
 	} else if oauthApp && !oauthSecretGiven {
 		// Check if oauthConsumerSecret is given or else add an indicator to the summary informing a new secret is generated.
