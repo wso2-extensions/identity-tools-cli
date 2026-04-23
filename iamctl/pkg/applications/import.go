@@ -27,6 +27,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/applications/authorizedApis"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
@@ -35,6 +36,7 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing applications...")
 	importFilePath := filepath.Join(inputDirPath, utils.APPLICATIONS.String())
 	exportAPIExists := utils.ExportAPIExists(utils.APPLICATIONS)
+	authorizedApis.InitSupportedInVersion()
 
 	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
 		return
@@ -55,6 +57,9 @@ func ImportAll(inputDirPath string) {
 	}
 
 	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
 		appFilePath := filepath.Join(importFilePath, file.Name())
 		fileInfo := utils.GetFileInfo(appFilePath)
 		appName := fileInfo.ResourceName
@@ -97,10 +102,22 @@ func importApp(appId, appName, importFilePath string, exportAPIExists bool) erro
 
 	if exportAPIExists && appName != utils.RESIDENT_APP {
 		modifiedFileData = string(removeAssociatedRoles([]byte(modifiedFileData)))
+		var finalAppId string
 		if appId == "" {
-			return importApplication(appName, importFilePath, modifiedFileData, format)
+			finalAppId, err = importApplication(appName, importFilePath, modifiedFileData, format)
+		} else {
+			err = updateApplication(appId, appName, importFilePath, modifiedFileData, format)
+			finalAppId = appId
 		}
-		return updateApplication(appId, appName, importFilePath, modifiedFileData, format)
+		if err != nil {
+			return err
+		}
+
+		err := authorizedApis.Import(finalAppId, appName, filepath.Dir(importFilePath))
+		if err != nil {
+			return fmt.Errorf("error importing authorized APIs: %w", err)
+		}
+		return nil
 	}
 
 	appMap, err := utils.DeserializeToMap([]byte(modifiedFileData), format, utils.APPLICATIONS)
@@ -119,12 +136,12 @@ func importApp(appId, appName, importFilePath string, exportAPIExists bool) erro
 	return updateAppWithCRUD(appId, appName, appMap)
 }
 
-func importApplication(appName, importFilePath, modifiedFileData string, format utils.Format) error {
+func importApplication(appName, importFilePath, modifiedFileData string, format utils.Format) (appId string, err error) {
 
 	log.Println("Creating new application: " + appName)
 	resp, err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.APPLICATIONS)
 	if err != nil {
-		return fmt.Errorf("error when importing application: %s", err)
+		return "", fmt.Errorf("error when importing application: %s", err)
 	}
 	defer resp.Body.Close()
 
@@ -139,14 +156,14 @@ func importApplication(appName, importFilePath, modifiedFileData string, format 
 
 	location := resp.Header.Get("Location")
 	if location == "" {
-		return fmt.Errorf("no Location header in response")
+		return "", fmt.Errorf("no Location header in response")
 	}
-	appId := path.Base(location)
+	appId = path.Base(location)
 	utils.AddToIdentifierMap(utils.APPLICATIONS, appId, appName, utils.IMPORT)
 
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.IMPORT)
 	log.Println("Application imported successfully.")
-	return nil
+	return appId, nil
 }
 
 func updateApplication(appId, appName, importFilePath, modifiedFileData string, format utils.Format) error {
