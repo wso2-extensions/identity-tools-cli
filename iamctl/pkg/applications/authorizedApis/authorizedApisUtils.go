@@ -21,6 +21,7 @@ package authorizedApis
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -36,11 +37,16 @@ type AuthorizedScope struct {
 	Name string `json:"name"`
 }
 
-var supportedInVersion bool
+var SupportedInVersion bool
 
 func InitSupportedInVersion() {
 
-	supportedInVersion = utils.IsEntitySupportedInVersion(utils.APPLICATION_AUTHORIZED_APIS)
+	SupportedInVersion = utils.IsEntitySupportedInVersion(utils.APPLICATION_AUTHORIZED_APIS)
+}
+
+func GetOutputDirPath(appsOutputDirPath string) string {
+
+	return filepath.Join(appsOutputDirPath, utils.APPLICATION_AUTHORIZED_APIS.String())
 }
 
 func getAuthorizedAPIList(appId string) ([]AuthorizedAPI, error) {

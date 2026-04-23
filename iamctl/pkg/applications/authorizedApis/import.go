@@ -20,7 +20,7 @@ package authorizedApis
 
 func Import(appId, appName, appsImportDirPath string) error {
 
-	if !supportedInVersion {
+	if !SupportedInVersion {
 		return nil
 	}
 	return nil

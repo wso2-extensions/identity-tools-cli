@@ -152,6 +152,9 @@ func RemoveDeletedLocalResources(filePath string, deployedResourceNames []string
 	}
 
 	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
 		fileName := file.Name()
 		if !Contains(deployedResourceNames, GetFileInfo(fileName).ResourceName) {
 			err := os.Remove(filepath.Join(filePath, fileName))
