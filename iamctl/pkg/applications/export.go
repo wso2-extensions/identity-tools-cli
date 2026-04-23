@@ -27,7 +27,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/applications/authorizedApis"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/applications/applicationAuthorizedApis"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
@@ -39,8 +39,8 @@ func ExportAll(exportFilePath string, format string) {
 	exportAPIExists := utils.ExportAPIExists(utils.APPLICATIONS)
 	deployedAppNames := getDeployedAppNames()
 
-	authorizedApis.InitSupportedInVersion()
-	authAPIsOutputDir := authorizedApis.GetOutputDirPath(exportFilePath)
+	applicationAuthorizedApis.InitSupportedInVersion()
+	authAPIsOutputDir := applicationAuthorizedApis.GetOutputDirPath(exportFilePath)
 
 	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
 		return
@@ -53,8 +53,8 @@ func ExportAll(exportFilePath string, format string) {
 		}
 	}
 
-	if authorizedApis.SupportedInVersion {
-		if _, err := os.Stat(authAPIsOutputDir); os.IsNotExist(err) && authorizedApis.SupportedInVersion {
+	if applicationAuthorizedApis.SupportedInVersion {
+		if _, err := os.Stat(authAPIsOutputDir); os.IsNotExist(err) {
 			os.MkdirAll(authAPIsOutputDir, 0700)
 		} else {
 			if utils.TOOL_CONFIGS.AllowDelete {
@@ -145,7 +145,7 @@ func exportApp(appId string, outputDirPath string, format string, excludeSecrets
 	if err != nil {
 		return fmt.Errorf("error when writing the exported content to file: %w", err)
 	}
-	if err := authorizedApis.ExportAuthorizedAPIs(appId, fileInfo.ResourceName, outputDirPath, format); err != nil {
+	if err := applicationAuthorizedApis.ExportAPIs(appId, fileInfo.ResourceName, outputDirPath, format); err != nil {
 		return fmt.Errorf("error exporting authorized APIs: %w", err)
 	}
 	return nil

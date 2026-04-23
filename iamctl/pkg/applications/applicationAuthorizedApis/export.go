@@ -16,7 +16,7 @@
 * under the License.
  */
 
-package authorizedApis
+package applicationAuthorizedApis
 
 import (
 	"fmt"
@@ -25,7 +25,7 @@ import (
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
-func ExportAuthorizedAPIs(appId, appName, appsOutputDirPath, formatString string) error {
+func ExportAPIs(appId, appName, appsOutputDirPath, formatString string) error {
 
 	if !SupportedInVersion {
 		return nil
