@@ -18,10 +18,42 @@
 
 package authorizedApis
 
-func Export(appId, appName, appsOutputDirPath, formatString string) error {
+import (
+	"fmt"
+	"io/ioutil"
 
-	if !supportedInVersion {
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
+)
+
+func ExportAuthorizedAPIs(appId, appName, appsOutputDirPath, formatString string) error {
+
+	if !SupportedInVersion {
 		return nil
 	}
+	outputDirPath := GetOutputDirPath(appsOutputDirPath)
+
+	apiData, err := utils.GetResourceData(utils.APPLICATIONS, appId+"/authorized-apis")
+	if err != nil {
+		return fmt.Errorf("error fetching authorized APIs: %w", err)
+	}
+
+	format := utils.FormatFromString(formatString)
+	exportedFileName := utils.GetExportedFilePath(outputDirPath, appName, format)
+
+	keywordMapping := getAuthorizedApisKeywordMapping(appName)
+	modifiedData, err := utils.ProcessExportedData(apiData, exportedFileName, format, keywordMapping, utils.APPLICATION_AUTHORIZED_APIS)
+	if err != nil {
+		return fmt.Errorf("error while processing exported content: %w", err)
+	}
+
+	fileContent, err := utils.Serialize(modifiedData, format, utils.APPLICATION_AUTHORIZED_APIS)
+	if err != nil {
+		return fmt.Errorf("error serializing authorized APIs: %w", err)
+	}
+
+	if err := ioutil.WriteFile(exportedFileName, fileContent, 0644); err != nil {
+		return fmt.Errorf("error when writing exported content to file: %w", err)
+	}
+
 	return nil
 }

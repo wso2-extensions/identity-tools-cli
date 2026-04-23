@@ -37,7 +37,10 @@ func ExportAll(exportFilePath string, format string) {
 	log.Println("Exporting applications...")
 	exportFilePath = filepath.Join(exportFilePath, utils.APPLICATIONS.String())
 	exportAPIExists := utils.ExportAPIExists(utils.APPLICATIONS)
+	deployedAppNames := getDeployedAppNames()
+
 	authorizedApis.InitSupportedInVersion()
+	authAPIsOutputDir := authorizedApis.GetOutputDirPath(exportFilePath)
 
 	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
 		return
@@ -46,7 +49,17 @@ func ExportAll(exportFilePath string, format string) {
 		os.MkdirAll(exportFilePath, 0700)
 	} else {
 		if utils.TOOL_CONFIGS.AllowDelete {
-			utils.RemoveDeletedLocalResources(exportFilePath, append(getDeployedAppNames(), utils.RESIDENT_APP))
+			utils.RemoveDeletedLocalResources(exportFilePath, append(deployedAppNames, utils.RESIDENT_APP))
+		}
+	}
+
+	if authorizedApis.SupportedInVersion {
+		if _, err := os.Stat(authAPIsOutputDir); os.IsNotExist(err) && authorizedApis.SupportedInVersion {
+			os.MkdirAll(authAPIsOutputDir, 0700)
+		} else {
+			if utils.TOOL_CONFIGS.AllowDelete {
+				utils.RemoveDeletedLocalResources(authAPIsOutputDir, deployedAppNames)
+			}
 		}
 	}
 
@@ -132,7 +145,7 @@ func exportApp(appId string, outputDirPath string, format string, excludeSecrets
 	if err != nil {
 		return fmt.Errorf("error when writing the exported content to file: %w", err)
 	}
-	if err := authorizedApis.Export(appId, fileInfo.ResourceName, outputDirPath, format); err != nil {
+	if err := authorizedApis.ExportAuthorizedAPIs(appId, fileInfo.ResourceName, outputDirPath, format); err != nil {
 		return fmt.Errorf("error exporting authorized APIs: %w", err)
 	}
 	return nil
