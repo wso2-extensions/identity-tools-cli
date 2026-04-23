@@ -79,6 +79,7 @@ const (
 // Sub resource types
 const WORKFLOW_ASSOCIATIONS ResourceType = "WorkflowAssociations"
 const API_RESOURCE_SCOPES ResourceType = "ApiResourceScopes"
+const APPLICATION_AUTHORIZED_APIS ResourceType = "ApplicationAuthorizedApis"
 
 // Config file names
 const SERVER_CONFIG_FILE = "serverConfig.json"
@@ -216,6 +217,12 @@ var apiResourceArrayIdentifiers = map[string]string{
 	"scopes":                    "name",
 	"properties":                "name",
 	"authorizationDetailsTypes": "type",
+}
+
+var applicationAuthorizedApiArrayIdentifiers = map[string]string{
+
+	"ApplicationAuthorizedApis": "identifier",
+	"authorizedScopes":          "name",
 }
 
 var validationRuleArrayIdentifiers = map[string]string{

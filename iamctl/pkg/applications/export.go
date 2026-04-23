@@ -27,6 +27,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/applications/authorizedApis"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
@@ -36,6 +37,7 @@ func ExportAll(exportFilePath string, format string) {
 	log.Println("Exporting applications...")
 	exportFilePath = filepath.Join(exportFilePath, utils.APPLICATIONS.String())
 	exportAPIExists := utils.ExportAPIExists(utils.APPLICATIONS)
+	authorizedApis.InitSupportedInVersion()
 
 	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
 		return
@@ -129,6 +131,9 @@ func exportApp(appId string, outputDirPath string, format string, excludeSecrets
 	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 	if err != nil {
 		return fmt.Errorf("error when writing the exported content to file: %w", err)
+	}
+	if err := authorizedApis.Export(appId, fileInfo.ResourceName, outputDirPath, format); err != nil {
+		return fmt.Errorf("error exporting authorized APIs: %w", err)
 	}
 	return nil
 }
