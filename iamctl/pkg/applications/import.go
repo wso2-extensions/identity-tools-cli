@@ -27,7 +27,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/applications/authorizedApis"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/applications/applicationAuthorizedApis"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
@@ -36,7 +36,7 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing applications...")
 	importFilePath := filepath.Join(inputDirPath, utils.APPLICATIONS.String())
 	exportAPIExists := utils.ExportAPIExists(utils.APPLICATIONS)
-	authorizedApis.InitSupportedInVersion()
+	applicationAuthorizedApis.InitSupportedInVersion()
 
 	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
 		return
@@ -113,7 +113,7 @@ func importApp(appId, appName, importFilePath string, exportAPIExists bool) erro
 			return err
 		}
 
-		err := authorizedApis.Import(finalAppId, appName, filepath.Dir(importFilePath))
+		err := applicationAuthorizedApis.ImportAPIs(finalAppId, appName, filepath.Dir(importFilePath))
 		if err != nil {
 			return fmt.Errorf("error importing authorized APIs: %w", err)
 		}
