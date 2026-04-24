@@ -28,11 +28,14 @@ import (
 	emailTemplates "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/emailTemplates"
 	governanceConnectors "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/governanceConnectors"
 	identityproviders "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/identityProviders"
+	apiResources "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/apiResources"
 	oidcScopes "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/oidcScopes"
+	validationRules "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/validationRules"
 	roles "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/roles"
 	scriptLibraries "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/scriptLibraries"
 	userstores "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/userStores"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
+	workflows "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/workflows"
 )
 
 var exportAllCmd = &cobra.Command{
@@ -61,6 +64,9 @@ var exportAllCmd = &cobra.Command{
 			utils.SCRIPT_LIBRARIES:      scriptLibraries.ExportAll,
 			utils.GOVERNANCE_CONNECTORS: governanceConnectors.ExportAll,
 			utils.CERTIFICATES:          certificates.ExportAll,
+			utils.WORKFLOWS:             workflows.ExportAll,
+			utils.API_RESOURCES:         apiResources.ExportAll,
+			utils.VALIDATION_RULES:      validationRules.ExportAll,
 		}
 
 		for _, resourceType := range utils.ResourceOrder {

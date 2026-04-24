@@ -25,6 +25,9 @@ import (
 	"strings"
 )
 
+// Flags to indicate the presence of resource-specific APIs
+var RolesV2ApiExists bool
+
 // Checks if a resource type is supported in the configured WSO2 IS version.
 // Returns true if:
 //   - Version is not configured (backward compatibility - version checking disabled)
