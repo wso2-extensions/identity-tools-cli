@@ -46,6 +46,14 @@ func ImportAll(inputDirPath string) {
 		return
 	}
 
+	if applicationAuthorizedApis.SupportedInVersion {
+		err := applicationAuthorizedApis.GetAPIResources()
+		if err != nil {
+			log.Println("Error retrieving API resource list: ", err)
+			return
+		}
+	}
+
 	deployedApps := getAppList()
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {

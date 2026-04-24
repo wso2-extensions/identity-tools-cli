@@ -42,7 +42,7 @@ func ImportAll(inputDirPath string) {
 		return
 	}
 
-	deployedResources, err := getApiResourceList()
+	deployedResources, err := GetApiResourceList(true)
 	if err != nil {
 		log.Println("Error retrieving the deployed API resource list:", err)
 		return
@@ -158,7 +158,7 @@ func updateApiResource(resourceId, resourceIdentifier string, requestBody []byte
 	return nil
 }
 
-func removeDeletedDeployedApiResources(localFiles []os.FileInfo, deployedResources []apiResource) (remainingResources []apiResource) {
+func removeDeletedDeployedApiResources(localFiles []os.FileInfo, deployedResources []ApiResource) (remainingResources []ApiResource) {
 
 	if len(deployedResources) == 0 {
 		return deployedResources
@@ -193,7 +193,7 @@ func removeDeletedDeployedApiResources(localFiles []os.FileInfo, deployedResourc
 	return remainingResources
 }
 
-func removeDeletedDeployedScopes(localScopeMap map[string]string, deployedResources []apiResource) (failedResources map[string]struct{}) {
+func removeDeletedDeployedScopes(localScopeMap map[string]string, deployedResources []ApiResource) (failedResources map[string]struct{}) {
 
 	failedResources = make(map[string]struct{})
 

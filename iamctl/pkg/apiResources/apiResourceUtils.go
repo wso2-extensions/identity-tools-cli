@@ -32,21 +32,27 @@ type apiScope struct {
 	Name string `json:"name"`
 }
 
-type apiResource struct {
+type ApiResource struct {
 	ID         string `json:"id"`
 	Identifier string `json:"identifier"`
 }
 
 type apiResourceListResponse struct {
-	APIResources []apiResource `json:"apiResources"`
+	APIResources []ApiResource `json:"apiResources"`
 }
 
 var exportedScopesMap map[string]string
 
-func getApiResourceList() ([]apiResource, error) {
+func GetApiResourceList(limitToBusinessApis bool) ([]ApiResource, error) {
+
+	queryParams := make(map[string]string)
+	if limitToBusinessApis {
+		queryParams["filter"] = "type eq BUSINESS"
+	}
 
 	var listResponse apiResourceListResponse
-	resp, err := utils.SendGetListRequest(utils.API_RESOURCES, -1)
+	resp, err := utils.SendGetListRequest(utils.API_RESOURCES, -1,
+		utils.WithQueryParams(queryParams))
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving API resource list. %w", err)
 	}
@@ -71,7 +77,7 @@ func getApiResourceList() ([]apiResource, error) {
 	return nil, fmt.Errorf("error while retrieving API resource list")
 }
 
-func getDeployedApiResourceIdentifiers(resources []apiResource) []string {
+func getDeployedApiResourceIdentifiers(resources []ApiResource) []string {
 
 	var identifiers []string
 	for _, r := range resources {
@@ -80,7 +86,7 @@ func getDeployedApiResourceIdentifiers(resources []apiResource) []string {
 	return identifiers
 }
 
-func getApiResourceId(identifier string, list []apiResource) string {
+func getApiResourceId(identifier string, list []ApiResource) string {
 
 	for _, r := range list {
 		if r.Identifier == identifier {
