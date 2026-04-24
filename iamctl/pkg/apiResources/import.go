@@ -124,6 +124,16 @@ func createApiResource(resourceIdentifier string, requestBody []byte, format uti
 	}
 	defer resp.Body.Close()
 
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error reading create API response: %w", err)
+	}
+	var created ApiResource
+	if err := json.Unmarshal(body, &created); err != nil {
+		return fmt.Errorf("error parsing create API response: %w", err)
+	}
+	utils.AddToIdentifierMap(utils.API_RESOURCES, created.ID, resourceIdentifier, utils.IMPORT)
+
 	utils.UpdateSuccessSummary(utils.API_RESOURCES, utils.IMPORT)
 	log.Println("API resource created successfully.")
 	return nil
@@ -153,6 +163,7 @@ func updateApiResource(resourceId, resourceIdentifier string, requestBody []byte
 	}
 	defer resp.Body.Close()
 
+	utils.AddToIdentifierMap(utils.API_RESOURCES, resourceId, resourceIdentifier, utils.IMPORT)
 	utils.UpdateSuccessSummary(utils.API_RESOURCES, utils.UPDATE)
 	log.Println("API resource updated successfully.")
 	return nil

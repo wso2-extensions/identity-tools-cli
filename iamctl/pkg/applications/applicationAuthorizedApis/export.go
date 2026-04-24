@@ -36,6 +36,9 @@ func ExportAPIs(appId, appName, appsOutputDirPath, formatString string) error {
 	if err != nil {
 		return fmt.Errorf("error fetching authorized APIs: %w", err)
 	}
+	if err := validateAuthorizedApiReferences(apiData); err != nil {
+		return err
+	}
 
 	format := utils.FormatFromString(formatString)
 	exportedFileName := utils.GetExportedFilePath(outputDirPath, appName, format)
