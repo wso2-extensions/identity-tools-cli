@@ -131,10 +131,11 @@ func importClaimDialect(dialectId, dialectUri, importFilePath string) error {
 func importDialect(dialectUri, importFilePath, modifiedFileData string) error {
 
 	log.Println("Creating new claim dialect: " + dialectUri)
-	_, err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.CLAIMS)
+	resp, err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.CLAIMS)
 	if err != nil {
 		return fmt.Errorf("error when importing claim dialect: %s", err)
 	}
+	defer resp.Body.Close()
 	utils.UpdateSuccessSummary(utils.CLAIMS, utils.IMPORT)
 	log.Println("Claim dialect imported successfully.")
 	return nil
