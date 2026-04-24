@@ -434,7 +434,7 @@ func SendPostRequest(resourceType ResourceType, requestBody []byte, opts ...Send
 		return nil, fmt.Errorf("error sending POST request: %w", err)
 	}
 
-	if resp.StatusCode != http.StatusCreated {
+	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
 		resp.Body.Close()
 		if errMsg, ok := ErrorCodes[resp.StatusCode]; ok {
 			return nil, fmt.Errorf("error response for the POST request: %s", errMsg)

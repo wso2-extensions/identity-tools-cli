@@ -94,7 +94,7 @@ func importAuthorizedAPI(appId string, api interface{}, deployedAPIs []Authorize
 			return fmt.Errorf("error updating API %q: %w", identifier, err)
 		}
 	} else {
-		err := createAuthorizedAPI(appId, apiMap)
+		err := createAuthorizedAPI(appId, identifier, apiMap)
 		if err != nil {
 			return fmt.Errorf("error creating API %q: %w", identifier, err)
 		}
@@ -102,17 +102,43 @@ func importAuthorizedAPI(appId string, api interface{}, deployedAPIs []Authorize
 	return nil
 }
 
-func createAuthorizedAPI(appId string, apiMap map[string]interface{}) error {
+func createAuthorizedAPI(appId, identifier string, apiMap map[string]interface{}) error {
+
+	apiId, err := getApiIdByIdentifier(identifier)
+	if err != nil {
+		return err
+	}
+	scopeNames, err := extractScopeNames(apiMap)
+	if err != nil {
+		return err
+	}
+
+	body, err := buildPostRequestBody(apiMap, apiId, scopeNames)
+	if err != nil {
+		return err
+	}
+
+	resp, err := utils.SendPostRequest(utils.APPLICATIONS, body,
+		utils.WithPathSuffix(appId+"/authorized-apis"))
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
 	return nil
 }
 
 func updateAuthorizedAPI(appId string, apiMap map[string]interface{}, deployedApi AuthorizedAPI) error {
 
-	localScopes, err := extractScopeNames(apiMap)
+	localScopeNames, err := extractScopeNames(apiMap)
 	if err != nil {
 		return err
 	}
-	deployedScopes := make(map[string]struct{})
+
+	localScopes := make(map[string]struct{}, len(localScopeNames))
+	for _, name := range localScopeNames {
+		localScopes[name] = struct{}{}
+	}
+	deployedScopes := make(map[string]struct{}, len(deployedApi.AuthorizedScopes))
 	for _, s := range deployedApi.AuthorizedScopes {
 		deployedScopes[s.Name] = struct{}{}
 	}
@@ -130,7 +156,6 @@ func updateAuthorizedAPI(appId string, apiMap map[string]interface{}, deployedAp
 		return err
 	}
 	resp.Body.Close()
-
 	return nil
 }
 
