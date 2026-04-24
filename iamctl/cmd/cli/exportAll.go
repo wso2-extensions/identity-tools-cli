@@ -21,6 +21,7 @@ package cli
 import (
 	"github.com/spf13/cobra"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
+	apiResources "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/apiResources"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/applications"
 	certificates "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/certificates"
 	challengeQuestions "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/challengeQuestions"
@@ -28,13 +29,13 @@ import (
 	emailTemplates "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/emailTemplates"
 	governanceConnectors "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/governanceConnectors"
 	identityproviders "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/identityProviders"
-	apiResources "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/apiResources"
+	notificationProviders "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/notificationProviders"
 	oidcScopes "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/oidcScopes"
-	validationRules "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/validationRules"
 	roles "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/roles"
 	scriptLibraries "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/scriptLibraries"
 	userstores "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/userStores"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
+	validationRules "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/validationRules"
 	workflows "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/workflows"
 )
 
@@ -67,6 +68,8 @@ var exportAllCmd = &cobra.Command{
 			utils.WORKFLOWS:             workflows.ExportAll,
 			utils.API_RESOURCES:         apiResources.ExportAll,
 			utils.VALIDATION_RULES:      validationRules.ExportAll,
+			utils.EMAIL_PROVIDERS:       notificationProviders.ExportAllEmailProviders,
+			utils.SMS_PROVIDERS:         notificationProviders.ExportAllSmsProviders,
 		}
 
 		for _, resourceType := range utils.ResourceOrder {
