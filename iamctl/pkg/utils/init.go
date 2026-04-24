@@ -44,7 +44,8 @@ const SCOPE string = "internal_application_mgt_update internal_application_mgt_c
 	"internal_workflow_association_view internal_workflow_association_create internal_workflow_association_update internal_workflow_association_delete " +
 	"internal_api_resource_view internal_api_resource_create internal_api_resource_update internal_api_resource_delete " +
 	"internal_validation_rule_mgt_update internal_governance_view internal_governance_update " +
-	"internal_organization_view"
+	"internal_organization_view " +
+	"internal_config_mgt_view internal_config_mgt_add internal_config_mgt_update internal_config_mgt_delete"
 
 const (
 	AppName       = "IAM-CTL"

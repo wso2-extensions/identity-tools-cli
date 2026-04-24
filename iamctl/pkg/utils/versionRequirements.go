@@ -25,6 +25,8 @@ const (
 	MIN_VERSION_API_RESOURCES               = "7.0.0"
 	MIN_VERSION_VALIDATION_RULES            = "7.0.0"
 	MIN_VERSION_APPLICATION_AUTHORIZED_APIS = "7.0.0"
+	MIN_VERSION_EMAIL_PROVIDERS             = "7.2.0"
+	MIN_VERSION_SMS_PROVIDERS               = "7.2.0"
 )
 
 var EntityMinVersionRequirements = map[ResourceType]string{
@@ -32,6 +34,8 @@ var EntityMinVersionRequirements = map[ResourceType]string{
 	API_RESOURCES:               MIN_VERSION_API_RESOURCES,
 	VALIDATION_RULES:            MIN_VERSION_VALIDATION_RULES,
 	APPLICATION_AUTHORIZED_APIS: MIN_VERSION_APPLICATION_AUTHORIZED_APIS,
+	EMAIL_PROVIDERS:             MIN_VERSION_EMAIL_PROVIDERS,
+	SMS_PROVIDERS:               MIN_VERSION_SMS_PROVIDERS,
 }
 
 // Maximum supported WSO2 Identity Server version for each resource type.

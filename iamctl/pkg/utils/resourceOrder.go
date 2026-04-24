@@ -34,6 +34,8 @@ var ResourceOrder = []ResourceType{
 	ROLES, // Dependency: Applications
 	CHALLENGE_QUESTIONS,
 	EMAIL_TEMPLATES,
+	EMAIL_PROVIDERS,
+	SMS_PROVIDERS,
 	SCRIPT_LIBRARIES,
 	GOVERNANCE_CONNECTORS, // Dependency: Roles
 	CERTIFICATES,
