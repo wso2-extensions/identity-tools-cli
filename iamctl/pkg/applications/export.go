@@ -63,6 +63,7 @@ func ExportAll(exportFilePath string, format string) {
 				utils.UpdateFailureSummary(utils.APPLICATIONS, app.Name)
 				log.Printf("Error while exporting application: %s. %s", app.Name, err)
 			} else {
+				utils.AddToIdentifierMap(utils.APPLICATIONS, app.Id, app.Name, utils.EXPORT)
 				utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.EXPORT)
 				log.Println("Application exported successfully: ", app.Name)
 			}
@@ -77,6 +78,10 @@ func ExportAll(exportFilePath string, format string) {
 			utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.EXPORT)
 			log.Println("Resident application exported successfully.")
 		}
+	}
+
+	if utils.IsResourceTypeExcluded(utils.ROLES) && exportAPIExists {
+		log.Println("Warn: Roles are excluded from export. Export Roles to persist Role audiences of applications.")
 	}
 }
 

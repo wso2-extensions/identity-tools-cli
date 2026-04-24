@@ -151,7 +151,13 @@ func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map
 				break
 			} else {
 				arrayIdentifiers := GetArrayIdentifiers(resourceType)
-				arrayElementPath, err := resolvePathWithIdentifiers(path[len(path)-1], val, arrayIdentifiers)
+				var arrayName string
+				if len(path) > 0 {
+					arrayName = path[len(path)-1]
+				} else {
+					arrayName = resourceType.String()
+				}
+				arrayElementPath, err := resolvePathWithIdentifiers(arrayName, val, arrayIdentifiers)
 				if err != nil {
 					log.Printf("Error: cannot resolve path for the field %s. %s.\n", strings.Join(path, "."), err)
 					break
@@ -186,8 +192,16 @@ func GetArrayIdentifiers(resourceType ResourceType) map[string]string {
 		return userStoreArrayIdentifiers
 	case CLAIMS:
 		return claimArrayIdentifiers
+	case ROLES:
+		return roleArrayIdentifiers
 	case CHALLENGE_QUESTIONS:
 		return challengeQuestionsArrayIdentifiers
+	case WORKFLOWS:
+		return workflowArrayIdentifiers
+	case API_RESOURCES:
+		return apiResourceArrayIdentifiers
+	case VALIDATION_RULES:
+		return validationRuleArrayIdentifiers
 	default:
 		return make(map[string]string)
 	}

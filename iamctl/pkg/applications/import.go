@@ -68,6 +68,10 @@ func ImportAll(inputDirPath string) {
 			}
 		}
 	}
+
+	if utils.IsResourceTypeExcluded(utils.ROLES) && exportAPIExists {
+		log.Println("Warn: Roles are excluded from import. Import Roles to persist Role audiences of applications.")
+	}
 }
 
 func importApp(appId, appName, importFilePath string, exportAPIExists bool) error {
@@ -86,17 +90,19 @@ func importApp(appId, appName, importFilePath string, exportAPIExists bool) erro
 	fileDataWithReplacedKeywords := utils.ReplaceKeywords(string(fileBytes), appKeywordMapping)
 	modifiedFileData := utils.RemoveSecretMasks(fileDataWithReplacedKeywords)
 
-	if exportAPIExists && appName != utils.RESIDENT_APP {
-		if appId == "" {
-			return importApplication(appName, importFilePath, modifiedFileData)
-		}
-		return updateApplication(appName, importFilePath, modifiedFileData)
-	}
-
 	format, err := utils.FormatFromExtension(filepath.Ext(importFilePath))
 	if err != nil {
 		return fmt.Errorf("unsupported file format for application: %w", err)
 	}
+
+	if exportAPIExists && appName != utils.RESIDENT_APP {
+		modifiedFileData = string(removeAssociatedRoles([]byte(modifiedFileData)))
+		if appId == "" {
+			return importApplication(appName, importFilePath, modifiedFileData, format)
+		}
+		return updateApplication(appId, appName, importFilePath, modifiedFileData, format)
+	}
+
 	appMap, err := utils.DeserializeToMap([]byte(modifiedFileData), format, utils.APPLICATIONS)
 	if err != nil {
 		return fmt.Errorf("error deserializing application: %w", err)
@@ -113,34 +119,51 @@ func importApp(appId, appName, importFilePath string, exportAPIExists bool) erro
 	return updateAppWithCRUD(appId, appName, appMap)
 }
 
-func importApplication(appName, importFilePath, modifiedFileData string) error {
+func importApplication(appName, importFilePath, modifiedFileData string, format utils.Format) error {
 
 	log.Println("Creating new application: " + appName)
-	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.APPLICATIONS)
+	resp, err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.APPLICATIONS)
 	if err != nil {
 		return fmt.Errorf("error when importing application: %s", err)
 	}
+	defer resp.Body.Close()
 
-	if oauthApp, err := isOauthApp(modifiedFileData); err != nil {
+	if oauthApp, err := isOauthApp(modifiedFileData, format); err != nil {
 		fmt.Println("Failed to check if the applications is an OAuth app:", err.Error())
-	} else if oauthSecretGiven, err := isOauthSecretGiven(modifiedFileData); err != nil {
+	} else if oauthSecretGiven, err := isOauthSecretGiven(modifiedFileData, format); err != nil {
 		fmt.Println("Failed to check if oauthConsumerSecret is given:", err.Error())
 	} else if oauthApp && !oauthSecretGiven {
 		// Check if oauthConsumerSecret is given or else add an indicator to the summary informing a new secret is generated.
 		utils.AddNewSecretIndicatorToSummary(appName)
 	}
+
+	location := resp.Header.Get("Location")
+	if location == "" {
+		return fmt.Errorf("no Location header in response")
+	}
+	appId := path.Base(location)
+	utils.AddToIdentifierMap(utils.APPLICATIONS, appId, appName, utils.IMPORT)
+
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.IMPORT)
 	log.Println("Application imported successfully.")
 	return nil
 }
 
-func updateApplication(appName, importFilePath, modifiedFileData string) error {
+func updateApplication(appId, appName, importFilePath, modifiedFileData string, format utils.Format) error {
 
 	log.Println("Updating application: " + appName)
-	err := utils.SendUpdateRequest("", importFilePath, modifiedFileData, utils.APPLICATIONS)
+	fileData, err := injectDeployedOAuthCredentials(appId, modifiedFileData, format)
+	if err != nil {
+		return fmt.Errorf("error injecting deployed OAuth credentials: %w", err)
+	}
+
+	err = utils.SendUpdateRequest(appId, importFilePath, fileData, utils.APPLICATIONS)
 	if err != nil {
 		return fmt.Errorf("error when updating application: %s", err)
 	}
+
+	utils.AddToIdentifierMap(utils.APPLICATIONS, appId, appName, utils.IMPORT)
+
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.UPDATE)
 	log.Println("Application updated successfully.")
 	return nil
@@ -169,6 +192,14 @@ func importAppWithCRUD(appName string, appMap map[string]interface{}) error {
 	if newSecretCreated {
 		utils.AddNewSecretIndicatorToSummary(appName)
 	}
+
+	location := resp.Header.Get("Location")
+	if location == "" {
+		return fmt.Errorf("no Location header in response")
+	}
+	appId := path.Base(location)
+	utils.AddToIdentifierMap(utils.APPLICATIONS, appId, appName, utils.IMPORT)
+
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.IMPORT)
 	log.Println("Application imported successfully.")
 	return nil
@@ -203,6 +234,8 @@ func updateAppWithCRUD(appId, appName string, appMap map[string]interface{}) err
 	if err := updateInboundProtocols(appId, localProtocols); err != nil {
 		return fmt.Errorf("error updating inbound protocols: %w", err)
 	}
+
+	utils.AddToIdentifierMap(utils.APPLICATIONS, appId, appName, utils.IMPORT)
 
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.UPDATE)
 	log.Println("Application updated successfully.")
