@@ -196,3 +196,40 @@ func buildPatchRequestBody(localScopes, deployedScopes map[string]struct{}) ([]b
 
 	return body, nil
 }
+
+func validateAuthorizedApiReferences(apiData interface{}) error {
+
+	apiList, ok := apiData.([]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for authorized APIs response")
+	}
+	for _, api := range apiList {
+		apiMap, ok := api.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for API")
+		}
+		id, ok := apiMap["id"].(string)
+		if !ok {
+			return fmt.Errorf("unexpected format for API id")
+		}
+		apiType, ok := apiMap["type"].(string)
+		if !ok {
+			return fmt.Errorf("unexpected format for API type in API: %s", id)
+		}
+		if err := validateApiResourceRef(id, apiType); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateApiResourceRef(reference, apiType string) error {
+
+	if apiType == "BUSINESS" {
+		resourceMap := utils.GetResourceIdentifierMap(utils.API_RESOURCES)
+		if _, ok := resourceMap[reference]; !ok {
+			return fmt.Errorf("referenced API resource with identifier '%s' has not been exported", reference)
+		}
+	}
+	return nil
+}

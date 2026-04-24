@@ -86,6 +86,15 @@ func importAuthorizedAPI(appId string, api interface{}, deployedAPIs []Authorize
 	if !ok {
 		return fmt.Errorf("unexpected format for API identifier")
 	}
+
+	apiType, ok := apiMap["type"].(string)
+	if !ok {
+		return fmt.Errorf("unexpected format for API type in API: %s", identifier)
+	}
+	if err := validateApiResourceRef(identifier, apiType); err != nil {
+		return err
+	}
+
 	deployedApi := getAPIByIdentifier(identifier, deployedAPIs)
 
 	if deployedApi != nil {

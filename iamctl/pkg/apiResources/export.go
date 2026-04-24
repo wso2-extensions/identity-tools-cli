@@ -63,6 +63,7 @@ func ExportAll(exportFilePath string, format string) {
 				log.Printf("Error while exporting API resource: %s. %s", resource.Identifier, err)
 			} else {
 				successCount++
+				utils.AddToIdentifierMap(utils.API_RESOURCES, resource.ID, resource.Identifier, utils.EXPORT)
 				log.Println("API resource exported successfully:", resource.Identifier)
 			}
 		}
