@@ -38,6 +38,7 @@ type ApiResource struct {
 }
 
 type apiResourceListResponse struct {
+	TotalResults int           `json:"totalResults"`
 	APIResources []ApiResource `json:"apiResources"`
 }
 
@@ -49,9 +50,13 @@ func GetApiResourceList(limitToBusinessApis bool) ([]ApiResource, error) {
 	if limitToBusinessApis {
 		queryParams["filter"] = "type eq BUSINESS"
 	}
+	totalResults, err := getApiResourceCount(queryParams)
+	if err != nil {
+		return nil, err
+	}
 
 	var listResponse apiResourceListResponse
-	resp, err := utils.SendGetListRequest(utils.API_RESOURCES, -1,
+	resp, err := utils.SendGetListRequest(utils.API_RESOURCES, totalResults,
 		utils.WithQueryParams(queryParams))
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving API resource list. %w", err)
@@ -75,6 +80,26 @@ func GetApiResourceList(limitToBusinessApis bool) ([]ApiResource, error) {
 		return nil, fmt.Errorf("error while retrieving API resource list. Status code: %d, Error: %s", statusCode, errMsg)
 	}
 	return nil, fmt.Errorf("error while retrieving API resource list")
+}
+
+func getApiResourceCount(queryParams map[string]string) (int, error) {
+
+	resp, err := utils.SendGetListRequest(utils.API_RESOURCES, 1,
+		utils.WithQueryParams(queryParams))
+	if err != nil {
+		return 0, fmt.Errorf("error while retrieving API resource count. %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return 0, fmt.Errorf("error when reading API resource count response. %w", err)
+	}
+	var countResponse apiResourceListResponse
+	if err := json.Unmarshal(body, &countResponse); err != nil {
+		return 0, fmt.Errorf("error when unmarshalling API resource count response. %w", err)
+	}
+	return countResponse.TotalResults, nil
 }
 
 func getDeployedApiResourceIdentifiers(resources []ApiResource) []string {
