@@ -582,6 +582,10 @@ func getResourcePath(resourceType ResourceType) string {
 		return "validation-rules"
 	case ORGANIZATIONS:
 		return "organizations"
+	case EMAIL_PROVIDERS:
+		return "notification-senders/email"
+	case SMS_PROVIDERS:
+		return "notification-senders/sms"
 	}
 	return ""
 }

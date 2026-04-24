@@ -204,6 +204,8 @@ func GetArrayIdentifiers(resourceType ResourceType) map[string]string {
 		return validationRuleArrayIdentifiers
 	case APPLICATION_AUTHORIZED_APIS:
 		return applicationAuthorizedApiArrayIdentifiers
+	case EMAIL_PROVIDERS, SMS_PROVIDERS:
+		return notificationProviderArrayIdentifiers
 	default:
 		return make(map[string]string)
 	}

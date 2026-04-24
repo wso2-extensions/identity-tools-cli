@@ -68,6 +68,8 @@ type ToolConfigs struct {
 	WorkflowConfigs            map[string]interface{} `json:"WORKFLOWS"`
 	ApiResourceConfigs         map[string]interface{} `json:"API_RESOURCES"`
 	ValidationRuleConfigs      map[string]interface{} `json:"VALIDATION_RULES"`
+	EmailProviderConfigs       map[string]interface{} `json:"EMAIL_PROVIDERS"`
+	SmsProviderConfigs         map[string]interface{} `json:"SMS_PROVIDERS"`
 }
 
 type KeywordConfigs struct {
@@ -86,6 +88,8 @@ type KeywordConfigs struct {
 	WorkflowConfigs            map[string]interface{} `json:"WORKFLOWS"`
 	ApiResourceConfigs         map[string]interface{} `json:"API_RESOURCES"`
 	ValidationRuleConfigs      map[string]interface{} `json:"VALIDATION_RULES"`
+	EmailProviderConfigs       map[string]interface{} `json:"EMAIL_PROVIDERS"`
+	SmsProviderConfigs         map[string]interface{} `json:"SMS_PROVIDERS"`
 }
 
 var SERVER_CONFIGS ServerConfigs

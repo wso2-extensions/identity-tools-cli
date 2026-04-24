@@ -33,6 +33,8 @@ const CERTIFICATES_CONFIG = "CERTIFICATES"
 const WORKFLOWS_CONFIG = "WORKFLOWS"
 const API_RESOURCES_CONFIG = "API_RESOURCES"
 const VALIDATION_RULES_CONFIG = "VALIDATION_RULES"
+const EMAIL_PROVIDERS_CONFIG = "EMAIL_PROVIDERS"
+const SMS_PROVIDERS_CONFIG = "SMS_PROVIDERS"
 
 // Tool configs
 const EXCLUDE_CONFIG = "EXCLUDE"
@@ -74,6 +76,8 @@ const (
 	API_RESOURCES         ResourceType = "ApiResources"
 	VALIDATION_RULES      ResourceType = "ValidationRules"
 	ORGANIZATIONS         ResourceType = "Organizations"
+	EMAIL_PROVIDERS       ResourceType = "EmailProviders"
+	SMS_PROVIDERS         ResourceType = "SmsProviders"
 )
 
 // Sub resource types
@@ -230,6 +234,11 @@ var validationRuleArrayIdentifiers = map[string]string{
 	"ValidationRules": "field",
 	"rules":           "validator",
 	"properties":      "key",
+}
+
+var notificationProviderArrayIdentifiers = map[string]string{
+
+	"properties": "key",
 }
 
 type ResourceIdentifierMeta struct {
