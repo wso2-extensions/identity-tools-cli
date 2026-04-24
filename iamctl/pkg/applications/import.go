@@ -120,6 +120,7 @@ func importApplication(appName, importFilePath, modifiedFileData string) error {
 	if err != nil {
 		return fmt.Errorf("error when importing application: %s", err)
 	}
+	defer resp.Body.Close()
 
 	if oauthApp, err := isOauthApp(modifiedFileData); err != nil {
 		fmt.Println("Failed to check if the applications is an OAuth app:", err.Error())

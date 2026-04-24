@@ -143,7 +143,7 @@ func processExportedRole(roleData interface{}) (processedData interface{}, err e
 
 	dataMap, ok := roleData.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("unepected format for response")
+		return nil, fmt.Errorf("unexpected format for response")
 	}
 
 	if dataMap, err = processPermissionsForExport(dataMap); err != nil {
@@ -195,9 +195,9 @@ func processAudienceForImport(roleMap map[string]interface{}) (interface{}, erro
 
 	switch audType {
 	case "organization":
-		superOrgId, err := organizations.GetSuperOrganizationId()
+		superOrgId, err := organizations.GetCurrentOrganizationId()
 		if err != nil {
-			return nil, fmt.Errorf("error while retrieving super organization ID: %w", err)
+			return nil, fmt.Errorf("error while retrieving organization ID: %w", err)
 		}
 		audience["value"] = superOrgId
 		roleMap["audience"] = audience
@@ -227,7 +227,7 @@ func unescapeName(sanitizedFileName string) string {
 
 func setRolesV2ApiExists() {
 
-	res, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSRION_ROLES_V2_API)
+	res, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_ROLES_V2_API)
 
 	// Use the V2 API when the server version is not properly configured
 	if err != nil || res >= 0 {

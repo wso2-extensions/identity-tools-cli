@@ -43,7 +43,7 @@ const (
 	MIN_VERSION_USERSTORE_EXPORT_API = "6.1.0"
 	MIN_VERSION_IDP_EXPORT_API       = "6.1.0"
 	MIN_VERSION_APP_EXPORT_API       = "6.1.0"
-	MIN_VERSRION_ROLES_V2_API        = "7.0.0"
+	MIN_VERSION_ROLES_V2_API         = "7.0.0"
 )
 
 var ExportAPIMinVersionRequirements = map[ResourceType]string{
