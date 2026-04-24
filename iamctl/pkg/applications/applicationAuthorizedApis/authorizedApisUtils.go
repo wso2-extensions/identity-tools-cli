@@ -39,7 +39,7 @@ type AuthorizedScope struct {
 }
 
 var SupportedInVersion bool
-var apiResourcesMap []apiResources.ApiResource
+var apiResourcesMap map[string]string
 
 func InitSupportedInVersion() {
 
@@ -48,10 +48,13 @@ func InitSupportedInVersion() {
 
 func GetAPIResources() error {
 
-	var err error
-	apiResourcesMap, err = apiResources.GetApiResourceList(false)
+	list, err := apiResources.GetApiResourceList(false)
 	if err != nil {
 		return fmt.Errorf("error while retrieving API resource list: %w", err)
+	}
+	apiResourcesMap = make(map[string]string)
+	for _, r := range list {
+		apiResourcesMap[r.Identifier] = r.ID
 	}
 	return nil
 }
@@ -104,6 +107,62 @@ func findLocalFile(appsImportDirPath, appName string) (string, error) {
 	return matches[0], nil
 }
 
+func extractScopeNames(apiMap map[string]interface{}) ([]string, error) {
+
+	scopes, ok := apiMap["authorizedScopes"].([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected format for authorizedScopes")
+	}
+	names := make([]string, 0, len(scopes))
+
+	for _, s := range scopes {
+		scopeMap, ok := s.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("unexpected format for scope")
+		}
+		name, ok := scopeMap["name"].(string)
+		if !ok {
+			return nil, fmt.Errorf("unexpected format for scope name")
+		}
+		names = append(names, name)
+	}
+	return names, nil
+}
+
+func getApiIdByIdentifier(identifier string) (string, error) {
+
+	id, ok := apiResourcesMap[identifier]
+	if !ok {
+		return "", fmt.Errorf("referenced API resource with identifier '%s' is not found in the target environment", identifier)
+	}
+	return id, nil
+}
+
+func buildPostRequestBody(apiMap map[string]interface{}, apiId string, scopeNames []string) ([]byte, error) {
+
+	delete(apiMap, "displayName")
+	delete(apiMap, "type")
+
+	policyIdentifier, ok := apiMap["policyId"].(string)
+	if !ok {
+		return nil, fmt.Errorf("unexpected format for policy identifier")
+	}
+	apiMap["policyIdentifier"] = policyIdentifier
+	delete(apiMap, "policyId")
+
+	delete(apiMap, "identifier")
+	apiMap["id"] = apiId
+
+	delete(apiMap, "authorizedScopes")
+	apiMap["scopes"] = scopeNames
+
+	body, err := json.Marshal(apiMap)
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling request body: %w", err)
+	}
+	return body, nil
+}
+
 func buildPatchRequestBody(localScopes, deployedScopes map[string]struct{}) ([]byte, error) {
 
 	addedScopes := make([]string, 0)
@@ -136,25 +195,4 @@ func buildPatchRequestBody(localScopes, deployedScopes map[string]struct{}) ([]b
 	}
 
 	return body, nil
-}
-
-func extractScopeNames(apiMap map[string]interface{}) (map[string]struct{}, error) {
-
-	names := make(map[string]struct{})
-	scopes, ok := apiMap["authorizedScopes"].([]interface{})
-	if !ok {
-		return nil, fmt.Errorf("unexpected format for authorizedScopes")
-	}
-	for _, s := range scopes {
-		scopeMap, ok := s.(map[string]interface{})
-		if !ok {
-			return nil, fmt.Errorf("unexpected format for scope")
-		}
-		name, ok := scopeMap["name"].(string)
-		if !ok {
-			return nil, fmt.Errorf("unexpected format for scope name")
-		}
-		names[name] = struct{}{}
-	}
-	return names, nil
 }
