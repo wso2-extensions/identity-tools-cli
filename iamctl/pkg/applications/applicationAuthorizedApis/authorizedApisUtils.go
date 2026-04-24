@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/apiResources"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
@@ -38,10 +39,21 @@ type AuthorizedScope struct {
 }
 
 var SupportedInVersion bool
+var apiResourcesMap []apiResources.ApiResource
 
 func InitSupportedInVersion() {
 
 	SupportedInVersion = utils.IsEntitySupportedInVersion(utils.APPLICATION_AUTHORIZED_APIS)
+}
+
+func GetAPIResources() error {
+
+	var err error
+	apiResourcesMap, err = apiResources.GetApiResourceList(false)
+	if err != nil {
+		return fmt.Errorf("error while retrieving API resource list: %w", err)
+	}
+	return nil
 }
 
 func GetOutputDirPath(appsOutputDirPath string) string {

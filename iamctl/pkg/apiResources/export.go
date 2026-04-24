@@ -36,7 +36,7 @@ func ExportAll(exportFilePath string, format string) {
 	if !utils.IsEntitySupportedInVersion(utils.API_RESOURCES) || utils.IsResourceTypeExcluded(utils.API_RESOURCES) {
 		return
 	}
-	resources, err := getApiResourceList()
+	resources, err := GetApiResourceList(true)
 	if err != nil {
 		log.Println("Error: when retrieving API resource list.", err)
 		return

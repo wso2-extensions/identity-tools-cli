@@ -660,10 +660,6 @@ func addQueryParams(reqURL string, resourceType ResourceType, operation string) 
 		if operation == GET {
 			queryParams.Set("encode-cert", "true")
 		}
-	case API_RESOURCES:
-		if operation == LIST {
-			queryParams.Set("filter", "type eq BUSINESS")
-		}
 	}
 
 	url.RawQuery = queryParams.Encode()
