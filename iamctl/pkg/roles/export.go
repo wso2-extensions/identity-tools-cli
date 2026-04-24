@@ -32,6 +32,7 @@ func ExportAll(exportFilePath string, format string) {
 
 	log.Println("Exporting roles...")
 	exportFilePath = filepath.Join(exportFilePath, utils.ROLES.String())
+	setRolesV2ApiExists()
 
 	if utils.IsResourceTypeExcluded(utils.ROLES) {
 		return
@@ -60,6 +61,7 @@ func ExportAll(exportFilePath string, format string) {
 				utils.UpdateFailureSummary(utils.ROLES, r.DisplayName)
 				log.Printf("Error while exporting role: %s. %s", r.DisplayName, err)
 			} else {
+				utils.AddToIdentifierMap(utils.ROLES, r.Id, r.DisplayName, utils.EXPORT)
 				utils.UpdateSuccessSummary(utils.ROLES, utils.EXPORT)
 				log.Println("Role exported successfully:", r.DisplayName)
 			}
@@ -74,9 +76,11 @@ func exportRole(r role, outputDirPath string, formatString string) error {
 	if err != nil {
 		return fmt.Errorf("error while getting role: %w", err)
 	}
-	roleData, err = utils.RemoveResponseFields(roleData, "id")
-	if err != nil {
-		return fmt.Errorf("error while processing response fields: %w", err)
+	if utils.RolesV2ApiExists {
+		roleData, err = processExportedRole(roleData)
+		if err != nil {
+			return fmt.Errorf("error while processing role permissions: %w", err)
+		}
 	}
 
 	format := utils.FormatFromString(formatString)
