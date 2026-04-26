@@ -116,3 +116,112 @@ func isProviderExists(name string, exisitingProviderList []notificationProvider)
 	}
 	return false
 }
+
+func processAuthSecrets(resType utils.ResourceType, data interface{}) (interface{}, error) {
+
+	providerMap, ok := data.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected format for provider data")
+	}
+	provider, ok := providerMap["provider"].(string)
+	if !ok {
+		return nil, fmt.Errorf("unexpected format for provider")
+	}
+
+	if provider != "Custom" && resType == utils.SMS_PROVIDERS {
+		delete(providerMap, "authentication")
+		return providerMap, nil
+	}
+
+	var authType string
+	var authentication map[string]interface{}
+	var properties interface{}
+
+	switch resType {
+	case utils.EMAIL_PROVIDERS:
+		authType, ok = providerMap["authType"].(string)
+		if !ok {
+			return nil, fmt.Errorf("unexpected format for authType")
+		}
+		emailProps, ok := providerMap["properties"].([]interface{})
+		if !ok {
+			return nil, fmt.Errorf("unexpected format for properties")
+		}
+		properties = emailProps
+
+	case utils.SMS_PROVIDERS:
+		authentication, ok = providerMap["authentication"].(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("unexpected format for authentication")
+		}
+		authType, ok = authentication["type"].(string)
+		if !ok {
+			return nil, fmt.Errorf("unexpected format for authentication type")
+		}
+		smsProps, ok := authentication["properties"].(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("unexpected format for authentication properties")
+		}
+		properties = smsProps
+	}
+
+	maskedProps, err := maskAuthSecrets(resType, authType, properties)
+	if err != nil {
+		return nil, fmt.Errorf("error masking auth secrets: %w", err)
+	}
+
+	switch resType {
+	case utils.EMAIL_PROVIDERS:
+		providerMap["properties"] = maskedProps
+	case utils.SMS_PROVIDERS:
+		authentication["properties"] = maskedProps
+	}
+
+	return providerMap, nil
+}
+
+func maskAuthSecrets(resType utils.ResourceType, authType string, properties interface{}) (interface{}, error) {
+
+	switch authType {
+	case "NONE":
+		return properties, nil
+	case "BASIC":
+		return addSecretWithMask(resType, properties, "password")
+	case "CLIENT_CREDENTIAL":
+		return addSecretWithMask(resType, properties, "clientSecret")
+	case "BEARER":
+		return addSecretWithMask(resType, properties, "accessToken")
+	case "API_KEY":
+		switch resType {
+		case utils.SMS_PROVIDERS:
+			return addSecretWithMask(resType, properties, "value")
+		case utils.EMAIL_PROVIDERS:
+			return addSecretWithMask(resType, properties, "apiKeyValue")
+		}
+	}
+	return properties, nil
+}
+
+func addSecretWithMask(resType utils.ResourceType, properties interface{}, key string) (interface{}, error) {
+
+	switch resType {
+	case utils.EMAIL_PROVIDERS:
+		emailProps, ok := properties.([]interface{})
+		if !ok {
+			return nil, fmt.Errorf("unexpected format for email provider properties")
+		}
+		return append(emailProps, map[string]interface{}{
+			"key":   key,
+			"value": utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES,
+		}), nil
+
+	case utils.SMS_PROVIDERS:
+		smsProps, ok := properties.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("unexpected format for SMS provider properties")
+		}
+		smsProps[key] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+		return smsProps, nil
+	}
+	return properties, nil
+}
