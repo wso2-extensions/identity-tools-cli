@@ -52,6 +52,17 @@ func exportAll(resType utils.ResourceType, exportFilePath string, format string)
 		}
 	}
 
+	var secretExclusionDisabled bool
+	switch resType {
+	case utils.EMAIL_PROVIDERS:
+		secretExclusionDisabled = !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.EmailProviderConfigs)
+	case utils.SMS_PROVIDERS:
+		secretExclusionDisabled = !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.SmsProviderConfigs)
+	}
+	if secretExclusionDisabled {
+		log.Printf("Warn: Secrets exclusion cannot be disabled for %s. All secrets will be masked.", logName)
+	}
+
 	for _, provider := range providers {
 		if !utils.IsResourceExcluded(provider.Name, getProviderResourceConfig(resType)) {
 			log.Printf("Exporting %s: %s", logName, provider.Name)
@@ -73,6 +84,11 @@ func exportProvider(resType utils.ResourceType, logName string, name string, out
 	data, err := utils.GetResourceData(resType, name)
 	if err != nil {
 		return fmt.Errorf("error while getting %s: %w", logName, err)
+	}
+
+	data, err = processAuthSecrets(resType, data)
+	if err != nil {
+		return fmt.Errorf("error while processing auth secrets: %w", err)
 	}
 
 	format := utils.FormatFromString(formatString)
