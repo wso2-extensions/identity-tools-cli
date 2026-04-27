@@ -596,13 +596,17 @@ func getResourceBaseUrl(resourceType ResourceType) string {
 	if IsSubOrganization() {
 		basePath += "/o"
 	}
-	if resourceType == ROLES {
+
+	switch resourceType {
+	case ROLES:
 		if RolesV2ApiExists {
 			basePath += "/scim2/v2/Roles/"
 		} else {
 			basePath += "/scim2/Roles/"
 		}
-	} else {
+	case EMAIL_PROVIDERS, SMS_PROVIDERS:
+		basePath += "/api/server/v2/" + getResourcePath(resourceType) + "/"
+	default:
 		basePath += "/api/server/v1/" + getResourcePath(resourceType) + "/"
 	}
 	return SERVER_CONFIGS.ServerUrl + basePath
