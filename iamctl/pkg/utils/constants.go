@@ -238,7 +238,9 @@ var validationRuleArrayIdentifiers = map[string]string{
 
 var notificationProviderArrayIdentifiers = map[string]string{
 
-	"properties": "key",
+	"properties":     "key",
+	"EmailProviders": "name",
+	"SmsProviders":   "name",
 }
 
 type ResourceIdentifierMeta struct {
