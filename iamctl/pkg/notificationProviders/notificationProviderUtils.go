@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -128,17 +129,16 @@ func processAuthSecrets(resType utils.ResourceType, data interface{}) (interface
 		return nil, fmt.Errorf("unexpected format for provider")
 	}
 
-	if provider != "Custom" && resType == utils.SMS_PROVIDERS {
-		delete(providerMap, "authentication")
-		return providerMap, nil
-	}
-
 	var authType string
 	var authentication map[string]interface{}
 	var properties interface{}
 
 	switch resType {
 	case utils.EMAIL_PROVIDERS:
+		if !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.EmailProviderConfigs) {
+			log.Printf("Warn: Secrets exclusion cannot be disabled for Email Providers. All secrets will be masked.")
+		}
+
 		authType, ok = providerMap["authType"].(string)
 		if !ok {
 			return nil, fmt.Errorf("unexpected format for authType")
@@ -150,6 +150,19 @@ func processAuthSecrets(resType utils.ResourceType, data interface{}) (interface
 		properties = emailProps
 
 	case utils.SMS_PROVIDERS:
+		if provider != "Custom" {
+			delete(providerMap, "authentication")
+			if utils.AreSecretsExcluded(utils.TOOL_CONFIGS.SmsProviderConfigs) {
+				providerMap["secret"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+			}
+			return providerMap, nil
+		}
+
+		if !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.SmsProviderConfigs) {
+			log.Printf("Warn: Secrets exclusion cannot be disabled for Custom SMS Providers. All secrets will be masked.")
+		}
+		delete(providerMap, "secret")
+
 		authentication, ok = providerMap["authentication"].(map[string]interface{})
 		if !ok {
 			return nil, fmt.Errorf("unexpected format for authentication")
