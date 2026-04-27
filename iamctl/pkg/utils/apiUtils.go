@@ -565,6 +565,9 @@ func getResourcePath(resourceType ResourceType) string {
 	case CHALLENGE_QUESTIONS:
 		return "challenges"
 	case EMAIL_TEMPLATES:
+		if NotificationTemplatesApiExists {
+			return "notification/email/template-types"
+		}
 		return "email/template-types"
 	case SCRIPT_LIBRARIES:
 		return "script-libraries"
@@ -586,6 +589,8 @@ func getResourcePath(resourceType ResourceType) string {
 		return "notification-senders/email"
 	case SMS_PROVIDERS:
 		return "notification-senders/sms"
+	case SMS_TEMPLATES:
+		return "notification/sms/template-types"
 	}
 	return ""
 }

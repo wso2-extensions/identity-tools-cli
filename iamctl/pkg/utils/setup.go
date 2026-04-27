@@ -70,6 +70,7 @@ type ToolConfigs struct {
 	ValidationRuleConfigs      map[string]interface{} `json:"VALIDATION_RULES"`
 	EmailProviderConfigs       map[string]interface{} `json:"EMAIL_PROVIDERS"`
 	SmsProviderConfigs         map[string]interface{} `json:"SMS_PROVIDERS"`
+	SmsTemplateConfigs         map[string]interface{} `json:"SMS_TEMPLATES"`
 }
 
 type KeywordConfigs struct {
@@ -90,6 +91,7 @@ type KeywordConfigs struct {
 	ValidationRuleConfigs      map[string]interface{} `json:"VALIDATION_RULES"`
 	EmailProviderConfigs       map[string]interface{} `json:"EMAIL_PROVIDERS"`
 	SmsProviderConfigs         map[string]interface{} `json:"SMS_PROVIDERS"`
+	SmsTemplateConfigs         map[string]interface{} `json:"SMS_TEMPLATES"`
 }
 
 var SERVER_CONFIGS ServerConfigs
