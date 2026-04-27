@@ -34,6 +34,9 @@ func exportAll(resType utils.ResourceType, exportFilePath string, format string)
 	log.Printf("Exporting %s...", logName)
 	exportFilePath = filepath.Join(exportFilePath, resType.String())
 
+	if resType == utils.EMAIL_PROVIDERS && utils.SERVER_CONFIGS.TenantDomain == utils.DEFAULT_TENANT_DOMAIN {
+		log.Println("Exporting email providers for super tenant not supported.")
+	}
 	if !utils.IsEntitySupportedInVersion(resType) || utils.IsResourceTypeExcluded(resType) {
 		return
 	}

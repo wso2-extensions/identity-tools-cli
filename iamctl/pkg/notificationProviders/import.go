@@ -34,6 +34,9 @@ func importAll(resType utils.ResourceType, inputDirPath string) {
 	log.Printf("Importing %s...", logName)
 	importFilePath := filepath.Join(inputDirPath, resType.String())
 
+	if resType == utils.EMAIL_PROVIDERS && utils.SERVER_CONFIGS.TenantDomain == utils.DEFAULT_TENANT_DOMAIN {
+		log.Println("Importing email providers for super tenant not supported.")
+	}
 	if !utils.IsEntitySupportedInVersion(resType) || utils.IsResourceTypeExcluded(resType) {
 		return
 	}
