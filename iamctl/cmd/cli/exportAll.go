@@ -30,6 +30,7 @@ import (
 	governanceConnectors "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/governanceConnectors"
 	identityproviders "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/identityProviders"
 	notificationProviders "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/notificationProviders"
+	notificationTemplates "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/notificationTemplates"
 	oidcScopes "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/oidcScopes"
 	roles "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/roles"
 	scriptLibraries "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/scriptLibraries"
@@ -70,6 +71,7 @@ var exportAllCmd = &cobra.Command{
 			utils.VALIDATION_RULES:      validationRules.ExportAll,
 			utils.EMAIL_PROVIDERS:       notificationProviders.ExportAllEmailProviders,
 			utils.SMS_PROVIDERS:         notificationProviders.ExportAllSmsProviders,
+			utils.SMS_TEMPLATES:         notificationTemplates.ExportAllSmsTemplates,
 		}
 
 		for _, resourceType := range utils.ResourceOrder {
