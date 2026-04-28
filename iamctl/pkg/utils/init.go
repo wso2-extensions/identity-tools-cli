@@ -35,11 +35,17 @@ const SCOPE string = "internal_application_mgt_update internal_application_mgt_c
 	"internal_application_script_update internal_org_application_script_update " +
 	"internal_application_business_api_update internal_application_internal_api_update internal_org_application_business_api_update internal_org_application_internal_api_update " +
 	"internal_oidc_scope_mgt_view internal_oidc_scope_mgt_create internal_oidc_scope_mgt_update internal_oidc_scope_mgt_delete " +
-	"internal_role_mgt_view internal_role_mgt_create internal_role_mgt_update internal_role_mgt_delete " +
+	"internal_role_mgt_view internal_role_mgt_create internal_role_mgt_update internal_role_mgt_delete internal_role_mgt_permissions_update " +
 	"internal_identity_mgt_view internal_identity_mgt_create internal_identity_mgt_update internal_identity_mgt_delete " +
 	"internal_email_mgt_view internal_email_mgt_create internal_email_mgt_update internal_email_mgt_delete " +
 	"internal_functional_lib_view internal_functional_lib_create internal_functional_lib_update internal_functional_lib_delete " +
-	"internal_keystore_view internal_keystore_update internal_keystore_create internal_keystore_delete"
+	"internal_keystore_view internal_keystore_update internal_keystore_create internal_keystore_delete " +
+	"internal_workflow_view internal_workflow_create internal_workflow_update internal_workflow_delete " +
+	"internal_workflow_association_view internal_workflow_association_create internal_workflow_association_update internal_workflow_association_delete " +
+	"internal_api_resource_view internal_api_resource_create internal_api_resource_update internal_api_resource_delete " +
+	"internal_validation_rule_mgt_update internal_governance_view internal_governance_update " +
+	"internal_organization_view " +
+	"internal_notification_senders_view internal_notification_senders_create internal_notification_senders_update internal_notification_senders_delete"
 
 const (
 	AppName       = "IAM-CTL"
