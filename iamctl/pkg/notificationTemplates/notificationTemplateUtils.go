@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -155,6 +156,18 @@ func isTemplateExists(locale string, templates []notificationTemplate) bool {
 		}
 	}
 	return false
+}
+
+func isSystemDefinedType(rt utils.ResourceType, typeId string) (bool, error) {
+
+	_, err := utils.SendGetRequest(rt, typeId+"/system-templates")
+	if err == nil {
+		return true, nil
+	}
+	if strings.Contains(err.Error(), "Resource not found") {
+		return false, nil
+	}
+	return false, err
 }
 
 func createTemplateType(rt utils.ResourceType, displayName string) (string, error) {

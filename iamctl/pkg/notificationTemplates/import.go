@@ -204,13 +204,30 @@ func removeDeletedDeployedTypes(rt utils.ResourceType, localDirs []os.FileInfo, 
 			log.Printf("%s type: %s is excluded from deletion.", logName, deployedType.DisplayName)
 			continue
 		}
-		log.Printf("%s type not found locally. Resetting: %s", logName, deployedType.DisplayName)
-		if err := resetTemplateType(rt, deployedType.ID); err != nil {
-			utils.UpdateFailureSummary(rt, deployedType.DisplayName)
-			log.Printf("Error resetting %s type: %s. %s", logName, deployedType.DisplayName, err)
-		} else {
-			utils.UpdateSuccessSummary(rt, utils.DELETE)
+
+		isSystem, err := isSystemDefinedType(rt, deployedType.ID)
+		if err != nil {
+			log.Printf("Error checking if template type is system-defined: %s\n", err.Error())
+			log.Printf("%s type: %s is excluded from deletion.\n", logName, deployedType.DisplayName)
+			continue
 		}
+
+		if isSystem {
+			log.Printf("%s type not found locally. Resetting system type: %s", logName, deployedType.DisplayName)
+			if err := resetTemplateType(rt, deployedType.ID); err != nil {
+				utils.UpdateFailureSummary(rt, deployedType.DisplayName)
+				log.Printf("Error resetting %s type: %s. %s", logName, deployedType.DisplayName, err)
+				return
+			}
+		} else {
+			log.Printf("%s type not found locally. Deleting: %s", logName, deployedType.DisplayName)
+			if err := utils.SendDeleteRequest(deployedType.ID, rt); err != nil {
+				utils.UpdateFailureSummary(rt, deployedType.DisplayName)
+				log.Printf("Error deleting %s type: %s. %s", logName, deployedType.DisplayName, err)
+				return
+			}
+		}
+		utils.UpdateSuccessSummary(rt, utils.DELETE)
 	}
 }
 
