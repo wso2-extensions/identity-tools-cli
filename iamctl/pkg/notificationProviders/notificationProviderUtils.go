@@ -57,9 +57,9 @@ func getProviderLogName(resType utils.ResourceType) string {
 
 	switch resType {
 	case utils.EMAIL_PROVIDERS:
-		return "Email Providers"
+		return "email providers"
 	case utils.SMS_PROVIDERS:
-		return "SMS Providers"
+		return "sms providers"
 	}
 	return string(resType)
 }
