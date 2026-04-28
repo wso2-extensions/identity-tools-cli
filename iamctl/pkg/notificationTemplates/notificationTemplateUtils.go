@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -61,11 +62,22 @@ func getTemplateLogName(rt utils.ResourceType) string {
 
 	switch rt {
 	case utils.EMAIL_TEMPLATES:
-		return "Email Templates"
+		return "email templates"
 	case utils.SMS_TEMPLATES:
-		return "SMS Templates"
+		return "sms templates"
 	}
 	return string(rt)
+}
+
+func getTemplateChannel(rt utils.ResourceType) string {
+
+	switch rt {
+	case utils.EMAIL_TEMPLATES:
+		return "EMAIL"
+	case utils.SMS_TEMPLATES:
+		return "SMS"
+	}
+	return ""
 }
 
 func getTemplateTypeList(rt utils.ResourceType) ([]notificationTemplateType, error) {
@@ -123,4 +135,80 @@ func getTemplateKeywordMapping(rt utils.ResourceType, typeName string) map[strin
 		return utils.ResolveAdvancedKeywordMapping(typeName, kwConfig)
 	}
 	return utils.KEYWORD_CONFIGS.KeywordMappings
+}
+
+func getTemplateTypeId(displayName string, types []notificationTemplateType) string {
+
+	for i := range types {
+		if types[i].DisplayName == displayName {
+			return types[i].ID
+		}
+	}
+	return ""
+}
+
+func isTemplateExists(locale string, templates []notificationTemplate) bool {
+
+	for _, t := range templates {
+		if t.Locale == locale {
+			return true
+		}
+	}
+	return false
+}
+
+func createTemplateType(rt utils.ResourceType, displayName string) (string, error) {
+
+	body := map[string]string{
+		"displayName": displayName,
+	}
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return "", fmt.Errorf("error marshaling request: %w", err)
+	}
+
+	resp, err := utils.SendPostRequest(rt, jsonBody)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("error reading response: %w", err)
+	}
+	var created notificationTemplateType
+	if err := json.Unmarshal(respBody, &created); err != nil {
+		return "", fmt.Errorf("error parsing response: %w", err)
+	}
+
+	return created.ID, nil
+}
+
+func resetTemplateType(rt utils.ResourceType, typeId string) error {
+
+	reqURL := utils.GetTenantBaseUrl() + "/api/server/v1/notification/reset-template-type"
+
+	body := map[string]string{
+		"templateTypeId": typeId,
+		"channel":        getTemplateChannel(rt),
+	}
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		return fmt.Errorf("error marshaling request: %w", err)
+	}
+
+	resp, err := utils.SendCustomRequest("POST", reqURL, jsonBody, utils.MEDIA_TYPE_JSON)
+	if err != nil {
+		return fmt.Errorf("error sending request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		if errMsg, ok := utils.ErrorCodes[resp.StatusCode]; ok {
+			return fmt.Errorf("error response for reset request: %s", errMsg)
+		}
+		return fmt.Errorf("unexpected error when resetting: %s", resp.Status)
+	}
+	return nil
 }

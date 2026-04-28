@@ -549,6 +549,37 @@ func SendGetListRequest(resourceType ResourceType, resourceLimit int, opts ...Se
 	return resp, nil
 }
 
+func SendCustomRequest(method, reqURL string, body []byte, contentType string) (*http.Response, error) {
+
+	var reqBody io.Reader
+	if body != nil {
+		reqBody = bytes.NewBuffer(body)
+	}
+
+	req, err := http.NewRequest(method, reqURL, reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("error creating %s request: %w", method, err)
+	}
+	req.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error sending %s request: %w", method, err)
+	}
+	return resp, nil
+}
+
 func getResourcePath(resourceType ResourceType) string {
 
 	switch resourceType {
@@ -595,26 +626,29 @@ func getResourcePath(resourceType ResourceType) string {
 	return ""
 }
 
-func getResourceBaseUrl(resourceType ResourceType) string {
+func GetTenantBaseUrl() string {
 
 	basePath := "/t/" + SERVER_CONFIGS.TenantDomain
 	if IsSubOrganization() {
 		basePath += "/o"
 	}
+	return SERVER_CONFIGS.ServerUrl + basePath
+}
 
+func getResourceBaseUrl(resourceType ResourceType) string {
+
+	base := GetTenantBaseUrl()
 	switch resourceType {
 	case ROLES:
 		if RolesV2ApiExists {
-			basePath += "/scim2/v2/Roles/"
-		} else {
-			basePath += "/scim2/Roles/"
+			return base + "/scim2/v2/Roles/"
 		}
+		return base + "/scim2/Roles/"
 	case EMAIL_PROVIDERS, SMS_PROVIDERS:
-		basePath += "/api/server/v2/" + getResourcePath(resourceType) + "/"
+		return base + "/api/server/v2/" + getResourcePath(resourceType) + "/"
 	default:
-		basePath += "/api/server/v1/" + getResourcePath(resourceType) + "/"
+		return base + "/api/server/v1/" + getResourcePath(resourceType) + "/"
 	}
-	return SERVER_CONFIGS.ServerUrl + basePath
 }
 
 func buildRequestUrl(requestType string, resourceType ResourceType, resourceId string) (reqUrl string) {
