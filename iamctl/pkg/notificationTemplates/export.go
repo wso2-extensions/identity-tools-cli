@@ -47,8 +47,11 @@ func ExportAll(rt utils.ResourceType, exportFilePath string, format string) {
 		os.MkdirAll(exportFilePath, 0700)
 	}
 
+	var allTypeNames []string
 	var typesWithTemplates []string
 	for _, templateType := range types {
+		allTypeNames = append(allTypeNames, templateType.DisplayName)
+
 		if !utils.IsResourceExcluded(templateType.DisplayName, getTemplateResourceConfig(rt)) {
 			log.Printf("Exporting %s type: %s", logName, templateType.DisplayName)
 			hadTemplates, err := exportTemplateType(rt, templateType.ID, templateType.DisplayName, exportFilePath, format)
@@ -67,6 +70,11 @@ func ExportAll(rt utils.ResourceType, exportFilePath string, format string) {
 
 	if utils.TOOL_CONFIGS.AllowDelete {
 		utils.RemoveDeletedLocalDirectories(exportFilePath, typesWithTemplates)
+	}
+
+	if err := writeTemplateTypesList(exportFilePath, allTypeNames, rt, utils.FormatFromString(format)); err != nil {
+		log.Printf("Error writing %s type list: %s", logName, err)
+		utils.UpdateFailureSummary(rt, "TemplateTypes")
 	}
 }
 

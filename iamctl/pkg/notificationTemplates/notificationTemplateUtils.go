@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"path/filepath"
 	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
@@ -224,4 +225,43 @@ func resetTemplateType(rt utils.ResourceType, typeId string) error {
 		return fmt.Errorf("unexpected error when resetting: %s", resp.Status)
 	}
 	return nil
+}
+
+func writeTemplateTypesList(outputDirPath string, typeNames []string, rt utils.ResourceType, format utils.Format) error {
+
+	exportedFileName := utils.GetExportedFilePath(outputDirPath, "TemplateTypes", format)
+	data, err := utils.Serialize(typeNames, format, rt)
+	if err != nil {
+		return fmt.Errorf("error serializing list: %w", err)
+	}
+	if err := ioutil.WriteFile(exportedFileName, data, 0644); err != nil {
+		return fmt.Errorf("error writing file: %w", err)
+	}
+	return nil
+}
+
+func readLocalTemplateTypeNames(importDirPath string, rt utils.ResourceType) ([]string, error) {
+
+	matches, err := filepath.Glob(filepath.Join(importDirPath, "TemplateTypes.*"))
+	if err != nil {
+		return nil, fmt.Errorf("error searching for file: %w", err)
+	}
+	if len(matches) == 0 {
+		return nil, fmt.Errorf("file not found")
+	}
+
+	fileBytes, err := ioutil.ReadFile(matches[0])
+	if err != nil {
+		return nil, fmt.Errorf("error reading file: %w", err)
+	}
+	format, err := utils.FormatFromExtension(filepath.Ext(matches[0]))
+	if err != nil {
+		return nil, fmt.Errorf("unsupported format for file: %w", err)
+	}
+
+	var names []string
+	if _, err := utils.Deserialize(fileBytes, format, rt, &names); err != nil {
+		return nil, fmt.Errorf("error deserializing file: %w", err)
+	}
+	return names, nil
 }

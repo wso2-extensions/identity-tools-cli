@@ -52,9 +52,15 @@ func ImportAll(rt utils.ResourceType, inputDirPath string) {
 		log.Printf("Error reading %s directory: %s", logName, err)
 		return
 	}
+	exportedTypeNames, err := readLocalTemplateTypeNames(importFilePath, rt)
+	if err != nil {
+		log.Printf("Error reading %s type list: %s", logName, err)
+		utils.UpdateFailureSummary(rt, "TemplateTypes")
+		return
+	}
 
 	if utils.TOOL_CONFIGS.AllowDelete {
-		removeDeletedDeployedTypes(rt, localTypeDirs, deployedTypes, logName)
+		removeDeletedDeployedTypes(rt, localTypeDirs, deployedTypes, exportedTypeNames, logName)
 	}
 
 	for _, entry := range localTypeDirs {
@@ -183,21 +189,25 @@ func updateTemplate(rt utils.ResourceType, typeId, locale string, requestBody []
 	return nil
 }
 
-func removeDeletedDeployedTypes(rt utils.ResourceType, localDirs []os.FileInfo, deployedTypes []notificationTemplateType, logName string) {
+func removeDeletedDeployedTypes(rt utils.ResourceType, localDirs []os.FileInfo, deployedTypes []notificationTemplateType, exportedTypeNames []string, logName string) {
 
 	if len(deployedTypes) == 0 {
 		return
 	}
 
-	localNames := make(map[string]struct{})
+	localDirNames := make(map[string]struct{})
 	for _, dir := range localDirs {
 		if dir.IsDir() {
-			localNames[dir.Name()] = struct{}{}
+			localDirNames[dir.Name()] = struct{}{}
 		}
+	}
+	exportedNames := make(map[string]struct{})
+	for _, name := range exportedTypeNames {
+		exportedNames[name] = struct{}{}
 	}
 
 	for _, deployedType := range deployedTypes {
-		if _, existsLocally := localNames[deployedType.DisplayName]; existsLocally {
+		if _, existsLocally := localDirNames[deployedType.DisplayName]; existsLocally {
 			continue
 		}
 		if utils.IsResourceExcluded(deployedType.DisplayName, getTemplateResourceConfig(rt)) {
@@ -220,6 +230,9 @@ func removeDeletedDeployedTypes(rt utils.ResourceType, localDirs []os.FileInfo, 
 				return
 			}
 		} else {
+			if _, isKnown := exportedNames[deployedType.DisplayName]; isKnown {
+				continue
+			}
 			log.Printf("%s type not found locally. Deleting: %s", logName, deployedType.DisplayName)
 			if err := utils.SendDeleteRequest(deployedType.ID, rt); err != nil {
 				utils.UpdateFailureSummary(rt, deployedType.DisplayName)
