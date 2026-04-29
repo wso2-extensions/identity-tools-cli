@@ -229,14 +229,14 @@ func removeDeletedDeployedTypes(rt utils.ResourceType, localDirs []os.FileInfo, 
 			if err := resetTemplateType(rt, deployedType.ID); err != nil {
 				utils.UpdateFailureSummary(rt, deployedType.DisplayName)
 				log.Printf("Error resetting %s type: %s. %s", logName, deployedType.DisplayName, err)
-				return
+				continue
 			}
 		} else {
 			log.Printf("%s type not found locally. Deleting: %s", logName, deployedType.DisplayName)
 			if err := utils.SendDeleteRequest(deployedType.ID, rt); err != nil {
 				utils.UpdateFailureSummary(rt, deployedType.DisplayName)
 				log.Printf("Error deleting %s type: %s. %s", logName, deployedType.DisplayName, err)
-				return
+				continue
 			}
 		}
 		utils.UpdateSuccessSummary(rt, utils.DELETE)
