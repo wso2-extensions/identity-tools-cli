@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/notificationTemplates/applicationNotificationTemplates"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
@@ -88,29 +89,35 @@ func exportTemplateType(rt utils.ResourceType, typeId, displayName, parentDir, f
 	if err != nil {
 		return false, fmt.Errorf("error retrieving deployed templates: %w", err)
 	}
-	if len(deployedTemplates) == 0 {
-		return false, nil
-	}
-
-	if _, err := os.Stat(orgDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(orgDir, 0700); err != nil {
-			return false, fmt.Errorf("error creating template type directory: %w", err)
-		}
-	} else {
-		if utils.TOOL_CONFIGS.AllowDelete {
-			utils.RemoveDeletedLocalResources(orgDir, getDeployedTemplateLocales(deployedTemplates))
-		}
-	}
 
 	keywordMapping := getTemplateKeywordMapping(rt, displayName)
-	for _, template := range deployedTemplates {
-		err := exportTemplate(rt, typeId, template.Locale, orgDir, format, keywordMapping)
-		if err != nil {
-			return false, fmt.Errorf("error while exporting template: %s. %w", template.Locale, err)
+	hadOrgTemplates := len(deployedTemplates) > 0
+
+	if hadOrgTemplates {
+		if _, err := os.Stat(orgDir); os.IsNotExist(err) {
+			if err := os.MkdirAll(orgDir, 0700); err != nil {
+				return false, fmt.Errorf("error creating template type directory: %w", err)
+			}
+		} else {
+			if utils.TOOL_CONFIGS.AllowDelete {
+				utils.RemoveDeletedLocalResources(orgDir, getDeployedTemplateLocales(deployedTemplates))
+			}
+		}
+
+		for _, template := range deployedTemplates {
+			err := exportTemplate(rt, typeId, template.Locale, orgDir, format, keywordMapping)
+			if err != nil {
+				return false, fmt.Errorf("error while exporting template: %s. %w", template.Locale, err)
+			}
 		}
 	}
 
-	return true, nil
+	hadAppTemplates, err := applicationNotificationTemplates.ExportTemplateType(rt, typeId, displayName, typeDir, format, keywordMapping)
+	if err != nil {
+		return hadOrgTemplates, fmt.Errorf("error while exporting application templates: %w", err)
+	}
+
+	return hadOrgTemplates || hadAppTemplates, nil
 }
 
 func exportTemplate(rt utils.ResourceType, typeId, locale, typeDir string, format utils.Format, keywordMapping map[string]interface{}) error {
