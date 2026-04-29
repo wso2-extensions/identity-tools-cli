@@ -25,10 +25,21 @@ import (
 	"os"
 	"path/filepath"
 
+	notificationTemplates "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/notificationTemplates"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 func ImportAll(inputDirPath string) {
+
+	setNotificationTemplatesApiExists()
+	if utils.NotificationTemplatesApiExists {
+		notificationTemplates.ImportAll(utils.EMAIL_TEMPLATES, inputDirPath)
+		return
+	}
+	ImportAllLegacyApi(inputDirPath)
+}
+
+func ImportAllLegacyApi(inputDirPath string) {
 
 	log.Println("Importing email templates...")
 	importFilePath := filepath.Join(inputDirPath, utils.EMAIL_TEMPLATES.String())

@@ -65,6 +65,12 @@ type ToolConfigs struct {
 	ScriptLibraryConfigs       map[string]interface{} `json:"SCRIPT_LIBRARIES"`
 	GovernanceConnectorConfigs map[string]interface{} `json:"GOVERNANCE_CONNECTORS"`
 	CertificateConfigs         map[string]interface{} `json:"CERTIFICATES"`
+	WorkflowConfigs            map[string]interface{} `json:"WORKFLOWS"`
+	ApiResourceConfigs         map[string]interface{} `json:"API_RESOURCES"`
+	ValidationRuleConfigs      map[string]interface{} `json:"VALIDATION_RULES"`
+	EmailProviderConfigs       map[string]interface{} `json:"EMAIL_PROVIDERS"`
+	SmsProviderConfigs         map[string]interface{} `json:"SMS_PROVIDERS"`
+	SmsTemplateConfigs         map[string]interface{} `json:"SMS_TEMPLATES"`
 }
 
 type KeywordConfigs struct {
@@ -80,6 +86,12 @@ type KeywordConfigs struct {
 	ScriptLibraryConfigs       map[string]interface{} `json:"SCRIPT_LIBRARIES"`
 	GovernanceConnectorConfigs map[string]interface{} `json:"GOVERNANCE_CONNECTORS"`
 	CertificateConfigs         map[string]interface{} `json:"CERTIFICATES"`
+	WorkflowConfigs            map[string]interface{} `json:"WORKFLOWS"`
+	ApiResourceConfigs         map[string]interface{} `json:"API_RESOURCES"`
+	ValidationRuleConfigs      map[string]interface{} `json:"VALIDATION_RULES"`
+	EmailProviderConfigs       map[string]interface{} `json:"EMAIL_PROVIDERS"`
+	SmsProviderConfigs         map[string]interface{} `json:"SMS_PROVIDERS"`
+	SmsTemplateConfigs         map[string]interface{} `json:"SMS_TEMPLATES"`
 }
 
 var SERVER_CONFIGS ServerConfigs

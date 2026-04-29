@@ -32,6 +32,7 @@ func ImportAll(inputDirPath string) {
 
 	log.Println("Importing roles...")
 	importFilePath := filepath.Join(inputDirPath, utils.ROLES.String())
+	setRolesV2ApiExists()
 
 	if utils.IsResourceTypeExcluded(utils.ROLES) {
 		return
@@ -63,8 +64,8 @@ func ImportAll(inputDirPath string) {
 		displayName := unescapeName(fileInfo.ResourceName)
 
 		if !utils.IsResourceExcluded(displayName, utils.TOOL_CONFIGS.RoleConfigs) {
-			roleExists := isRoleExists(displayName, existingRoleList)
-			err := importRole(displayName, roleExists, roleFilePath, existingRoleList)
+			roleId := getRoleId(displayName, existingRoleList)
+			err := importRole(displayName, roleId, roleFilePath)
 			if err != nil {
 				log.Println("Error importing role:", err)
 				utils.UpdateFailureSummary(utils.ROLES, displayName)
@@ -73,10 +74,11 @@ func ImportAll(inputDirPath string) {
 	}
 }
 
-func importRole(displayName string, roleExists bool, importFilePath string, existingRoles []role) error {
+func importRole(displayName string, roleId string, importFilePath string) error {
 
-	if displayName == utils.ADMIN {
-		log.Println("Role: admin is a system role. Skipping import.")
+	if displayName == utils.ADMIN_ROLE || (utils.RolesV2ApiExists && (displayName == utils.ADMINISTRATOR_ROLE || displayName == utils.IMPERSONATOR_ROLE)) {
+		log.Printf("Role: %s is a system role. Skipping import.", displayName)
+		utils.AddToIdentifierMap(utils.ROLES, roleId, displayName, utils.IMPORT)
 		return nil
 	}
 
@@ -93,11 +95,9 @@ func importRole(displayName string, roleExists bool, importFilePath string, exis
 	roleKeywordMapping := getRoleKeywordMapping(displayName)
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), roleKeywordMapping)
 
-	if !roleExists {
+	if roleId == "" {
 		return createRole([]byte(modifiedFileData), format, displayName)
 	}
-
-	roleId := getRoleIdByDisplayName(displayName, existingRoles)
 	return updateRole(roleId, []byte(modifiedFileData), format, displayName)
 }
 
@@ -105,9 +105,22 @@ func createRole(requestBody []byte, format utils.Format, displayName string) err
 
 	log.Println("Creating new role:", displayName)
 
-	jsonBody, err := utils.PrepareJSONRequestBody(requestBody, format, utils.ROLES)
+	roleMap, err := utils.DeserializeToMap(requestBody, format, utils.ROLES, "id")
 	if err != nil {
-		return err
+		return fmt.Errorf("error deserializing role: %w", err)
+	}
+
+	var roleData interface{} = roleMap
+	if utils.RolesV2ApiExists {
+		roleData, err = processAudienceForImport(roleMap)
+		if err != nil {
+			return fmt.Errorf("error processing role audience: %w", err)
+		}
+	}
+
+	jsonBody, err := utils.Serialize(roleData, utils.FormatJSON, utils.ROLES)
+	if err != nil {
+		return fmt.Errorf("error serializing to JSON: %w", err)
 	}
 
 	resp, err := utils.SendPostRequest(utils.ROLES, jsonBody)
@@ -115,6 +128,12 @@ func createRole(requestBody []byte, format utils.Format, displayName string) err
 		return fmt.Errorf("error when creating role: %w", err)
 	}
 	defer resp.Body.Close()
+
+	var created role
+	if _, err := utils.ParseResponseBody(resp, &created); err != nil {
+		return fmt.Errorf("error reading create role response: %w", err)
+	}
+	utils.AddToIdentifierMap(utils.ROLES, created.Id, created.DisplayName, utils.IMPORT)
 
 	utils.UpdateSuccessSummary(utils.ROLES, utils.IMPORT)
 	log.Println("Role created successfully:", displayName)
@@ -135,6 +154,8 @@ func updateRole(roleId string, requestBody []byte, format utils.Format, displayN
 		return fmt.Errorf("error when updating role: %w", err)
 	}
 	defer resp.Body.Close()
+
+	utils.AddToIdentifierMap(utils.ROLES, roleId, displayName, utils.IMPORT)
 
 	utils.UpdateSuccessSummary(utils.ROLES, utils.UPDATE)
 	log.Println("Role updated successfully:", displayName)
@@ -158,7 +179,11 @@ func removeDeletedDeployedRoles(localFiles []os.FileInfo, deployedRoles []role) 
 		if _, existsLocally := localResourceNames[fileName]; existsLocally {
 			continue
 		}
-		if utils.IsResourceExcluded(r.DisplayName, utils.TOOL_CONFIGS.RoleConfigs) || r.DisplayName == utils.ADMIN {
+		if utils.IsResourceExcluded(r.DisplayName, utils.TOOL_CONFIGS.RoleConfigs) || r.DisplayName == utils.ADMIN_ROLE {
+			log.Println("Role is excluded from deletion:", r.DisplayName)
+			continue
+		}
+		if utils.RolesV2ApiExists && (r.DisplayName == utils.ADMINISTRATOR_ROLE || r.DisplayName == utils.IMPERSONATOR_ROLE) {
 			log.Println("Role is excluded from deletion:", r.DisplayName)
 			continue
 		}
