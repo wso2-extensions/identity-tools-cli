@@ -82,6 +82,7 @@ func exportTemplateType(rt utils.ResourceType, typeId, displayName, parentDir, f
 
 	format := utils.FormatFromString(formatString)
 	typeDir := filepath.Join(parentDir, displayName)
+	orgDir := filepath.Join(typeDir, orgTemplatesDir)
 
 	deployedTemplates, err := getTemplatesList(rt, typeId)
 	if err != nil {
@@ -91,19 +92,19 @@ func exportTemplateType(rt utils.ResourceType, typeId, displayName, parentDir, f
 		return false, nil
 	}
 
-	if _, err := os.Stat(typeDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(typeDir, 0700); err != nil {
+	if _, err := os.Stat(orgDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(orgDir, 0700); err != nil {
 			return false, fmt.Errorf("error creating template type directory: %w", err)
 		}
 	} else {
 		if utils.TOOL_CONFIGS.AllowDelete {
-			utils.RemoveDeletedLocalResources(typeDir, getDeployedTemplateLocales(deployedTemplates))
+			utils.RemoveDeletedLocalResources(orgDir, getDeployedTemplateLocales(deployedTemplates))
 		}
 	}
 
 	keywordMapping := getTemplateKeywordMapping(rt, displayName)
 	for _, template := range deployedTemplates {
-		err := exportTemplate(rt, typeId, template.Locale, typeDir, format, keywordMapping)
+		err := exportTemplate(rt, typeId, template.Locale, orgDir, format, keywordMapping)
 		if err != nil {
 			return false, fmt.Errorf("error while exporting template: %s. %w", template.Locale, err)
 		}

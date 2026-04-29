@@ -100,9 +100,16 @@ func importTemplateType(rt utils.ResourceType, localTypePath, displayName string
 	if err != nil {
 		return fmt.Errorf("error getting deployed templates: %w", err)
 	}
-	localFiles, err := ioutil.ReadDir(localTypePath)
-	if err != nil {
-		return fmt.Errorf("error reading local template files: %w", err)
+
+	orgDir := filepath.Join(localTypePath, orgTemplatesDir)
+	var localFiles []os.FileInfo
+	if _, err := os.Stat(orgDir); os.IsNotExist(err) {
+		localFiles = []os.FileInfo{}
+	} else {
+		localFiles, err = ioutil.ReadDir(orgDir)
+		if err != nil {
+			return fmt.Errorf("error reading local template files: %w", err)
+		}
 	}
 
 	if utils.TOOL_CONFIGS.AllowDelete {
@@ -115,7 +122,7 @@ func importTemplateType(rt utils.ResourceType, localTypePath, displayName string
 	keywordMapping := getTemplateKeywordMapping(rt, displayName)
 
 	for _, file := range localFiles {
-		filePath := filepath.Join(localTypePath, file.Name())
+		filePath := filepath.Join(orgDir, file.Name())
 		fileInfo := utils.GetFileInfo(filePath)
 		locale := fileInfo.ResourceName
 
