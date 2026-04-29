@@ -52,3 +52,13 @@ func getDeployedAppTemplateLocales(templates []appTemplate) []string {
 	}
 	return locales
 }
+
+func isAppTemplateExists(locale string, templates []appTemplate) bool {
+
+	for _, t := range templates {
+		if t.Locale == locale {
+			return true
+		}
+	}
+	return false
+}

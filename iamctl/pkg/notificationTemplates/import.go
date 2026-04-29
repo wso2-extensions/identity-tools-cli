@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 
+	applicationNotificationTemplates "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/notificationTemplates/applicationNotificationTemplates"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
@@ -131,6 +132,10 @@ func importTemplateType(rt utils.ResourceType, localTypePath, displayName string
 		if err != nil {
 			return fmt.Errorf("error importing template: %s. %w", locale, err)
 		}
+	}
+
+	if err := applicationNotificationTemplates.ImportTemplateType(rt, typeId, localTypePath, keywordMapping, logName); err != nil {
+		return fmt.Errorf("error while importing application templates: %w", err)
 	}
 
 	if existingType != "" {
