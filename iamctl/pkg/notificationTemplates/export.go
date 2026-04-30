@@ -110,6 +110,10 @@ func exportTemplateType(rt utils.ResourceType, typeId, displayName, parentDir, f
 				return false, fmt.Errorf("error while exporting template: %s. %w", template.Locale, err)
 			}
 		}
+	} else if utils.TOOL_CONFIGS.AllowDelete {
+		if _, err := os.Stat(orgDir); err == nil {
+			os.RemoveAll(orgDir)
+		}
 	}
 
 	hadAppTemplates, err := applicationNotificationTemplates.ExportTemplateType(rt, typeId, displayName, typeDir, format, keywordMapping)

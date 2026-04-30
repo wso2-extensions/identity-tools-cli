@@ -32,6 +32,12 @@ func ImportTemplateType(rt utils.ResourceType, typeId, localTypePath string, key
 
 	appsDir := filepath.Join(localTypePath, ApplicationTemplatesDir)
 	if _, err := os.Stat(appsDir); os.IsNotExist(err) {
+		if utils.TOOL_CONFIGS.AllowDelete {
+			err := removeDeployedTemplatesOfAllApps(rt, typeId)
+			if err != nil {
+				return fmt.Errorf("error removing deployed application templates: %w", err)
+			}
+		}
 		return nil
 	}
 	appDirEntries, err := ioutil.ReadDir(appsDir)
@@ -40,6 +46,7 @@ func ImportTemplateType(rt utils.ResourceType, typeId, localTypePath string, key
 	}
 
 	appMap := utils.GetResourceIdentifierMap(utils.APPLICATIONS)
+	localAppDirs := make(map[string]struct{})
 
 	for _, appDirEntry := range appDirEntries {
 		if !appDirEntry.IsDir() {
@@ -50,15 +57,22 @@ func ImportTemplateType(rt utils.ResourceType, typeId, localTypePath string, key
 		if !ok {
 			return fmt.Errorf("referenced application with identifier '%s' has not been exported", appName)
 		}
+		localAppDirs[appName] = struct{}{}
 
-		if err := importAppTemplates(rt, typeId, appId, appName, appsDir, keywordMapping, logName); err != nil {
+		if err := importTemplatesOfApp(rt, typeId, appId, appName, appsDir, keywordMapping, logName); err != nil {
 			return fmt.Errorf("error importing templates of application %s: %w", appName, err)
+		}
+	}
+
+	if utils.TOOL_CONFIGS.AllowDelete {
+		if err := removeDeployedTemplatesOfDeletedApps(rt, typeId, appMap, localAppDirs); err != nil {
+			return fmt.Errorf("error removing templates of deleted applications: %w", err)
 		}
 	}
 	return nil
 }
 
-func importAppTemplates(rt utils.ResourceType, typeId, appId, appName, appsDir string, keywordMapping map[string]interface{}, logName string) error {
+func importTemplatesOfApp(rt utils.ResourceType, typeId, appId, appName, appsDir string, keywordMapping map[string]interface{}, logName string) error {
 
 	deployedTemplates, err := getAppTemplatesList(rt, typeId, appId)
 	if err != nil {
@@ -137,6 +151,42 @@ func updateAppTemplate(rt utils.ResourceType, typeId, appId, locale string, requ
 	}
 	defer resp.Body.Close()
 
+	return nil
+}
+
+func removeDeployedTemplatesOfAllApps(rt utils.ResourceType, typeId string) error {
+
+	appMap := utils.GetResourceIdentifierMap(utils.APPLICATIONS)
+	if len(appMap) == 0 {
+		return nil
+	}
+
+	for appName, appId := range appMap {
+		deployedTemplates, err := getAppTemplatesList(rt, typeId, appId)
+		if err != nil {
+			return fmt.Errorf("error getting templates for application %s: %w", appName, err)
+		}
+		if err := removeDeletedDeployedAppTemplates(rt, typeId, appId, appName, []os.FileInfo{}, deployedTemplates); err != nil {
+			return fmt.Errorf("error removing templates for application %s: %w", appName, err)
+		}
+	}
+	return nil
+}
+
+func removeDeployedTemplatesOfDeletedApps(rt utils.ResourceType, typeId string, appMap map[string]string, localAppDirs map[string]struct{}) error {
+
+	for appName, appId := range appMap {
+		if _, hasLocal := localAppDirs[appName]; hasLocal {
+			continue
+		}
+		deployedTemplates, err := getAppTemplatesList(rt, typeId, appId)
+		if err != nil {
+			return fmt.Errorf("error getting templates for application %s: %w", appName, err)
+		}
+		if err := removeDeletedDeployedAppTemplates(rt, typeId, appId, appName, []os.FileInfo{}, deployedTemplates); err != nil {
+			return fmt.Errorf("error removing templates for application %s: %w", appName, err)
+		}
+	}
 	return nil
 }
 
