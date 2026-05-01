@@ -28,7 +28,7 @@ import (
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
-const orgTemplatesDir = "organizationTemplates"
+const orgTemplatesDir = "OrganizationTemplates"
 
 type notificationTemplateType struct {
 	ID          string `json:"id"`

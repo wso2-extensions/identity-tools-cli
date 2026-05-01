@@ -25,7 +25,7 @@ import (
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
-const ApplicationTemplatesDir = "applicationTemplates"
+const ApplicationTemplatesDir = "ApplicationTemplates"
 
 type appTemplate struct {
 	Locale string `json:"locale"`
