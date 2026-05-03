@@ -228,15 +228,6 @@ func removeDeletedDeployedTypes(rt utils.ResourceType, localDirs []os.FileInfo, 
 		}
 
 		if _, isExported := exportedNames[deployedType.DisplayName]; isExported {
-			templates, err := getTemplatesList(rt, deployedType.ID)
-			if err != nil {
-				log.Printf("Error checking whether templates exist for type: %s", err.Error())
-				log.Printf("%s type: %s is excluded from deletion.", logName, deployedType.DisplayName)
-				continue
-			}
-			if len(templates) == 0 {
-				continue
-			}
 			log.Printf("%s type not found locally. Resetting: %s", logName, deployedType.DisplayName)
 			if err := resetTemplateType(rt, deployedType.ID); err != nil {
 				utils.UpdateFailureSummary(rt, deployedType.DisplayName)
