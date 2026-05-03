@@ -55,7 +55,11 @@ func ExportTemplateType(rt utils.ResourceType, typeId, displayName, typeDir stri
 	if utils.TOOL_CONFIGS.AllowDelete && appsDirExistedBefore {
 		utils.RemoveDeletedLocalDirectories(appsDir, appsWithTemplates)
 		if len(appsWithTemplates) == 0 {
-			os.Remove(appsDir)
+			if err := os.Remove(appsDir); err != nil {
+				log.Println("Error removing application templates directory:", err)
+			} else {
+				log.Println("Removed the directory:", ApplicationTemplatesDir)
+			}
 		}
 	}
 	return len(appsWithTemplates) > 0, nil

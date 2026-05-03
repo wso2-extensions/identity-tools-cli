@@ -208,7 +208,7 @@ func removeDeletedDeployedAppTemplates(rt utils.ResourceType, typeId, appId, app
 		}
 		log.Printf("Application template for application %s not found locally. Deleting: %s", appName, template.Locale)
 		if err := utils.SendDeleteRequest(typeId+"/app-templates/"+appId+"/"+template.Locale, rt); err != nil {
-			return fmt.Errorf("error deleting template: %s. %s", template.Locale, err)
+			return fmt.Errorf("error deleting template: %s. %w", template.Locale, err)
 		}
 	}
 	return nil

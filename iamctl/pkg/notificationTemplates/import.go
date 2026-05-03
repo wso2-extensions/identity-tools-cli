@@ -264,7 +264,7 @@ func removeDeletedDeployedTemplates(rt utils.ResourceType, typeId string, localF
 		}
 		log.Printf("Template not found locally. Deleting: %s", template.Locale)
 		if err := utils.SendDeleteRequest(typeId+"/org-templates/"+template.Locale, rt); err != nil {
-			return fmt.Errorf("error deleting template: %s. %s", template.Locale, err)
+			return fmt.Errorf("error deleting template: %s. %w", template.Locale, err)
 		}
 	}
 	return nil

@@ -112,7 +112,11 @@ func exportTemplateType(rt utils.ResourceType, typeId, displayName, parentDir, f
 		}
 	} else if utils.TOOL_CONFIGS.AllowDelete {
 		if _, err := os.Stat(orgDir); err == nil {
-			os.RemoveAll(orgDir)
+			if err := os.RemoveAll(orgDir); err != nil {
+				log.Println("Error removing organization templates directory:", err)
+			} else {
+				log.Println("Removed the directory:", orgTemplatesDir)
+			}
 		}
 	}
 
