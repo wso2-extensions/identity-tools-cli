@@ -36,6 +36,7 @@ const API_RESOURCES_CONFIG = "API_RESOURCES"
 const VALIDATION_RULES_CONFIG = "VALIDATION_RULES"
 const EMAIL_PROVIDERS_CONFIG = "EMAIL_PROVIDERS"
 const SMS_PROVIDERS_CONFIG = "SMS_PROVIDERS"
+const ACTIONS_CONFIG = "ACTIONS"
 
 // Tool configs
 const EXCLUDE_CONFIG = "EXCLUDE"
@@ -80,6 +81,7 @@ const (
 	EMAIL_PROVIDERS       ResourceType = "EmailProviders"
 	SMS_PROVIDERS         ResourceType = "SmsProviders"
 	SMS_TEMPLATES         ResourceType = "SmsTemplates"
+	ACTIONS               ResourceType = "Actions"
 )
 
 // Sub resource types
