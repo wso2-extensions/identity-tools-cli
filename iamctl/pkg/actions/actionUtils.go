@@ -31,7 +31,7 @@ type actionType struct {
 	Self string `json:"self"`
 }
 
-type actionSummary struct {
+type action struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
@@ -52,13 +52,13 @@ func getActionTypesList() ([]actionType, error) {
 	return types, nil
 }
 
-func getActionsList(actionType string) ([]actionSummary, error) {
+func getActionsList(actionType string) ([]action, error) {
 
 	body, err := utils.SendGetRequest(utils.ACTIONS, actionType)
 	if err != nil {
 		return nil, err
 	}
-	var summaries []actionSummary
+	var summaries []action
 	if err := json.Unmarshal(body, &summaries); err != nil {
 		return nil, fmt.Errorf("error unmarshalling actions list: %w", err)
 	}
@@ -74,7 +74,7 @@ func getDeployedActionTypeIds(types []actionType) []string {
 	return ids
 }
 
-func getDeployedActionNames(summaries []actionSummary) []string {
+func getDeployedActionNames(summaries []action) []string {
 
 	var names []string
 	for _, s := range summaries {
@@ -89,6 +89,16 @@ func getActionsKeywordMapping(typeName string) map[string]interface{} {
 		return utils.ResolveAdvancedKeywordMapping(typeName, utils.KEYWORD_CONFIGS.ActionConfigs)
 	}
 	return utils.KEYWORD_CONFIGS.KeywordMappings
+}
+
+func isActionExists(name string, existingActionList []action) *action {
+
+	for i := range existingActionList {
+		if existingActionList[i].Name == name {
+			return &existingActionList[i]
+		}
+	}
+	return nil
 }
 
 func typeIdFromSelf(self string) string {

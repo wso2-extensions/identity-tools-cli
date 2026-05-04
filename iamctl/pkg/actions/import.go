@@ -18,5 +18,172 @@
 
 package actions
 
+import (
+	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
+
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
+)
+
 func ImportAll(inputDirPath string) {
+
+	log.Println("Importing actions...")
+	importFilePath := filepath.Join(inputDirPath, utils.ACTIONS.String())
+
+	if utils.IsResourceTypeExcluded(utils.ACTIONS) {
+		return
+	}
+	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
+		log.Println("No actions to import.")
+		return
+	}
+
+	typeFolders, err := ioutil.ReadDir(importFilePath)
+	if err != nil {
+		log.Println("Error reading action type directories: ", err)
+		return
+	}
+
+	for _, typeFolder := range typeFolders {
+		if !typeFolder.IsDir() {
+			continue
+		}
+		typeName := typeFolder.Name()
+
+		if !utils.IsResourceExcluded(typeName, utils.TOOL_CONFIGS.ActionConfigs) {
+			err := importActionType(importFilePath, typeName)
+			if err != nil {
+				utils.UpdateFailureSummary(utils.ACTIONS, typeName)
+				log.Printf("Error importing action type %s: %s", typeName, err)
+			}
+		}
+	}
+}
+
+func importActionType(importFilePath, typeName string) error {
+
+	typeDir := filepath.Join(importFilePath, typeName)
+
+	deployed, err := getActionsList(typeName)
+	if err != nil {
+		return fmt.Errorf("error retrieving deployed action list: %w", err)
+	}
+	localFiles, err := ioutil.ReadDir(typeDir)
+	if err != nil {
+		return fmt.Errorf("error reading action type directory: %w", err)
+	}
+
+	if utils.TOOL_CONFIGS.AllowDelete {
+		if err := removeDeletedDeployedActions(typeName, localFiles, deployed); err != nil {
+			return fmt.Errorf("error removing deleted deployed actions: %w", err)
+		}
+	}
+
+	for _, file := range localFiles {
+		actionFilePath := filepath.Join(typeDir, file.Name())
+		fileInfo := utils.GetFileInfo(actionFilePath)
+		actionName := fileInfo.ResourceName
+
+		existing := isActionExists(actionName, deployed)
+		err := importAction(typeName, actionName, actionFilePath, existing)
+		if err != nil {
+			return fmt.Errorf("error importing action %s: %w", actionName, err)
+		}
+	}
+	return nil
+}
+
+func importAction(typeName, actionName, filePath string, existing *action) error {
+
+	format, err := utils.FormatFromExtension(filepath.Ext(filePath))
+	if err != nil {
+		return fmt.Errorf("unsupported file format: %w", err)
+	}
+	fileBytes, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("error when reading the file: %w", err)
+	}
+
+	keywordMapping := getActionsKeywordMapping(typeName)
+	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), keywordMapping)
+
+	actionMap, err := utils.DeserializeToMap([]byte(modifiedFileData), format, utils.ACTIONS, "id", "type", "status", "createdAt", "updatedAt")
+	if err != nil {
+		return fmt.Errorf("error when deserializing action data: %w", err)
+	}
+
+	if existing == nil {
+		return createAction(typeName, actionName, actionMap)
+	}
+	return updateAction(typeName, actionName, existing.ID, actionMap)
+}
+
+func createAction(typeName, actionName string, actionMap map[string]interface{}) error {
+
+	log.Printf("Creating new action: %s of type %s", actionName, typeName)
+
+	delete(actionMap, "version")
+	jsonBody, err := utils.Serialize(actionMap, utils.FormatJSON, utils.ACTIONS)
+	if err != nil {
+		return fmt.Errorf("error when serializing action data: %w", err)
+	}
+
+	resp, err := utils.SendPostRequest(utils.ACTIONS, jsonBody, utils.WithPathSuffix(typeName))
+	if err != nil {
+		return fmt.Errorf("error when importing action: %w", err)
+	}
+	defer resp.Body.Close()
+
+	utils.UpdateSuccessSummary(utils.ACTIONS, utils.IMPORT)
+	log.Println("Action imported successfully.")
+	return nil
+}
+
+func updateAction(typeName, actionName, actionId string, actionMap map[string]interface{}) error {
+
+	log.Printf("Updating action: %s of type %s", actionName, typeName)
+
+	jsonBody, err := utils.Serialize(actionMap, utils.FormatJSON, utils.ACTIONS)
+	if err != nil {
+		return fmt.Errorf("error when serializing action data: %w", err)
+	}
+
+	resp, err := utils.SendPatchRequest(utils.ACTIONS, typeName+"/"+actionId, jsonBody)
+	if err != nil {
+		return fmt.Errorf("error when updating action: %w", err)
+	}
+	defer resp.Body.Close()
+
+	utils.UpdateSuccessSummary(utils.ACTIONS, utils.UPDATE)
+	log.Println("Action updated successfully.")
+	return nil
+}
+
+func removeDeletedDeployedActions(typeName string, localFiles []os.FileInfo, deployed []action) error {
+
+	if len(deployed) == 0 {
+		return nil
+	}
+
+	localResourceNames := make(map[string]struct{})
+	for _, file := range localFiles {
+		resourceName := utils.GetFileInfo(file.Name()).ResourceName
+		localResourceNames[resourceName] = struct{}{}
+	}
+
+	for _, action := range deployed {
+		if _, existsLocally := localResourceNames[action.Name]; existsLocally {
+			continue
+		}
+		log.Printf("Action: %s of type %s not found locally. Deleting action.\n", action.Name, typeName)
+		if err := utils.SendDeleteRequest(typeName+"/"+action.ID, utils.ACTIONS); err != nil {
+			return fmt.Errorf("error deleting action: %s. %w", action.Name, err)
+		} else {
+			utils.UpdateSuccessSummary(utils.ACTIONS, utils.DELETE)
+		}
+	}
+	return nil
 }
