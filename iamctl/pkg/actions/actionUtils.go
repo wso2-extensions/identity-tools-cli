@@ -91,17 +91,37 @@ func getActionsKeywordMapping(typeName string) map[string]interface{} {
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
 
-func isActionExists(name string, existingActionList []action) *action {
+func getActionId(name string, existingActionList []action) string {
 
 	for i := range existingActionList {
 		if existingActionList[i].Name == name {
-			return &existingActionList[i]
+			return existingActionList[i].ID
 		}
 	}
-	return nil
+	return ""
 }
 
 func typeIdFromSelf(self string) string {
 
 	return path.Base(self)
+}
+
+func setActionStatus(typePath, actionId, status string) error {
+
+	endpoint := typePath + "/" + actionId + "/"
+	switch status {
+	case "ACTIVE":
+		endpoint += "activate"
+	case "INACTIVE":
+		endpoint += "deactivate"
+	default:
+		return fmt.Errorf("unexpected value for status: %s", status)
+	}
+
+	resp, err := utils.SendPostRequest(utils.ACTIONS, nil, utils.WithPathSuffix(endpoint))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	return nil
 }

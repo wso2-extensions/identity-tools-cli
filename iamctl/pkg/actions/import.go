@@ -19,6 +19,7 @@
 package actions
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -87,8 +88,8 @@ func importActionType(importFilePath, typeName string) error {
 		fileInfo := utils.GetFileInfo(actionFilePath)
 		actionName := fileInfo.ResourceName
 
-		existing := isActionExists(actionName, deployed)
-		err := importAction(typeName, actionName, actionFilePath, existing)
+		actionId := getActionId(actionName, deployed)
+		err := importAction(typeName, actionId, actionName, actionFilePath)
 		if err != nil {
 			return fmt.Errorf("error importing action %s: %w", actionName, err)
 		}
@@ -96,7 +97,7 @@ func importActionType(importFilePath, typeName string) error {
 	return nil
 }
 
-func importAction(typeName, actionName, filePath string, existing *action) error {
+func importAction(typeName, actionId, actionName, filePath string) error {
 
 	format, err := utils.FormatFromExtension(filepath.Ext(filePath))
 	if err != nil {
@@ -110,18 +111,24 @@ func importAction(typeName, actionName, filePath string, existing *action) error
 	keywordMapping := getActionsKeywordMapping(typeName)
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), keywordMapping)
 
-	actionMap, err := utils.DeserializeToMap([]byte(modifiedFileData), format, utils.ACTIONS, "id", "type", "status", "createdAt", "updatedAt")
+	actionMap, err := utils.DeserializeToMap([]byte(modifiedFileData), format, utils.ACTIONS, "id", "type", "createdAt", "updatedAt")
 	if err != nil {
 		return fmt.Errorf("error when deserializing action data: %w", err)
 	}
 
-	if existing == nil {
-		return createAction(typeName, actionName, actionMap)
+	status, ok := actionMap["status"].(string)
+	if !ok {
+		return fmt.Errorf("unexpected format for status field")
 	}
-	return updateAction(typeName, actionName, existing.ID, actionMap)
+	delete(actionMap, "status")
+
+	if actionId == "" {
+		return createAction(typeName, actionName, status, actionMap)
+	}
+	return updateAction(typeName, actionId, actionName, status, actionMap)
 }
 
-func createAction(typeName, actionName string, actionMap map[string]interface{}) error {
+func createAction(typeName, actionName, status string, actionMap map[string]interface{}) error {
 
 	log.Printf("Creating new action: %s of type %s", actionName, typeName)
 
@@ -137,12 +144,25 @@ func createAction(typeName, actionName string, actionMap map[string]interface{})
 	}
 	defer resp.Body.Close()
 
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error reading create response: %w", err)
+	}
+	var created action
+	if err := json.Unmarshal(respBody, &created); err != nil {
+		return fmt.Errorf("error parsing create response: %w", err)
+	}
+
+	if err := setActionStatus(typeName, created.ID, status); err != nil {
+		return fmt.Errorf("error setting action status: %w", err)
+	}
+
 	utils.UpdateSuccessSummary(utils.ACTIONS, utils.IMPORT)
 	log.Println("Action imported successfully.")
 	return nil
 }
 
-func updateAction(typeName, actionName, actionId string, actionMap map[string]interface{}) error {
+func updateAction(typeName, actionId, actionName, status string, actionMap map[string]interface{}) error {
 
 	log.Printf("Updating action: %s of type %s", actionName, typeName)
 
@@ -156,6 +176,10 @@ func updateAction(typeName, actionName, actionId string, actionMap map[string]in
 		return fmt.Errorf("error when updating action: %w", err)
 	}
 	defer resp.Body.Close()
+
+	if err := setActionStatus(typeName, actionId, status); err != nil {
+		return fmt.Errorf("error setting action status: %w", err)
+	}
 
 	utils.UpdateSuccessSummary(utils.ACTIONS, utils.UPDATE)
 	log.Println("Action updated successfully.")
