@@ -247,6 +247,12 @@ var notificationProviderArrayIdentifiers = map[string]string{
 	"SmsProviders":   "name",
 }
 
+var actionArrayIdentifiers = map[string]string{
+
+	"rules":       "condition",
+	"expressions": "field",
+}
+
 type ResourceIdentifierMeta struct {
 	IdentifierPath  string // Path to the ID field in the resource object
 	UniqueValuePath string // Path to the unique identifier field
