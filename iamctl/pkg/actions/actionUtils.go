@@ -145,6 +145,56 @@ func processAuthProperties(actionMap map[string]interface{}) error {
 	return nil
 }
 
+func replaceRuleReferences(actionMap map[string]interface{}) error {
+
+	ruleRaw, exists := actionMap["rule"]
+	if !exists {
+		return nil
+	}
+	appMap := utils.GetResourceIdentifierMap(utils.APPLICATIONS)
+
+	ruleArr, ok := ruleRaw.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for rule field")
+	}
+	rules, ok := ruleArr["rules"].([]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for rules array")
+	}
+
+	for _, rule := range rules {
+		ruleMap, ok := rule.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for rule element")
+		}
+		exprs, ok := ruleMap["expressions"].([]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for rule expressions")
+		}
+
+		for _, expr := range exprs {
+			exprMap, ok := expr.(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("unexpected format for expression element")
+			}
+			if exprMap["field"] != "application" {
+				continue
+			}
+
+			oldVal, ok := exprMap["value"].(string)
+			if !ok {
+				return fmt.Errorf("unexpected format for value in expression")
+			}
+			newVal, found := appMap[oldVal]
+			if !found {
+				return fmt.Errorf("referenced application '%s' has not been exported", oldVal)
+			}
+			exprMap["value"] = newVal
+		}
+	}
+	return nil
+}
+
 func setActionStatus(typePath, actionId, status string) error {
 
 	endpoint := typePath + "/" + actionId + "/"

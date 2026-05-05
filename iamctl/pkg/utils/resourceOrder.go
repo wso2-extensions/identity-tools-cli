@@ -42,5 +42,5 @@ var ResourceOrder = []ResourceType{
 	CERTIFICATES,
 	WORKFLOWS, // Dependency: Roles
 	VALIDATION_RULES,
-	ACTIONS, // Dependency: Applications
+	ACTIONS, // Dependency: Applications, Claims
 }

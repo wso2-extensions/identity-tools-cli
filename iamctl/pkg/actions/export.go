@@ -105,6 +105,9 @@ func exportAction(typeId, actionId, actionName, outputDir, formatStr string) err
 	if err := processAuthProperties(actionMap); err != nil {
 		return fmt.Errorf("error processing auth properties: %w", err)
 	}
+	if err := replaceRuleReferences(actionMap); err != nil {
+		return fmt.Errorf("error replacing rule references: %w", err)
+	}
 
 	format := utils.FormatFromString(formatStr)
 	exportedFileName := utils.GetExportedFilePath(outputDir, actionName, format)

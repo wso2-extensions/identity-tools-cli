@@ -115,6 +115,9 @@ func importAction(typeName, actionId, actionName, filePath string) error {
 	if err != nil {
 		return fmt.Errorf("error when deserializing action data: %w", err)
 	}
+	if err := replaceRuleReferences(actionMap); err != nil {
+		return fmt.Errorf("error replacing rule references: %w", err)
+	}
 
 	status, ok := actionMap["status"].(string)
 	if !ok {
