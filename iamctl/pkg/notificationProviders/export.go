@@ -48,6 +48,10 @@ func exportAll(resType utils.ResourceType, exportFilePath string, format string)
 		return
 	}
 
+	if resType == utils.EMAIL_PROVIDERS && !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.EmailProviderConfigs) {
+		log.Println("Warn: Secrets exclusion cannot be disabled for email providers. All secrets will be masked.")
+	}
+
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		os.MkdirAll(exportFilePath, 0700)
 	} else {

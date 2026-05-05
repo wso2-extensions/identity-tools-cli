@@ -42,6 +42,10 @@ func ExportAll(outputDirPath, format string) {
 		return
 	}
 
+	if !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.ActionConfigs) {
+		log.Println("Warn: Secrets exclusion cannot be disabled for actions. All secrets will be masked.")
+	}
+
 	if _, err := os.Stat(actionsDir); os.IsNotExist(err) {
 		os.MkdirAll(actionsDir, 0700)
 	} else if utils.TOOL_CONFIGS.AllowDelete {
@@ -89,16 +93,24 @@ func exportActionType(actionType actionType, parentDir, format string) error {
 
 func exportAction(typeId, actionId, actionName, outputDir, formatStr string) error {
 
-	action, err := utils.GetResourceData(utils.ACTIONS, typeId+"/"+actionId)
+	actionData, err := utils.GetResourceData(utils.ACTIONS, typeId+"/"+actionId)
 	if err != nil {
 		return fmt.Errorf("error getting action data: %w", err)
+	}
+
+	actionMap, ok := actionData.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for action data")
+	}
+	if err := processAuthProperties(actionMap); err != nil {
+		return fmt.Errorf("error processing auth properties: %w", err)
 	}
 
 	format := utils.FormatFromString(formatStr)
 	exportedFileName := utils.GetExportedFilePath(outputDir, actionName, format)
 
 	keywordMapping := getActionsKeywordMapping(typeId)
-	modifiedData, err := utils.ProcessExportedData(action, exportedFileName, format, keywordMapping, utils.ACTIONS)
+	modifiedData, err := utils.ProcessExportedData(actionMap, exportedFileName, format, keywordMapping, utils.ACTIONS)
 	if err != nil {
 		return fmt.Errorf("error processing exported data: %w", err)
 	}

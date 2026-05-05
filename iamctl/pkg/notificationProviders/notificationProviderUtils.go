@@ -135,10 +135,6 @@ func processAuthSecrets(resType utils.ResourceType, data interface{}) (interface
 
 	switch resType {
 	case utils.EMAIL_PROVIDERS:
-		if !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.EmailProviderConfigs) {
-			log.Printf("Warn: Secrets exclusion cannot be disabled for Email Providers. All secrets will be masked.")
-		}
-
 		authType, ok = providerMap["authType"].(string)
 		if !ok {
 			return nil, fmt.Errorf("unexpected format for authType")
@@ -159,7 +155,7 @@ func processAuthSecrets(resType utils.ResourceType, data interface{}) (interface
 		}
 
 		if !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.SmsProviderConfigs) {
-			log.Printf("Warn: Secrets exclusion cannot be disabled for Custom SMS Providers. All secrets will be masked.")
+			log.Printf("Warn: Secrets exclusion cannot be disabled for Custom sms providers. All secrets will be masked.")
 		}
 		delete(providerMap, "secret")
 

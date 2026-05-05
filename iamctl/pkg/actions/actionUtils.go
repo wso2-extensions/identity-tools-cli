@@ -106,6 +106,45 @@ func typeIdFromSelf(self string) string {
 	return path.Base(self)
 }
 
+func processAuthProperties(actionMap map[string]interface{}) error {
+
+	endpoint, ok := actionMap["endpoint"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for endpoint")
+	}
+	auth, ok := endpoint["authentication"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for authentication")
+	}
+
+	authType, ok := auth["type"].(string)
+	if !ok {
+		return fmt.Errorf("unexpected format for authentication type")
+	}
+
+	switch authType {
+	case "NONE":
+		auth["properties"] = map[string]interface{}{}
+	case "BASIC":
+		auth["properties"] = map[string]interface{}{
+			"username": utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES,
+			"password": utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES,
+		}
+	case "BEARER":
+		auth["properties"] = map[string]interface{}{
+			"accessToken": utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES,
+		}
+	case "API_KEY":
+		auth["properties"] = map[string]interface{}{
+			"header": utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES,
+			"value":  utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES,
+		}
+	default:
+		return fmt.Errorf("unknown authentication type %s", authType)
+	}
+	return nil
+}
+
 func setActionStatus(typePath, actionId, status string) error {
 
 	endpoint := typePath + "/" + actionId + "/"
