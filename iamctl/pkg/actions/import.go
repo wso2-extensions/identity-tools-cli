@@ -34,7 +34,7 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing actions...")
 	importFilePath := filepath.Join(inputDirPath, utils.ACTIONS.String())
 
-	if utils.IsResourceTypeExcluded(utils.ACTIONS) {
+	if !utils.IsEntitySupportedInVersion(utils.ACTIONS) || utils.IsResourceTypeExcluded(utils.ACTIONS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
