@@ -77,7 +77,9 @@ func importRole(displayName string, roleId string, importFilePath string) error 
 
 	if displayName == utils.ADMIN {
 		log.Println("Role: admin is a system role. Skipping import.")
-		utils.AddToIdentifierMap(utils.ROLES, roleId, displayName, utils.IMPORT)
+		if roleId != "" {
+			utils.AddToIdentifierMap(utils.ROLES, roleId, displayName, utils.IMPORT)
+		}
 		return nil
 	}
 

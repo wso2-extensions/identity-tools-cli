@@ -317,7 +317,7 @@ func disableAssociation(resp *http.Response, requestBody []byte) error {
 
 func readLocalAssociationNames(importDirPath string) ([]string, error) {
 
-	matches, err := filepath.Glob(filepath.Join(importDirPath, "WorkflowAssociations.*"))
+	matches, err := filepath.Glob(filepath.Join(importDirPath, utils.WORKFLOW_ASSOCIATIONS.String()+".*"))
 	if err != nil {
 		return nil, fmt.Errorf("error searching for file: %w", err)
 	}
@@ -345,7 +345,7 @@ func readLocalAssociationNames(importDirPath string) ([]string, error) {
 func writeWorkflowAssociationsList(outputDirPath string, formatString string) error {
 
 	format := utils.FormatFromString(formatString)
-	exportedFileName := utils.GetExportedFilePath(outputDirPath, "WorkflowAssociations", format)
+	exportedFileName := utils.GetExportedFilePath(outputDirPath, utils.WORKFLOW_ASSOCIATIONS.String(), format)
 
 	data, err := utils.Serialize(exportedAssociationNames, format, utils.WORKFLOW_ASSOCIATIONS)
 	if err != nil {
