@@ -65,15 +65,6 @@ func getActionsList(actionType string) ([]action, error) {
 	return summaries, nil
 }
 
-func getDeployedActionTypeIds(types []actionType) []string {
-
-	var ids []string
-	for _, at := range types {
-		ids = append(ids, at.ID)
-	}
-	return ids
-}
-
 func getDeployedActionNames(summaries []action) []string {
 
 	var names []string

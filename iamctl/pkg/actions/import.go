@@ -42,10 +42,18 @@ func ImportAll(inputDirPath string) {
 		return
 	}
 
+	deployedTypes, err := getActionTypesList()
+	if err != nil {
+		log.Println("Error retrieving action types list:", err)
+	}
 	typeFolders, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
 		log.Println("Error reading action type directories: ", err)
 		return
+	}
+
+	if utils.TOOL_CONFIGS.AllowDelete {
+		removeDeletedDeployedActionTypes(typeFolders, deployedTypes)
 	}
 
 	for _, typeFolder := range typeFolders {
@@ -187,6 +195,35 @@ func updateAction(typeName, actionId, actionName, status string, actionMap map[s
 	utils.UpdateSuccessSummary(utils.ACTIONS, utils.UPDATE)
 	log.Println("Action updated successfully.")
 	return nil
+}
+
+func removeDeletedDeployedActionTypes(localDirs []os.FileInfo, deployedTypes []actionType) {
+
+	localDirNames := make(map[string]struct{})
+	for _, dir := range localDirs {
+		if dir.IsDir() {
+			localDirNames[dir.Name()] = struct{}{}
+		}
+	}
+
+	for _, deployedType := range deployedTypes {
+		if _, existsLocally := localDirNames[deployedType.ID]; existsLocally {
+			continue
+		}
+		if utils.IsResourceExcluded(deployedType.ID, utils.TOOL_CONFIGS.ActionConfigs) {
+			log.Printf("Action type: %s is excluded from deletion.", deployedType.ID)
+			continue
+		}
+		actions, err := getActionsList(deployedType.ID)
+		if err != nil {
+			log.Printf("Error retrieving deployed actions for type %s: %s", deployedType.ID, err)
+			continue
+		}
+		if err := removeDeletedDeployedActions(deployedType.ID, nil, actions); err != nil {
+			utils.UpdateFailureSummary(utils.ACTIONS, deployedType.ID)
+			log.Printf("Error deleting actions for type %s: %s", deployedType.ID, err)
+		}
+	}
 }
 
 func removeDeletedDeployedActions(typeName string, localFiles []os.FileInfo, deployed []action) error {

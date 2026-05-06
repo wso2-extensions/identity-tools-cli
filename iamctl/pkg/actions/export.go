@@ -48,36 +48,47 @@ func ExportAll(outputDirPath, format string) {
 
 	if _, err := os.Stat(actionsDir); os.IsNotExist(err) {
 		os.MkdirAll(actionsDir, 0700)
-	} else if utils.TOOL_CONFIGS.AllowDelete {
-		utils.RemoveDeletedLocalDirectories(actionsDir, getDeployedActionTypeIds(types))
 	}
 
+	var typesWithActions []string
 	for _, at := range types {
 		if utils.IsResourceExcluded(at.ID, utils.TOOL_CONFIGS.ActionConfigs) {
 			continue
 		}
-		log.Println("Exporting action type:", at.ID)
-		if err := exportActionType(at, actionsDir, format); err != nil {
+
+		hadActions, err := exportActionType(at, actionsDir, format)
+		if err != nil {
 			utils.UpdateFailureSummary(utils.ACTIONS, at.ID)
 			log.Printf("Error exporting action type %s: %s", at.ID, err)
 		} else {
-			utils.UpdateSuccessSummary(utils.ACTIONS, utils.EXPORT)
-			log.Println("Action type exported successfully:", at.ID)
+			if hadActions {
+				typesWithActions = append(typesWithActions, at.ID)
+				utils.UpdateSuccessSummary(utils.ACTIONS, utils.EXPORT)
+				log.Println("Action type exported successfully:", at.ID)
+			}
 		}
+	}
+
+	if utils.TOOL_CONFIGS.AllowDelete {
+		utils.RemoveDeletedLocalDirectories(actionsDir, typesWithActions)
 	}
 }
 
-func exportActionType(actionType actionType, parentDir, format string) error {
+func exportActionType(actionType actionType, parentDir, format string) (bool, error) {
 
 	actions, err := getActionsList(actionType.ID)
 	if err != nil {
-		return fmt.Errorf("error retrieving actions list: %w", err)
+		return false, fmt.Errorf("error retrieving actions list: %w", err)
+	}
+	if len(actions) == 0 {
+		return false, nil
 	}
 
+	log.Println("Exporting action type:", actionType.ID)
 	typeDir := filepath.Join(parentDir, actionType.ID)
 	if _, err := os.Stat(typeDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(typeDir, 0700); err != nil {
-			return fmt.Errorf("error creating action type directory: %w", err)
+			return false, fmt.Errorf("error creating action type directory: %w", err)
 		}
 	} else if utils.TOOL_CONFIGS.AllowDelete {
 		utils.RemoveDeletedLocalResources(typeDir, getDeployedActionNames(actions))
@@ -85,10 +96,10 @@ func exportActionType(actionType actionType, parentDir, format string) error {
 
 	for _, action := range actions {
 		if err := exportAction(actionType.ID, action.ID, action.Name, typeDir, format); err != nil {
-			return fmt.Errorf("error exporting action %s: %w", action.Name, err)
+			return false, fmt.Errorf("error exporting action %s: %w", action.Name, err)
 		}
 	}
-	return nil
+	return true, nil
 }
 
 func exportAction(typeId, actionId, actionName, outputDir, formatStr string) error {
