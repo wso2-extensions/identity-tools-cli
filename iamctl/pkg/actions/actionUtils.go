@@ -140,18 +140,23 @@ func replaceRuleReferences(actionMap map[string]interface{}) error {
 
 	ruleRaw, exists := actionMap["rule"]
 	if !exists {
+		actionMap["rule"] = map[string]interface{}{}
 		return nil
 	}
-	appMap := utils.GetResourceIdentifierMap(utils.APPLICATIONS)
-
-	ruleArr, ok := ruleRaw.(map[string]interface{})
+	ruleMap, ok := ruleRaw.(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("unexpected format for rule field")
 	}
-	rules, ok := ruleArr["rules"].([]interface{})
+
+	rulesRaw, exists := ruleMap["rules"]
+	if !exists {
+		return nil
+	}
+	rules, ok := rulesRaw.([]interface{})
 	if !ok {
 		return fmt.Errorf("unexpected format for rules array")
 	}
+	appMap := utils.GetResourceIdentifierMap(utils.APPLICATIONS)
 
 	for _, rule := range rules {
 		ruleMap, ok := rule.(map[string]interface{})
