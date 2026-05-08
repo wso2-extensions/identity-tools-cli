@@ -19,14 +19,22 @@
 package organizations
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 type organization struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
+	Id        string `json:"id"`
+	Name      string `json:"name"`
+	OrgHandle string `json:"orgHandle"`
+	Status    string `json:"status"`
+}
+
+type organizationsResponse struct {
+	Organizations []organization `json:"organizations"`
 }
 
 func GetCurrentOrganizationId() (id string, err error) {
@@ -41,4 +49,50 @@ func GetCurrentOrganizationId() (id string, err error) {
 		return "", fmt.Errorf("error while deserializing JSON response: %w", err)
 	}
 	return curOrg.Id, nil
+}
+
+func getOrganizationList() ([]organization, error) {
+
+	resp, err := utils.SendGetListRequest(utils.ORGANIZATIONS, -1,
+		utils.WithQueryParams(map[string]string{"recursive": "false"}))
+	if err != nil {
+		return nil, fmt.Errorf("error while retrieving list. %w", err)
+	}
+	defer resp.Body.Close()
+
+	statusCode := resp.StatusCode
+	if statusCode == 200 {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("error when reading the retrieved list. %w", err)
+		}
+
+		var wrapper organizationsResponse
+		err = json.Unmarshal(body, &wrapper)
+		if err != nil {
+			return nil, fmt.Errorf("error when unmarshalling the retrieved list. %w", err)
+		}
+		return wrapper.Organizations, nil
+
+	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
+		return nil, fmt.Errorf("Status code: %d, Error: %s", statusCode, error)
+	}
+	return nil, fmt.Errorf("unknown error while retrieving  list")
+}
+
+func getDeployedOrganizationHandles(orgs []organization) []string {
+
+	var handles []string
+	for _, o := range orgs {
+		handles = append(handles, o.OrgHandle)
+	}
+	return handles
+}
+
+func getOrganizationKeywordMapping(orgHandle string) map[string]interface{} {
+
+	if utils.KEYWORD_CONFIGS.OrganizationConfigs != nil {
+		return utils.ResolveAdvancedKeywordMapping(orgHandle, utils.KEYWORD_CONFIGS.OrganizationConfigs)
+	}
+	return utils.KEYWORD_CONFIGS.KeywordMappings
 }

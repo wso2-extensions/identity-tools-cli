@@ -37,6 +37,7 @@ const VALIDATION_RULES_CONFIG = "VALIDATION_RULES"
 const EMAIL_PROVIDERS_CONFIG = "EMAIL_PROVIDERS"
 const SMS_PROVIDERS_CONFIG = "SMS_PROVIDERS"
 const ACTIONS_CONFIG = "ACTIONS"
+const ORGANIZATIONS_CONFIG = "ORGANIZATIONS"
 
 // Tool configs
 const EXCLUDE_CONFIG = "EXCLUDE"
@@ -251,6 +252,12 @@ var actionArrayIdentifiers = map[string]string{
 
 	"rules":       "condition",
 	"expressions": "field",
+}
+
+var organizationArrayIdentifiers = map[string]string{
+
+	"attributes":   "key",
+	"ancestorPath": "id",
 }
 
 type ResourceIdentifierMeta struct {
