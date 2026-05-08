@@ -32,7 +32,7 @@ func ImportAll(inputDirPath string) {
 
 	log.Println("Importing workflows...")
 	importFilePath := filepath.Join(inputDirPath, utils.WORKFLOWS.String())
-	setAssocSharingAcrossWfSupported()
+	setWorkflowVersionConfigs()
 
 	if !utils.IsEntitySupportedInVersion(utils.WORKFLOWS) || utils.IsResourceTypeExcluded(utils.WORKFLOWS) {
 		return

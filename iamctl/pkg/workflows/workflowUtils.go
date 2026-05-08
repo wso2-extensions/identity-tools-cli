@@ -52,6 +52,7 @@ type associationsOfWorkflowResponse struct {
 }
 
 var assocSharingSupported bool
+var assocRulesSupported bool
 var exportedAssociationNames []string
 
 func getWorkflowList() ([]workflow, error) {
@@ -213,6 +214,7 @@ func processWorkflowAssociation(association interface{}) error {
 	}
 	exportedAssociationNames = append(exportedAssociationNames, name)
 	delete(assocMap, "workflowName")
+	delete(assocMap, "rule")
 	return nil
 }
 
@@ -386,7 +388,7 @@ func updateWorkflowExportSummary(success bool, successCount int) {
 	}
 }
 
-func setAssocSharingAcrossWfSupported() {
+func setWorkflowVersionConfigs() {
 
 	res, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_ASSOCIATION_SHARING_ACROSS_WORKFLOWS)
 
@@ -395,5 +397,14 @@ func setAssocSharingAcrossWfSupported() {
 		assocSharingSupported = true
 	} else {
 		assocSharingSupported = false
+	}
+
+	res, err = utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_WORKFLOW_ASSOCIATION_RULES)
+
+	// Assume association rules are supported if the server version is not properly configured
+	if err != nil || res >= 0 {
+		assocRulesSupported = true
+	} else {
+		assocRulesSupported = false
 	}
 }

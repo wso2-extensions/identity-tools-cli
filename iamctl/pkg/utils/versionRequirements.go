@@ -44,6 +44,7 @@ const (
 // Minimum WSO2 Identity Server version requirements for other behavioural changes
 const (
 	MIN_VERSION_ASSOCIATION_SHARING_ACROSS_WORKFLOWS = "7.3.0"
+	MIN_VERSION_WORKFLOW_ASSOCIATION_RULES           = "7.3.0"
 )
 
 var ExportAPIMinVersionRequirements = map[ResourceType]string{

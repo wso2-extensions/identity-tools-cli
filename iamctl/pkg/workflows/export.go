@@ -32,7 +32,7 @@ func ExportAll(exportFilePath string, format string) {
 
 	log.Println("Exporting workflows...")
 	exportFilePath = filepath.Join(exportFilePath, utils.WORKFLOWS.String())
-	setAssocSharingAcrossWfSupported()
+	setWorkflowVersionConfigs()
 
 	if !utils.IsEntitySupportedInVersion(utils.WORKFLOWS) || utils.IsResourceTypeExcluded(utils.WORKFLOWS) {
 		return
@@ -80,7 +80,11 @@ func ExportAll(exportFilePath string, format string) {
 			log.Println("Error writing workflow associations list:", err)
 		}
 	}
+
 	log.Println("Warn: Users associated with workflow steps are not exported")
+	if assocRulesSupported {
+		log.Println("Warn: Workflow assocaition rules are not exported")
+	}
 }
 
 func exportWorkflow(workflowId string, workflowName string, outputDirPath string, formatString string) error {
