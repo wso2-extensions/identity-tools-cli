@@ -62,12 +62,15 @@ func ImportAll(inputDirPath string) {
 		existingAssoc, err = getWorkflowAssociationsList()
 		if err != nil {
 			log.Println("Error retrieving the deployed workflow association list:", err)
+			utils.UpdateFailureSummary(utils.WORKFLOWS, utils.WORKFLOW_ASSOCIATIONS.String())
 			return
 		}
+
 		if utils.TOOL_CONFIGS.AllowDelete {
 			localAssoc, err := readLocalAssociationNames(importFilePath)
 			if err != nil {
 				log.Println("Error reading local workflow association list:", err)
+				utils.UpdateFailureSummary(utils.WORKFLOWS, utils.WORKFLOW_ASSOCIATIONS.String())
 				return
 			}
 			failedWorkflows, _ = removeDeletedDeployedWfAssociations(localAssoc, existingAssoc)
@@ -283,7 +286,7 @@ func removeDeletedDeployedWfAssociations(localNames []string, deployedAssociatio
 		}
 		if err := utils.SendDeleteRequest(assoc.ID, utils.WORKFLOW_ASSOCIATIONS); err != nil {
 			if assocSharingSupported {
-				return nil, fmt.Errorf("Error deleting workflow association: %s. %w", assoc.Name, err)
+				return nil, fmt.Errorf("error deleting workflow association: %s. %w", assoc.Name, err)
 			} else {
 				log.Printf("Error deleting workflow association %s of workflow %s: %v", assoc.Name, assoc.WorkflowName, err)
 				failedWorkflows[assoc.WorkflowName] = struct{}{}

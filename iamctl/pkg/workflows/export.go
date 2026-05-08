@@ -83,7 +83,7 @@ func ExportAll(exportFilePath string, format string) {
 
 	log.Println("Warn: Users associated with workflow steps are not exported")
 	if assocRulesSupported {
-		log.Println("Warn: Workflow assocaition rules are not exported")
+		log.Println("Warn: Workflow association rules are not exported")
 	}
 }
 
