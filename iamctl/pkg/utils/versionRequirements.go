@@ -41,6 +41,11 @@ const (
 	MIN_VERSION_APP_EXPORT_API       = "6.1.0"
 )
 
+// Minimum WSO2 Identity Server version requirements for other behavioural changes
+const (
+	MIN_VERSION_ASSOCIATION_SHARING_ACROSS_WORKFLOWS = "7.3.0"
+)
+
 var ExportAPIMinVersionRequirements = map[ResourceType]string{
 	USERSTORES:         MIN_VERSION_USERSTORE_EXPORT_API,
 	IDENTITY_PROVIDERS: MIN_VERSION_IDP_EXPORT_API,

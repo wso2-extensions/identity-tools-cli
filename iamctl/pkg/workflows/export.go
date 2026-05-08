@@ -32,6 +32,7 @@ func ExportAll(exportFilePath string, format string) {
 
 	log.Println("Exporting workflows...")
 	exportFilePath = filepath.Join(exportFilePath, utils.WORKFLOWS.String())
+	setAssocSharingAcrossWfSupported()
 
 	if !utils.IsEntitySupportedInVersion(utils.WORKFLOWS) || utils.IsResourceTypeExcluded(utils.WORKFLOWS) {
 		return
@@ -62,16 +63,22 @@ func ExportAll(exportFilePath string, format string) {
 				utils.UpdateFailureSummary(utils.WORKFLOWS, wf.Name)
 				log.Printf("Error while exporting workflow: %s. %s", wf.Name, err)
 			} else {
-				successCount++
+				if assocSharingSupported {
+					utils.UpdateSuccessSummary(utils.WORKFLOWS, utils.EXPORT)
+				} else {
+					successCount++
+				}
 				log.Println("Workflow exported successfully:", wf.Name)
 			}
 		}
 	}
 
-	err = writeWorkflowAssociationsList(exportFilePath, format)
-	updateWorkflowExportSummary(err == nil, successCount)
-	if err != nil {
-		log.Println("Error writing workflow associations list:", err)
+	if !assocSharingSupported {
+		err = writeWorkflowAssociationsList(exportFilePath, format)
+		updateWorkflowExportSummary(err == nil, successCount)
+		if err != nil {
+			log.Println("Error writing workflow associations list:", err)
+		}
 	}
 	log.Println("Warn: Users associated with workflow steps are not exported")
 }
@@ -117,7 +124,7 @@ func getWorkflowData(workflowId string) (interface{}, error) {
 		return nil, fmt.Errorf("unexpected format for workflow data")
 	}
 
-	associations, err := getAssociationsOfWorkflow(workflowId)
+	associations, _, err := getAssociationsOfWorkflow(workflowId)
 	if err != nil {
 		return nil, fmt.Errorf("error while getting workflow associations: %w", err)
 	}

@@ -51,6 +51,7 @@ type associationsOfWorkflowResponse struct {
 	WorkflowAssociations []interface{} `json:"workflowAssociations"`
 }
 
+var assocSharingSupported bool
 var exportedAssociationNames []string
 
 func getWorkflowList() ([]workflow, error) {
@@ -121,6 +122,17 @@ func getDeployedWorkflowNames(workflows []workflow) []string {
 	return names
 }
 
+func getLocalWfAssocNames(associations []map[string]interface{}) []string {
+
+	var names []string
+	for _, a := range associations {
+		if name, ok := a["associationName"].(string); ok {
+			names = append(names, name)
+		}
+	}
+	return names
+}
+
 func getWorkflowKeywordMapping(workflowName string) map[string]interface{} {
 
 	if utils.KEYWORD_CONFIGS.WorkflowConfigs != nil {
@@ -149,39 +161,44 @@ func getWfAssocId(name string, list []workflowAssociation) string {
 	return ""
 }
 
-func getAssociationsOfWorkflow(workflowId string) ([]interface{}, error) {
+func getAssociationsOfWorkflow(workflowId string) ([]interface{}, []workflowAssociation, error) {
 
 	resp, err := utils.SendGetListRequest(utils.WORKFLOW_ASSOCIATIONS, -1,
 		utils.WithQueryParams(map[string]string{"filter": "workflowId eq " + workflowId}))
 	if err != nil {
-		return nil, fmt.Errorf("error while retrieving associations: %w", err)
+		return nil, nil, fmt.Errorf("error while retrieving associations: %w", err)
 	}
 	defer resp.Body.Close()
 
 	statusCode := resp.StatusCode
 	if statusCode != 200 {
 		if errMsg, ok := utils.ErrorCodes[statusCode]; ok {
-			return nil, fmt.Errorf("error while retrieving associations. Status code: %d, Error: %s", statusCode, errMsg)
+			return nil, nil, fmt.Errorf("error while retrieving associations. Status code: %d, Error: %s", statusCode, errMsg)
 		}
-		return nil, fmt.Errorf("error while retrieving associations for workflow. Status code: %d", statusCode)
+		return nil, nil, fmt.Errorf("error while retrieving associations for workflow. Status code: %d", statusCode)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error when reading associations: %w", err)
-	}
-	var listResp associationsOfWorkflowResponse
-	if err := json.Unmarshal(body, &listResp); err != nil {
-		return nil, fmt.Errorf("error when unmarshalling associations: %w", err)
+		return nil, nil, fmt.Errorf("error when reading associations: %w", err)
 	}
 
-	for _, association := range listResp.WorkflowAssociations {
+	var rawResp associationsOfWorkflowResponse
+	if err := json.Unmarshal(body, &rawResp); err != nil {
+		return nil, nil, fmt.Errorf("error when unmarshalling associations data: %w", err)
+	}
+	for _, association := range rawResp.WorkflowAssociations {
 		if err := processWorkflowAssociation(association); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
-	return listResp.WorkflowAssociations, nil
+	var structuredResp workflowAssociationListResponse
+	if err := json.Unmarshal(body, &structuredResp); err != nil {
+		return nil, nil, fmt.Errorf("error when parsing associations to struct: %w", err)
+	}
+
+	return rawResp.WorkflowAssociations, structuredResp.WorkflowAssociations, nil
 }
 
 func processWorkflowAssociation(association interface{}) error {
@@ -366,5 +383,17 @@ func updateWorkflowExportSummary(success bool, successCount int) {
 	}
 	for i := 0; i < successCount; i++ {
 		utils.UpdateSuccessSummary(utils.WORKFLOWS, utils.EXPORT)
+	}
+}
+
+func setAssocSharingAcrossWfSupported() {
+
+	res, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_ASSOCIATION_SHARING_ACROSS_WORKFLOWS)
+
+	// Assume association sharing is supported if the server version is not properly configured
+	if err != nil || res >= 0 {
+		assocSharingSupported = true
+	} else {
+		assocSharingSupported = false
 	}
 }
