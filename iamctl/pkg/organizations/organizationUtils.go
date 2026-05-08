@@ -96,3 +96,13 @@ func getOrganizationKeywordMapping(orgHandle string) map[string]interface{} {
 	}
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
+
+func getOrgId(orgHandle string, list []organization) string {
+
+	for _, o := range list {
+		if o.OrgHandle == orgHandle {
+			return o.Id
+		}
+	}
+	return ""
+}

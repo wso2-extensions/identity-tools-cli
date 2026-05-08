@@ -33,6 +33,7 @@ import (
 	notificationProviders "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/notificationProviders"
 	notificationTemplates "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/notificationTemplates"
 	oidcScopes "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/oidcScopes"
+	organizations "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/organizations"
 	roles "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/roles"
 	scriptLibraries "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/scriptLibraries"
 	userstores "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/userStores"
@@ -73,6 +74,7 @@ var importAllCmd = &cobra.Command{
 			utils.SMS_PROVIDERS:         notificationProviders.ImportAllSmsProviders,
 			utils.SMS_TEMPLATES:         notificationTemplates.ImportAllSmsTemplates,
 			utils.ACTIONS:               actions.ImportAll,
+			utils.ORGANIZATIONS:         organizations.ImportAll,
 		}
 
 		for _, resourceType := range utils.ResourceOrder {
