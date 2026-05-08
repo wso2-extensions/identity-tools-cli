@@ -37,6 +37,8 @@ type organizationsResponse struct {
 	Organizations []organization `json:"organizations"`
 }
 
+var curOrgId string
+
 func GetCurrentOrganizationId() (id string, err error) {
 
 	org, err := utils.SendGetRequest(utils.ORGANIZATIONS, "self")

@@ -48,9 +48,15 @@ func ImportAll(inputDirPath string) {
 	}
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Println("Error reading local organization  files: ", err)
+		log.Println("Error reading local organization files: ", err)
 		return
 	}
+	curOrgId, err = GetCurrentOrganizationId()
+	if err != nil {
+		log.Println("error while retrieving current organization ID")
+		return
+	}
+
 	if utils.TOOL_CONFIGS.AllowDelete {
 		removeDeletedDeployedOrganizations(files, existingList)
 	}
@@ -96,10 +102,16 @@ func createOrganization(requestBody []byte, format utils.Format, orgHandle strin
 
 	log.Println("Creating new organization: " + orgHandle)
 
-	jsonBody, err := utils.PrepareJSONRequestBody(requestBody, format, utils.ORGANIZATIONS,
+	orgData, err := utils.DeserializeToMap(requestBody, format, utils.ORGANIZATIONS,
 		"id", "parent", "version", "status", "permissions", "created", "lastModified", "hasChildren", "ancestorPath")
 	if err != nil {
-		return err
+		return fmt.Errorf("error deserializing organization: %w", err)
+	}
+
+	orgData["parentId"] = curOrgId
+	jsonBody, err := utils.Serialize(orgData, utils.FormatJSON, utils.ORGANIZATIONS)
+	if err != nil {
+		return fmt.Errorf("error serializing to JSON: %w", err)
 	}
 
 	resp, err := utils.SendPostRequest(utils.ORGANIZATIONS, jsonBody)
