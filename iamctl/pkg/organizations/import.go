@@ -19,6 +19,7 @@
 package organizations
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -102,23 +103,29 @@ func createOrganization(requestBody []byte, format utils.Format, orgHandle strin
 
 	log.Println("Creating new organization: " + orgHandle)
 
-	orgData, err := utils.DeserializeToMap(requestBody, format, utils.ORGANIZATIONS,
-		"id", "parent", "version", "status", "permissions", "created", "lastModified", "hasChildren", "ancestorPath")
+	jsonBody, status, err := prepareOrganizationPostBody(requestBody, format, curOrgId)
 	if err != nil {
-		return fmt.Errorf("error deserializing organization: %w", err)
-	}
-
-	orgData["parentId"] = curOrgId
-	jsonBody, err := utils.Serialize(orgData, utils.FormatJSON, utils.ORGANIZATIONS)
-	if err != nil {
-		return fmt.Errorf("error serializing to JSON: %w", err)
+		return err
 	}
 
 	resp, err := utils.SendPostRequest(utils.ORGANIZATIONS, jsonBody)
 	if err != nil {
 		return fmt.Errorf("error when creating organization: %w", err)
 	}
-	defer resp.Body.Close()
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		return fmt.Errorf("error reading create response: %w", err)
+	}
+	var createdOrg organization
+	if err := json.Unmarshal(respBody, &createdOrg); err != nil {
+		return fmt.Errorf("error parsing create response: %w", err)
+	}
+
+	if err := patchOrganizationStatus(createdOrg.Id, status); err != nil {
+		return fmt.Errorf("error updating status field: %w", err)
+	}
 
 	utils.UpdateSuccessSummary(utils.ORGANIZATIONS, utils.IMPORT)
 	log.Println("Organization created successfully.")

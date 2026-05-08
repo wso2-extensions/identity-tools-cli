@@ -108,3 +108,50 @@ func getOrgId(orgHandle string, list []organization) string {
 	}
 	return ""
 }
+
+func prepareOrganizationPostBody(requestBody []byte, format utils.Format, parentId string) ([]byte, interface{}, error) {
+
+	orgData, err := utils.DeserializeToMap(requestBody, format, utils.ORGANIZATIONS,
+		"id", "parent", "version", "permissions", "created", "lastModified", "hasChildren", "ancestorPath")
+	if err != nil {
+		return nil, nil, fmt.Errorf("error deserializing organization: %w", err)
+	}
+
+	orgData["parentId"] = parentId
+	status := orgData["status"]
+	delete(orgData, "status")
+
+	jsonBody, err := utils.Serialize(orgData, utils.FormatJSON, utils.ORGANIZATIONS)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error serializing to JSON: %w", err)
+	}
+	return jsonBody, status, nil
+}
+
+func patchOrganizationStatus(orgId string, rawStatus interface{}) error {
+
+	status, ok := rawStatus.(string)
+	if !ok {
+		return fmt.Errorf("unexpected format for status field")
+	}
+
+	patchBody := []map[string]string{
+		{
+			"operation": "REPLACE",
+			"path":      "/status",
+			"value":     status,
+		},
+	}
+	jsonBody, err := json.Marshal(patchBody)
+	if err != nil {
+		return fmt.Errorf("error serializing PATCH body: %w", err)
+	}
+
+	resp, err := utils.SendPatchRequest(utils.ORGANIZATIONS, orgId, jsonBody)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+
+	return nil
+}
