@@ -683,7 +683,7 @@ func buildRequestUrl(requestType string, resourceType ResourceType, resourceId s
 	case DELETE:
 		reqUrl = getResourceBaseUrl(resourceType) + resourceId
 	}
-	return reqUrl
+	return strings.TrimSuffix(reqUrl, "/")
 }
 
 func addQueryParams(reqURL string, resourceType ResourceType, operation string) string {
