@@ -79,7 +79,7 @@ func getOrganizationList() ([]organization, error) {
 	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
 		return nil, fmt.Errorf("Status code: %d, Error: %s", statusCode, error)
 	}
-	return nil, fmt.Errorf("unknown error while retrieving  list")
+	return nil, fmt.Errorf("unknown error while retrieving list")
 }
 
 func getDeployedOrganizationHandles(orgs []organization) []string {
