@@ -18,7 +18,12 @@
 
 package brandingPreferences
 
-import "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
+import (
+	"fmt"
+	"path/filepath"
+
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
+)
 
 const resourceFileName = "brandingPreferences"
 
@@ -29,4 +34,29 @@ func getBrandingPreferencesKeywordMapping() map[string]interface{} {
 			utils.KEYWORD_CONFIGS.BrandingPreferenceConfigs)
 	}
 	return nil
+}
+
+func isBrandingPreferencesExist() (bool, error) {
+
+	_, err := utils.SendGetRequest(utils.BRANDING_PREFERENCES, "")
+
+	if utils.IsResourceNotFound(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func getBrandingPreferencesFilePath(importDirPath string) (string, error) {
+
+	matches, err := filepath.Glob(filepath.Join(importDirPath, resourceFileName+".*"))
+	if err != nil {
+		return "", fmt.Errorf("error searching for branding preferences file: %w", err)
+	}
+	if len(matches) == 0 {
+		return "", fmt.Errorf("branding preferences file not found")
+	}
+	return matches[0], nil
 }
