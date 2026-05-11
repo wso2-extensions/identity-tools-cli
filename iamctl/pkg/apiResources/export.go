@@ -86,7 +86,8 @@ func exportApiResource(resourceId string, resourceIdentifier string, outputDirPa
 		return fmt.Errorf("unexpected format for API resource data")
 	}
 
-	if err := processScopes(resourceMap, resourceIdentifier); err != nil {
+	scopeNames, err := processScopes(resourceMap)
+	if err != nil {
 		return fmt.Errorf("error while processing scopes: %w", err)
 	}
 
@@ -106,6 +107,10 @@ func exportApiResource(resourceId string, resourceIdentifier string, outputDirPa
 
 	if err := ioutil.WriteFile(exportedFileName, modifiedFile, 0644); err != nil {
 		return fmt.Errorf("error when writing exported content to file: %w", err)
+	}
+
+	for _, scopeName := range scopeNames {
+		exportedScopesMap[scopeName] = resourceIdentifier
 	}
 
 	return nil

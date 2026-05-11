@@ -98,28 +98,28 @@ func getApiResourceKeywordMapping(resourceIdentifier string) map[string]interfac
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
 
-func processScopes(resourceMap map[string]interface{}, resourceIdentifier string) error {
+func processScopes(resourceMap map[string]interface{}) (scopeNames []string, err error) {
 
 	scopeList, ok := resourceMap["scopes"].([]interface{})
 	if !ok {
-		return fmt.Errorf("unexpected format for scopes in API resource data")
+		return nil, fmt.Errorf("unexpected format for scopes in API resource data")
 	}
 
 	for _, scopeRaw := range scopeList {
 		scopeEntry, ok := scopeRaw.(map[string]interface{})
 		if !ok {
-			return fmt.Errorf("unexpected format for scope in API resource data")
+			return nil, fmt.Errorf("unexpected format for scope in API resource data")
 		}
 		delete(scopeEntry, "id")
 
 		scopeName, ok := scopeEntry["name"].(string)
 		if !ok {
-			return fmt.Errorf("unexpected format for scope name")
+			return nil, fmt.Errorf("unexpected format for scope name")
 		}
-		exportedScopesMap[scopeName] = resourceIdentifier
+		scopeNames = append(scopeNames, scopeName)
 	}
 
-	return nil
+	return scopeNames, nil
 }
 
 func getApiResourceScopes(resourceId string) ([]apiScope, error) {
@@ -143,7 +143,7 @@ func readLocalScopesMap(importDirPath string) (map[string]string, error) {
 		return nil, fmt.Errorf("error searching for file: %w", err)
 	}
 	if len(matches) == 0 {
-		return map[string]string{}, nil
+		return nil, fmt.Errorf("ApiResourceScopes file not found")
 	}
 
 	fileBytes, err := ioutil.ReadFile(matches[0])

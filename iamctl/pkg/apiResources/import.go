@@ -198,6 +198,9 @@ func removeDeletedDeployedScopes(localScopeMap map[string]string, deployedResour
 	failedResources = make(map[string]struct{})
 
 	for _, resource := range deployedResources {
+		if utils.IsResourceExcluded(resource.Identifier, utils.TOOL_CONFIGS.ApiResourceConfigs) {
+			continue
+		}
 		scopes, err := getApiResourceScopes(resource.ID)
 		if err != nil {
 			log.Printf("Error retrieving scopes for API resource %s: %v", resource.Identifier, err)
