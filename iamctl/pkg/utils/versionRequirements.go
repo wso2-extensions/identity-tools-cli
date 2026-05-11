@@ -20,9 +20,13 @@ package utils
 
 // Minimum WSO2 Identity Server version requirements for each resource type.
 // If a resource type is not present in this map, there is no minimum version requirement.
-const ()
+const (
+	MIN_VERSION_WORKFLOWS = "7.2.0"
+)
 
-var EntityMinVersionRequirements = map[ResourceType]string{}
+var EntityMinVersionRequirements = map[ResourceType]string{
+	WORKFLOWS: MIN_VERSION_WORKFLOWS,
+}
 
 // Maximum supported WSO2 Identity Server version for each resource type.
 // If a resource type is not present in this map, there is no upper version limit.
@@ -35,6 +39,12 @@ const (
 	MIN_VERSION_USERSTORE_EXPORT_API = "6.1.0"
 	MIN_VERSION_IDP_EXPORT_API       = "6.1.0"
 	MIN_VERSION_APP_EXPORT_API       = "6.1.0"
+)
+
+// Minimum WSO2 Identity Server version requirements for other behavioural changes
+const (
+	MIN_VERSION_ASSOCIATION_SHARING_ACROSS_WORKFLOWS = "7.3.0"
+	MIN_VERSION_WORKFLOW_ASSOCIATION_RULES           = "7.3.0"
 )
 
 var ExportAPIMinVersionRequirements = map[ResourceType]string{
