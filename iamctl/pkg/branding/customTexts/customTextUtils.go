@@ -20,9 +20,12 @@ package customTexts
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
+
+const dotPlaceholder = "__DOT__"
 
 var ScreenList = []string{"login", "sms-otp", "email-otp", "totp", "push-auth", "sign-up", "password-recovery", "password-reset", "password-reset-success", "email-link-expiry", "username-recovery-claim", "username-recovery-channel-selection", "username-recovery-success"}
 var LocaleList = []string{"en-US", "de-DE", "es-ES", "fr-FR", "ja-JP", "pt-BR", "pt-PT", "zh-CN"}
@@ -65,4 +68,59 @@ func deleteCustomText(screen, locale string) error {
 
 	return utils.SendDeleteRequest("", utils.CUSTOM_TEXTS,
 		utils.WithQueryParams(map[string]string{"screen": screen, "locale": locale}))
+}
+
+func preprocessCustomTextKeys(data interface{}) (interface{}, error) {
+
+	data = utils.ConvertToStringKeyMap(data)
+
+	textMap, ok := data.(map[string]interface{})
+	if !ok {
+		return data, fmt.Errorf("invalid format for custom text data")
+	}
+	preference, ok := textMap["preference"].(map[string]interface{})
+	if !ok {
+		return data, fmt.Errorf("invalid format for preferences")
+	}
+	texts, ok := preference["text"].(map[string]interface{})
+	if !ok {
+		return data, fmt.Errorf("invalid format for preference texts")
+	}
+
+	encoded := make(map[string]interface{}, len(texts))
+	for k, v := range texts {
+		encoded[strings.ReplaceAll(k, ".", dotPlaceholder)] = v
+	}
+	preference["text"] = encoded
+
+	return textMap, nil
+}
+
+func postprocessCustomTextKeys(data interface{}) (interface{}, error) {
+
+	textMap, ok := data.(map[string]interface{})
+	if !ok {
+		return data, fmt.Errorf("invalid format for custom text data")
+	}
+	preference, ok := textMap["preference"].(map[string]interface{})
+	if !ok {
+		return data, fmt.Errorf("invalid format for preferences")
+	}
+	texts, ok := preference["text"].(map[string]interface{})
+	if !ok {
+		return data, fmt.Errorf("invalid format for preference texts")
+	}
+
+	decoded := make(map[string]interface{}, len(texts))
+	for k, v := range texts {
+		decoded[strings.ReplaceAll(k, dotPlaceholder, ".")] = v
+	}
+	preference["text"] = decoded
+
+	return textMap, nil
+}
+
+func init() {
+
+	utils.DataPreprocessFuncs[utils.CUSTOM_TEXTS] = preprocessCustomTextKeys
 }

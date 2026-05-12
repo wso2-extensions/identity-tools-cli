@@ -109,12 +109,20 @@ func exportCustomTextLocale(data interface{}, screenDir, locale string, format u
 
 	exportedFileName := utils.GetExportedFilePath(screenDir, locale, format)
 
-	modifiedData, err := utils.ProcessExportedData(data, exportedFileName, format, keywordMapping, utils.CUSTOM_TEXTS)
+	preprocessedData, err := preprocessCustomTextKeys(data)
+	if err != nil {
+		return fmt.Errorf("error while preprocessing custom text keys: %w", err)
+	}
+	modifiedData, err := utils.ProcessExportedData(preprocessedData, exportedFileName, format, keywordMapping, utils.CUSTOM_TEXTS)
 	if err != nil {
 		return fmt.Errorf("error while processing exported content: %w", err)
 	}
+	postprocessedData, err := postprocessCustomTextKeys(modifiedData)
+	if err != nil {
+		return fmt.Errorf("error while postprocessing custom text keys: %w", err)
+	}
 
-	modifiedFile, err := utils.Serialize(modifiedData, format, utils.CUSTOM_TEXTS)
+	modifiedFile, err := utils.Serialize(postprocessedData, format, utils.CUSTOM_TEXTS)
 	if err != nil {
 		return fmt.Errorf("error while serializing exported content: %w", err)
 	}
