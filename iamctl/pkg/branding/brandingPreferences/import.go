@@ -43,7 +43,7 @@ func ImportAll(parentDir string) {
 
 	exists, err := isBrandingPreferencesExist()
 	if err != nil {
-		log.Println("Error retrieving deployed branding preferences: %w", err)
+		log.Println("Error retrieving deployed branding preferences:", err)
 		return
 	}
 

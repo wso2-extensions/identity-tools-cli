@@ -33,7 +33,7 @@ func getBrandingPreferencesKeywordMapping() map[string]interface{} {
 		return utils.ResolveAdvancedKeywordMapping(resourceFileName,
 			utils.KEYWORD_CONFIGS.BrandingPreferenceConfigs)
 	}
-	return nil
+	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
 
 func isBrandingPreferencesExist() (bool, error) {
