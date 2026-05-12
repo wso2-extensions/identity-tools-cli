@@ -76,8 +76,7 @@ func exportCustomTextScreen(screen, exportFilePath, formatString string) (hadLoc
 
 	var exportedLocales []string
 	for _, locale := range LocaleList {
-		data, err := utils.GetResourceData(utils.CUSTOM_TEXTS, "",
-			utils.WithQueryParams(map[string]string{"screen": screen, "locale": locale}))
+		data, err := getCustomText(screen, locale)
 		if err != nil {
 			if utils.IsResourceNotFound(err) {
 				continue

@@ -19,11 +19,33 @@
 package customTexts
 
 import (
+	"fmt"
+
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
 var ScreenList = []string{"login", "sms-otp", "email-otp", "totp", "push-auth", "sign-up", "password-recovery", "password-reset", "password-reset-success", "email-link-expiry", "username-recovery-claim", "username-recovery-channel-selection", "username-recovery-success"}
 var LocaleList = []string{"en-US", "de-DE", "es-ES", "fr-FR", "ja-JP", "pt-BR", "pt-PT", "zh-CN"}
+
+func getCustomTextList() (map[string]map[string]struct{}, error) {
+
+	deployedTexts := make(map[string]map[string]struct{})
+
+	for _, screen := range ScreenList {
+		for _, locale := range LocaleList {
+			_, err := getCustomText(screen, locale)
+			if err == nil {
+				if deployedTexts[screen] == nil {
+					deployedTexts[screen] = make(map[string]struct{})
+				}
+				deployedTexts[screen][locale] = struct{}{}
+			} else if !utils.IsResourceNotFound(err) {
+				return nil, fmt.Errorf("error retrieving locale %s of screen %s: %w", locale, screen, err)
+			}
+		}
+	}
+	return deployedTexts, nil
+}
 
 func getCustomTextsKeywordMapping(screen string) map[string]interface{} {
 
@@ -31,4 +53,16 @@ func getCustomTextsKeywordMapping(screen string) map[string]interface{} {
 		return utils.ResolveAdvancedKeywordMapping(screen, utils.KEYWORD_CONFIGS.CustomTextConfigs)
 	}
 	return utils.KEYWORD_CONFIGS.KeywordMappings
+}
+
+func getCustomText(screen, locale string) (interface{}, error) {
+
+	return utils.GetResourceData(utils.CUSTOM_TEXTS, "",
+		utils.WithQueryParams(map[string]string{"screen": screen, "locale": locale}))
+}
+
+func deleteCustomText(screen, locale string) error {
+
+	return utils.SendDeleteRequest("", utils.CUSTOM_TEXTS,
+		utils.WithQueryParams(map[string]string{"screen": screen, "locale": locale}))
 }
