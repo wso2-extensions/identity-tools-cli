@@ -27,6 +27,15 @@ import (
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
+func ExportAll(exportFilePath string, format string) {
+
+	log.Println("Exporting branding...")
+	exportFilePath = filepath.Join(exportFilePath, utils.BRANDING.String())
+
+	brandingPreferences.ExportAll(exportFilePath, format)
+	customTexts.ExportAll(exportFilePath, format)
+}
+
 func ImportAll(inputDirPath string) {
 
 	log.Println("Importing branding...")
