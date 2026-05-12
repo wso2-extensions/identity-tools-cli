@@ -27,7 +27,7 @@ import (
 
 const dotPlaceholder = "__DOT__"
 
-var ScreenList = []string{"login", "sms-otp", "email-otp", "totp", "push-auth", "sign-up", "password-recovery", "password-reset", "password-reset-success", "email-link-expiry", "username-recovery-claim", "username-recovery-channel-selection", "username-recovery-success"}
+var ScreenList = []string{"common", "login", "sms-otp", "email-otp", "totp", "push-auth", "sign-up", "password-recovery", "password-reset", "password-reset-success", "email-link-expiry", "username-recovery-claim", "username-recovery-channel-selection", "username-recovery-success"}
 var LocaleList = []string{"en-US", "de-DE", "es-ES", "fr-FR", "ja-JP", "pt-BR", "pt-PT", "zh-CN"}
 
 func getCustomTextList() (map[string]map[string]struct{}, error) {
