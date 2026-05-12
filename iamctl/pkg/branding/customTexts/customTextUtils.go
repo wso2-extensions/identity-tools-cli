@@ -18,5 +18,17 @@
 
 package customTexts
 
-var ScreenList = []string{}
-var LocaleList = []string{}
+import (
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
+)
+
+var ScreenList = []string{"login", "sms-otp", "email-otp", "totp", "push-auth", "sign-up", "password-recovery", "password-reset", "password-reset-success", "email-link-expiry", "username-recovery-claim", "username-recovery-channel-selection", "username-recovery-success"}
+var LocaleList = []string{"en-US", "de-DE", "es-ES", "fr-FR", "ja-JP", "pt-BR", "pt-PT", "zh-CN"}
+
+func getCustomTextsKeywordMapping(screen string) map[string]interface{} {
+
+	if utils.KEYWORD_CONFIGS.CustomTextConfigs != nil {
+		return utils.ResolveAdvancedKeywordMapping(screen, utils.KEYWORD_CONFIGS.CustomTextConfigs)
+	}
+	return utils.KEYWORD_CONFIGS.KeywordMappings
+}

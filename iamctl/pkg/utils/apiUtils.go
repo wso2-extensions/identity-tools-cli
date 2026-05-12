@@ -337,9 +337,9 @@ func SendDeleteRequest(resourceId string, resourceType ResourceType, opts ...Sen
 	return fmt.Errorf("unexpected error when deleting resource: %s", resp.Status)
 }
 
-func GetResourceData(resourceType ResourceType, resourceId string) (interface{}, error) {
+func GetResourceData(resourceType ResourceType, resourceId string, opts ...SendOption) (interface{}, error) {
 
-	body, err := SendGetRequest(resourceType, resourceId)
+	body, err := SendGetRequest(resourceType, resourceId, opts...)
 	if err != nil {
 		return nil, err
 	}
