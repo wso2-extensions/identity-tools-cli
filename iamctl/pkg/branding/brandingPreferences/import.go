@@ -33,7 +33,7 @@ func ImportAll(parentDir string) {
 	log.Println("Importing branding preferences...")
 	importFilePath := filepath.Join(parentDir, utils.BRANDING_PREFERENCES.String())
 
-	if utils.IsResourceTypeExcluded(utils.BRANDING_PREFERENCES) {
+	if !utils.IsEntitySupportedInVersion(utils.BRANDING_PREFERENCES) || utils.IsResourceTypeExcluded(utils.BRANDING_PREFERENCES) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {

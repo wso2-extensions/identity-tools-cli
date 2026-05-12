@@ -33,7 +33,7 @@ func ImportAll(parentDir string) {
 	log.Println("Importing custom texts...")
 	importFilePath := filepath.Join(parentDir, utils.CUSTOM_TEXTS.String())
 
-	if utils.IsResourceTypeExcluded(utils.CUSTOM_TEXTS) {
+	if !utils.IsEntitySupportedInVersion(utils.CUSTOM_TEXTS) || utils.IsResourceTypeExcluded(utils.CUSTOM_TEXTS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {

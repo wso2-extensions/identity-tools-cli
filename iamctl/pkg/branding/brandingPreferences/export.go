@@ -33,7 +33,7 @@ func ExportAll(parentDir string, formatString string) {
 	log.Println("Exporting branding preferences...")
 	exportFilePath := filepath.Join(parentDir, utils.BRANDING_PREFERENCES.String())
 
-	if utils.IsResourceTypeExcluded(utils.BRANDING_PREFERENCES) {
+	if !utils.IsEntitySupportedInVersion(utils.BRANDING_PREFERENCES) || utils.IsResourceTypeExcluded(utils.BRANDING_PREFERENCES) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
