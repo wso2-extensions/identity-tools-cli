@@ -43,7 +43,6 @@ func ExportAll(parentDir string, formatString string) {
 	var screensWithLocales []string
 	for _, screen := range ScreenList {
 		if utils.IsResourceExcluded(screen, utils.TOOL_CONFIGS.CustomTextConfigs) {
-			screensWithLocales = append(screensWithLocales, screen)
 			continue
 		}
 		log.Println("Exporting custom text for screen:", screen)
@@ -55,9 +54,11 @@ func ExportAll(parentDir string, formatString string) {
 		} else {
 			if hadLocales {
 				screensWithLocales = append(screensWithLocales, screen)
+				utils.UpdateSuccessSummary(utils.CUSTOM_TEXTS, utils.EXPORT)
+				log.Println("Custom text exported successfully for screen:", screen)
+			} else {
+				log.Println("No custom text to export for screen:", screen)
 			}
-			utils.UpdateSuccessSummary(utils.CUSTOM_TEXTS, utils.EXPORT)
-			log.Println("Custom text exported successfully for screen:", screen)
 		}
 	}
 

@@ -44,6 +44,9 @@ func ExportAll(parentDir string, formatString string) {
 	if err != nil {
 		if utils.IsResourceNotFound(err) {
 			log.Println("No branding preferences configured.")
+			if utils.TOOL_CONFIGS.AllowDelete {
+				utils.RemoveDeletedLocalResources(exportFilePath, []string{})
+			}
 			return
 		}
 		utils.UpdateFailureSummary(utils.BRANDING_PREFERENCES, resourceFileName)

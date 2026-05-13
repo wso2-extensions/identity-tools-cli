@@ -41,16 +41,25 @@ func ImportAll(parentDir string) {
 		return
 	}
 
-	exists, err := isBrandingPreferencesExist()
+	isDeployed, err := isBrandingPreferencesExist()
 	if err != nil {
 		log.Println("Error retrieving deployed branding preferences:", err)
 		return
 	}
-
-	filePath, err := getBrandingPreferencesFilePath(importFilePath)
-	if err == nil {
-		err = importBrandingPreferences(filePath, exists)
+	filePath, fileExists, err := getBrandingPreferencesFilePath(importFilePath)
+	if err != nil {
+		log.Println("Error reading branding preferences file path:", err)
+		return
 	}
+
+	if !fileExists {
+		if utils.TOOL_CONFIGS.AllowDelete && isDeployed {
+			removeDeletedDeployedBrandingPreferences()
+		}
+		return
+	}
+
+	err = importBrandingPreferences(filePath, isDeployed)
 	if err != nil {
 		utils.UpdateFailureSummary(utils.BRANDING_PREFERENCES, resourceFileName)
 		log.Println("Error while importing branding preferences:", err)
@@ -110,4 +119,17 @@ func updateBrandingPreferences(jsonBody []byte) error {
 	utils.UpdateSuccessSummary(utils.BRANDING_PREFERENCES, utils.UPDATE)
 	log.Println("Branding preferences updated successfully.")
 	return nil
+}
+
+func removeDeletedDeployedBrandingPreferences() {
+
+	log.Printf("Branding preferences not found locally. Deleting preferences.")
+
+	if err := utils.SendDeleteRequest("", utils.BRANDING_PREFERENCES); err != nil {
+		utils.UpdateFailureSummary(utils.BRANDING_PREFERENCES, resourceFileName)
+		log.Println("Error while deleting branding preferences:", err)
+	} else {
+		utils.UpdateSuccessSummary(utils.BRANDING_PREFERENCES, utils.DELETE)
+		log.Println("Branding preferences deleted successfully.")
+	}
 }

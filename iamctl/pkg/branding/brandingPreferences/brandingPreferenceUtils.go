@@ -49,14 +49,14 @@ func isBrandingPreferencesExist() (bool, error) {
 	return true, nil
 }
 
-func getBrandingPreferencesFilePath(importDirPath string) (string, error) {
+func getBrandingPreferencesFilePath(importDirPath string) (path string, exists bool, err error) {
 
 	matches, err := filepath.Glob(filepath.Join(importDirPath, resourceFileName+".*"))
 	if err != nil {
-		return "", fmt.Errorf("error searching for branding preferences file: %w", err)
+		return "", false, fmt.Errorf("error searching for branding preferences file: %w", err)
 	}
 	if len(matches) == 0 {
-		return "", fmt.Errorf("branding preferences file not found")
+		return "", false, nil
 	}
-	return matches[0], nil
+	return matches[0], true, nil
 }
