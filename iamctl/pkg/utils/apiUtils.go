@@ -469,7 +469,7 @@ func SendPutRequest(resourceType ResourceType, resourceId string, requestBody []
 		return nil, fmt.Errorf("error sending PUT request: %w", err)
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		resp.Body.Close()
 		if errMsg, ok := ErrorCodes[resp.StatusCode]; ok {
 			return nil, fmt.Errorf("error response for the PUT request: %s", errMsg)
@@ -519,6 +519,7 @@ func SendGetListRequest(resourceType ResourceType, resourceLimit int, opts ...Se
 
 	cfg := applySendOptions(opts)
 	var reqUrl = buildRequestUrl(LIST, resourceType, "")
+	reqUrl = addQueryParams(reqUrl, resourceType, LIST)
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	req, err := http.NewRequest("GET", reqUrl, bytes.NewBuffer(nil))
@@ -573,6 +574,8 @@ func getResourcePath(resourceType ResourceType) string {
 		return "workflows"
 	case WORKFLOW_ASSOCIATIONS:
 		return "workflow-associations"
+	case API_RESOURCES:
+		return "api-resources"
 	}
 	return ""
 }
@@ -646,6 +649,10 @@ func addQueryParams(reqURL string, resourceType ResourceType, operation string) 
 	case CERTIFICATES:
 		if operation == GET {
 			queryParams.Set("encode-cert", "true")
+		}
+	case API_RESOURCES:
+		if operation == LIST {
+			queryParams.Set("filter", "type eq BUSINESS")
 		}
 	}
 
