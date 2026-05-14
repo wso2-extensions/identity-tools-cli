@@ -62,8 +62,8 @@ func ExportAll(exportFilePath string, format string) {
 				utils.UpdateSuccessSummary(utils.GOVERNANCE_CONNECTORS, utils.EXPORT)
 				log.Println("Governance connector category exported successfully:", catInfo.Name)
 
-				if catInfo.Name == utils.USER_ONBOARDING_GOVERNANCE_CATEGORY {
-					utils.AddToIdentifierMap(utils.GOVERNANCE_CONNECTORS, catInfo.Name, catInfo.Id, utils.EXPORT)
+				if catInfo.Name == utils.USER_ONBOARDING_GOVERNANCE_CATEGORY_NAME {
+					utils.AddToIdentifierMap(utils.GOVERNANCE_CONNECTORS, catInfo.Id, catInfo.Name, utils.EXPORT)
 				}
 			}
 		}

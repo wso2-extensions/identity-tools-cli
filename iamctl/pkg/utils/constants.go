@@ -131,7 +131,8 @@ const LOCAL_CLAIM_DIALECT = "local"
 const ADMIN_ROLE = "admin"
 const ADMINISTRATOR_ROLE = "Administrator"
 const IMPERSONATOR_ROLE = "Impersonator"
-const USER_ONBOARDING_GOVERNANCE_CATEGORY = "User Onboarding"
+const USER_ONBOARDING_GOVERNANCE_CATEGORY_NAME = "User Onboarding"
+const USER_ONBOARDING_GOVERNANCE_CATEGORY_ID = "VXNlciBPbmJvYXJkaW5n"
 const OAUTH2 = "oauth2"
 const ALL_ITEMS = "all_items" // Wildcard to match all elements in an array
 

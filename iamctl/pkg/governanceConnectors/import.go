@@ -110,7 +110,7 @@ func importCategory(localCategoryPath, catName string, deployedCategories []conn
 	utils.UpdateSuccessSummary(utils.GOVERNANCE_CONNECTORS, utils.UPDATE)
 	log.Println("Governance connector category imported successfully:", catName)
 
-	if catName == utils.USER_ONBOARDING_GOVERNANCE_CATEGORY {
+	if catName == utils.USER_ONBOARDING_GOVERNANCE_CATEGORY_NAME {
 		utils.AddToIdentifierMap(utils.GOVERNANCE_CONNECTORS, catInfo.Id, catName, utils.IMPORT)
 	}
 	return nil

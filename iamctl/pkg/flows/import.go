@@ -73,8 +73,8 @@ func ImportAll(inputDirPath string) {
 func importFlow(name, id, importFilePath string) error {
 
 	if name == invitedUserRegistrationFlowName {
-		if _, exists := utils.GetResourceIdentifierMap(utils.GOVERNANCE_CONNECTORS)[utils.USER_ONBOARDING_GOVERNANCE_CATEGORY]; !exists {
-			return fmt.Errorf("Dependent resource %s governance connector category has not been imported", utils.USER_ONBOARDING_GOVERNANCE_CATEGORY)
+		if _, exists := utils.GetResourceIdentifierMap(utils.GOVERNANCE_CONNECTORS)[utils.USER_ONBOARDING_GOVERNANCE_CATEGORY_NAME]; !exists {
+			return fmt.Errorf("required resource %s governance connector category has not been imported", utils.USER_ONBOARDING_GOVERNANCE_CATEGORY_NAME)
 		}
 	}
 
@@ -115,11 +115,15 @@ func updateFlow(name, id string, data []byte, format utils.Format) error {
 		return fmt.Errorf("error when updating flow: %w", err)
 	}
 	resp.Body.Close()
-	utils.UpdateSuccessSummary(utils.FLOWS, utils.UPDATE)
-	log.Println("Flow updated successfully:", name)
 
 	delete(dataMap, "steps")
-	return updateFlowConfig(dataMap)
+	if err := updateFlowConfig(dataMap); err != nil {
+		return err
+	}
+
+	utils.UpdateSuccessSummary(utils.FLOWS, utils.UPDATE)
+	log.Println("Flow updated successfully:", name)
+	return nil
 }
 
 func updateFlowConfig(dataMap map[string]interface{}) error {
