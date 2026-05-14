@@ -72,6 +72,12 @@ func ImportAll(inputDirPath string) {
 
 func importFlow(name, id, importFilePath string) error {
 
+	if name == invitedUserRegistrationFlowName {
+		if _, exists := utils.GetResourceIdentifierMap(utils.GOVERNANCE_CONNECTORS)[utils.USER_ONBOARDING_GOVERNANCE_CATEGORY]; !exists {
+			return fmt.Errorf("Dependent resource %s governance connector category has not been imported", utils.USER_ONBOARDING_GOVERNANCE_CATEGORY)
+		}
+	}
+
 	format, err := utils.FormatFromExtension(filepath.Ext(importFilePath))
 	if err != nil {
 		return fmt.Errorf("unsupported file format for flow: %w", err)

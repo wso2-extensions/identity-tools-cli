@@ -22,10 +22,12 @@ import (
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
+const invitedUserRegistrationFlowName = "InvitedUserRegistration"
+
 var flowTypes = map[string]string{
-	"Registration":            "REGISTRATION",
-	"PasswordRecovery":        "PASSWORD_RECOVERY",
-	"InvitedUserRegistration": "INVITED_USER_REGISTRATION",
+	"Registration":                  "REGISTRATION",
+	"PasswordRecovery":              "PASSWORD_RECOVERY",
+	invitedUserRegistrationFlowName: "INVITED_USER_REGISTRATION",
 }
 
 func getFlowKeywordMapping(flowType string) map[string]interface{} {

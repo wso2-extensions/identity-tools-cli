@@ -58,6 +58,12 @@ func ExportAll(exportFilePath string, format string) {
 
 func exportFlow(name, id string, outputDirPath string, formatString string) error {
 
+	if name == invitedUserRegistrationFlowName {
+		if _, exists := utils.GetResourceIdentifierMap(utils.GOVERNANCE_CONNECTORS)[utils.USER_ONBOARDING_GOVERNANCE_CATEGORY]; !exists {
+			return fmt.Errorf("Dependent resource %s governance connector category has not been exported", utils.USER_ONBOARDING_GOVERNANCE_CATEGORY)
+		}
+	}
+
 	flowData, err := getFlowData(id)
 	if err != nil {
 		return fmt.Errorf("error while getting flow data: %w", err)
