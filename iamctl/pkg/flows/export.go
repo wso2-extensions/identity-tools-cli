@@ -40,6 +40,7 @@ func ExportAll(exportFilePath string, format string) {
 		os.MkdirAll(exportFilePath, 0700)
 	}
 
+	var exportedFlowNames []string
 	for name, id := range flowTypes {
 		if !utils.IsResourceExcluded(name, utils.TOOL_CONFIGS.FlowConfigs) {
 			log.Println("Exporting flow:", name)
@@ -50,6 +51,7 @@ func ExportAll(exportFilePath string, format string) {
 				log.Printf("Error while exporting flow: %s. %s", name, err)
 			} else {
 				if exists {
+					exportedFlowNames = append(exportedFlowNames, name)
 					utils.UpdateSuccessSummary(utils.FLOWS, utils.EXPORT)
 					log.Println("Flow exported successfully:", name)
 				} else {
@@ -57,6 +59,10 @@ func ExportAll(exportFilePath string, format string) {
 				}
 			}
 		}
+	}
+
+	if utils.TOOL_CONFIGS.AllowDelete {
+		utils.RemoveDeletedLocalResources(exportFilePath, exportedFlowNames)
 	}
 }
 
