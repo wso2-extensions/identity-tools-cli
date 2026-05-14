@@ -67,6 +67,7 @@ type ToolConfigs struct {
 	CertificateConfigs         map[string]interface{} `json:"CERTIFICATES"`
 	WorkflowConfigs            map[string]interface{} `json:"WORKFLOWS"`
 	ApiResourceConfigs         map[string]interface{} `json:"API_RESOURCES"`
+	ValidationRuleConfigs      map[string]interface{} `json:"VALIDATION_RULES"`
 }
 
 type KeywordConfigs struct {
@@ -84,6 +85,7 @@ type KeywordConfigs struct {
 	CertificateConfigs         map[string]interface{} `json:"CERTIFICATES"`
 	WorkflowConfigs            map[string]interface{} `json:"WORKFLOWS"`
 	ApiResourceConfigs         map[string]interface{} `json:"API_RESOURCES"`
+	ValidationRuleConfigs      map[string]interface{} `json:"VALIDATION_RULES"`
 }
 
 var SERVER_CONFIGS ServerConfigs
