@@ -44,29 +44,36 @@ func ExportAll(exportFilePath string, format string) {
 		if !utils.IsResourceExcluded(name, utils.TOOL_CONFIGS.FlowConfigs) {
 			log.Println("Exporting flow:", name)
 
-			err := exportFlow(name, id, exportFilePath, format)
+			exists, err := exportFlow(name, id, exportFilePath, format)
 			if err != nil {
 				utils.UpdateFailureSummary(utils.FLOWS, name)
 				log.Printf("Error while exporting flow: %s. %s", name, err)
 			} else {
-				utils.UpdateSuccessSummary(utils.FLOWS, utils.EXPORT)
-				log.Println("Flow exported successfully:", name)
+				if exists {
+					utils.UpdateSuccessSummary(utils.FLOWS, utils.EXPORT)
+					log.Println("Flow exported successfully:", name)
+				} else {
+					log.Printf("Flow: %s is not configured", name)
+				}
 			}
 		}
 	}
 }
 
-func exportFlow(name, id string, outputDirPath string, formatString string) error {
+func exportFlow(name, id string, outputDirPath string, formatString string) (exists bool, err error) {
 
 	if name == invitedUserRegistrationFlowName {
 		if _, exists := utils.GetResourceIdentifierMap(utils.GOVERNANCE_CONNECTORS)[utils.USER_ONBOARDING_GOVERNANCE_CATEGORY_ID]; !exists {
-			return fmt.Errorf("required resource %s governance connector category has not been exported", utils.USER_ONBOARDING_GOVERNANCE_CATEGORY_NAME)
+			return false, fmt.Errorf("required resource %s governance connector category has not been exported", utils.USER_ONBOARDING_GOVERNANCE_CATEGORY_NAME)
 		}
 	}
 
-	flowData, err := getFlowData(id)
+	flowData, exists, err := getFlowData(id)
 	if err != nil {
-		return fmt.Errorf("error while getting flow data: %w", err)
+		return false, fmt.Errorf("error while getting flow data: %w", err)
+	}
+	if !exists {
+		return false, nil
 	}
 
 	format := utils.FormatFromString(formatString)
@@ -75,45 +82,45 @@ func exportFlow(name, id string, outputDirPath string, formatString string) erro
 
 	modifiedData, err := utils.ProcessExportedData(flowData, exportedFileName, format, keywordMapping, utils.FLOWS)
 	if err != nil {
-		return fmt.Errorf("error while processing exported content: %w", err)
+		return false, fmt.Errorf("error while processing exported content: %w", err)
 	}
 
 	modifiedFile, err := utils.Serialize(modifiedData, format, utils.FLOWS)
 	if err != nil {
-		return fmt.Errorf("error while serializing flow: %w", err)
+		return false, fmt.Errorf("error while serializing flow: %w", err)
 	}
 
 	if err := ioutil.WriteFile(exportedFileName, modifiedFile, 0644); err != nil {
-		return fmt.Errorf("error when writing exported content to file: %w", err)
+		return false, fmt.Errorf("error when writing exported content to file: %w", err)
 	}
 
-	return nil
+	return true, nil
 }
 
-func getFlowData(id string) (map[string]interface{}, error) {
+func getFlowData(id string) (flow map[string]interface{}, exists bool, err error) {
 
 	flowData, err := utils.GetResourceData(utils.FLOWS, "", utils.WithQueryParams(map[string]string{"flowType": id}))
 	if err != nil {
-		return nil, fmt.Errorf("error while retrieving flow: %w", err)
+		return nil, false, fmt.Errorf("error while retrieving flow: %w", err)
 	}
 	flowMap, ok := flowData.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("unexpected format for flow data")
+		return nil, false, fmt.Errorf("unexpected format for flow data")
 	}
 	steps, exists := flowMap["steps"]
 	if !exists {
-		return nil, fmt.Errorf("steps field missing in flow data")
+		return nil, false, nil
 	}
 
 	configData, err := utils.GetResourceData(utils.FLOWS, "config", utils.WithQueryParams(map[string]string{"flowType": id}))
 	if err != nil {
-		return nil, fmt.Errorf("error while retrieving flow config: %w", err)
+		return nil, false, fmt.Errorf("error while retrieving flow config: %w", err)
 	}
 	configMap, ok := configData.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("unexpected format for flow config data")
+		return nil, false, fmt.Errorf("unexpected format for flow config data")
 	}
 	configMap["steps"] = steps
 
-	return configMap, nil
+	return configMap, true, nil
 }
