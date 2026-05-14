@@ -101,10 +101,14 @@ func updateFlow(name, id string, data []byte, format utils.Format) error {
 	if err != nil {
 		return fmt.Errorf("error when deserializing file: %w", err)
 	}
+	steps, ok := dataMap["steps"].([]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for flow steps")
+	}
 
 	flowJSON, err := json.Marshal(map[string]interface{}{
 		"flowType": id,
-		"steps":    dataMap["steps"],
+		"steps":    steps,
 	})
 	if err != nil {
 		return fmt.Errorf("error when marshalling flow request body: %w", err)
