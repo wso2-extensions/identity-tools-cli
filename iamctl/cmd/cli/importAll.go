@@ -24,6 +24,7 @@ import (
 	actions "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/actions"
 	branding "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/branding"
 	apiResources "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/apiResources"
+	flows "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/flows"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/applications"
 	certificates "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/certificates"
 	challengeQuestions "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/challengeQuestions"
@@ -77,6 +78,7 @@ var importAllCmd = &cobra.Command{
 			utils.ACTIONS:               actions.ImportAll,
 			utils.ORGANIZATIONS:         organizations.ImportAll,
 			utils.BRANDING:              branding.ImportAll,
+			utils.FLOWS:                 flows.ImportAll,
 		}
 
 		for _, resourceType := range utils.ResourceOrder {

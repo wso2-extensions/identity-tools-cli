@@ -45,4 +45,5 @@ var ResourceOrder = []ResourceType{
 	ACTIONS, // Dependency: Applications, Claims
 	ORGANIZATIONS,
 	BRANDING,
+	FLOWS,
 }

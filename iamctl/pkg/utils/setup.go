@@ -75,6 +75,7 @@ type ToolConfigs struct {
 	OrganizationConfigs        map[string]interface{} `json:"ORGANIZATIONS"`
 	BrandingPreferenceConfigs  map[string]interface{} `json:"BRANDING_PREFERENCES"`
 	CustomTextConfigs          map[string]interface{} `json:"CUSTOM_TEXTS"`
+	FlowConfigs                map[string]interface{} `json:"FLOWS"`
 }
 
 type KeywordConfigs struct {
@@ -100,6 +101,7 @@ type KeywordConfigs struct {
 	OrganizationConfigs        map[string]interface{} `json:"ORGANIZATIONS"`
 	BrandingPreferenceConfigs  map[string]interface{} `json:"BRANDING_PREFERENCES"`
 	CustomTextConfigs          map[string]interface{} `json:"CUSTOM_TEXTS"`
+	FlowConfigs                map[string]interface{} `json:"FLOWS"`
 }
 
 var SERVER_CONFIGS ServerConfigs
