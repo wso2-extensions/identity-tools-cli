@@ -46,7 +46,10 @@ func ExportAll(exportFilePath string, format string) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
-		os.MkdirAll(exportFilePath, 0700)
+		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
+			log.Println("Error creating applications directory:", err)
+			return
+		}
 	} else {
 		if utils.TOOL_CONFIGS.AllowDelete {
 			utils.RemoveDeletedLocalResources(exportFilePath, append(deployedAppNames, utils.RESIDENT_APP))
@@ -55,7 +58,10 @@ func ExportAll(exportFilePath string, format string) {
 
 	if applicationAuthorizedApis.SupportedInVersion {
 		if _, err := os.Stat(authAPIsOutputDir); os.IsNotExist(err) {
-			os.MkdirAll(authAPIsOutputDir, 0700)
+			if err := os.MkdirAll(authAPIsOutputDir, 0700); err != nil {
+				log.Println("Error creating authorized APIs directory:", err)
+				return
+			}
 		} else {
 			if utils.TOOL_CONFIGS.AllowDelete {
 				utils.RemoveDeletedLocalResources(authAPIsOutputDir, deployedAppNames)
