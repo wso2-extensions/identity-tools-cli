@@ -55,9 +55,6 @@ func ImportAll(inputDirPath string) {
 		log.Println("Error importing identity providers: ", err)
 		return
 	}
-	if utils.TOOL_CONFIGS.AllowDelete {
-		removeDeletedDeployedIdps(files, existingIdpList)
-	}
 
 	for _, file := range files {
 		idpFilePath := filepath.Join(importFilePath, file.Name())
@@ -308,25 +305,53 @@ func updateIdpSubResources(idpId string, idpStruct idpConfig) error {
 	return nil
 }
 
-func removeDeletedDeployedIdps(localFiles []os.FileInfo, deployedIdps []identityProvider) {
+func RemoveDeletedDeployedIdps(inputDirPath string) {
 
-deployedResourcess:
+	log.Println("Removing deleted identity providers...")
+
+	if !utils.TOOL_CONFIGS.AllowDelete {
+		return
+	}
+	if utils.IsResourceTypeExcluded(utils.IDENTITY_PROVIDERS) {
+		return
+	}
+
+	importFilePath := filepath.Join(inputDirPath, utils.IDENTITY_PROVIDERS.String())
+	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
+		return
+	}
+
+	localFiles, err := ioutil.ReadDir(importFilePath)
+	if err != nil {
+		log.Println("Error reading local identity provider files: ", err)
+		return
+	}
+	deployedIdps, err := getIdpList()
+	if err != nil {
+		log.Printf("error when retrieving deployed identity provider list: %s", err)
+		return
+	}
+
+	localResourceNames := make(map[string]struct{})
+	for _, file := range localFiles {
+		localResourceNames[utils.GetFileInfo(file.Name()).ResourceName] = struct{}{}
+	}
+
 	for _, idp := range deployedIdps {
-		for _, file := range localFiles {
-			if idp.Name == utils.GetFileInfo(file.Name()).ResourceName {
-				continue deployedResourcess
-			}
+		if _, existsLocally := localResourceNames[idp.Name]; existsLocally {
+			continue
 		}
 		if utils.IsResourceExcluded(idp.Name, utils.TOOL_CONFIGS.IdpConfigs) || idp.Name == utils.RESIDENT_IDP_NAME {
 			log.Println("Identity provider is excluded from deletion: ", idp.Name)
 			continue
 		}
+
 		log.Printf("Identity provider: %s not found locally. Deleting idp.\n", idp.Name)
-		err := utils.SendDeleteRequest(idp.Id, utils.IDENTITY_PROVIDERS)
-		if err != nil {
+		if err := utils.SendDeleteRequest(idp.Id, utils.IDENTITY_PROVIDERS); err != nil {
 			utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, idp.Name)
 			log.Println("Error deleting idp: ", idp.Name, err)
+		} else {
+			utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.DELETE)
 		}
-		utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.DELETE)
 	}
 }
