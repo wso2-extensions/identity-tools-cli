@@ -130,6 +130,15 @@ func processAuthProperties(actionMap map[string]interface{}) error {
 			"header": utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES,
 			"value":  utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES,
 		}
+	case "CLIENT_CREDENTIAL":
+		auth["properties"] = map[string]interface{}{
+			"clientSecret": utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES,
+		}
+	case "PASSWORD_CREDENTIAL":
+		auth["properties"] = map[string]interface{}{
+			"clientSecret": utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES,
+			"password":     utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES,
+		}
 	default:
 		return fmt.Errorf("unknown authentication type %s", authType)
 	}
