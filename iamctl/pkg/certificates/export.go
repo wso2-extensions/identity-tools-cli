@@ -33,7 +33,7 @@ func ExportAll(exportFilePath string, format string) {
 	log.Println("Exporting certificates...")
 	exportFilePath = filepath.Join(exportFilePath, utils.CERTIFICATES.String())
 
-	if utils.IsResourceTypeExcluded(utils.CERTIFICATES) {
+	if !utils.IsEntitySupportedInVersion(utils.CERTIFICATES) || utils.IsResourceTypeExcluded(utils.CERTIFICATES) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {

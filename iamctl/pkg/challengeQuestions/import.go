@@ -33,7 +33,7 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing challenge question sets...")
 	importFilePath := filepath.Join(inputDirPath, utils.CHALLENGE_QUESTIONS.String())
 
-	if utils.IsResourceTypeExcluded(utils.CHALLENGE_QUESTIONS) {
+	if !utils.IsEntitySupportedInVersion(utils.CHALLENGE_QUESTIONS) || utils.IsResourceTypeExcluded(utils.CHALLENGE_QUESTIONS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {

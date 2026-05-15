@@ -33,7 +33,7 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing script libraries...")
 	importFilePath := filepath.Join(inputDirPath, utils.SCRIPT_LIBRARIES.String())
 
-	if utils.IsResourceTypeExcluded(utils.SCRIPT_LIBRARIES) {
+	if !utils.IsEntitySupportedInVersion(utils.SCRIPT_LIBRARIES) || utils.IsResourceTypeExcluded(utils.SCRIPT_LIBRARIES) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
