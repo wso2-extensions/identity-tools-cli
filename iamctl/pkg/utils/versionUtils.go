@@ -31,34 +31,37 @@ var NotificationTemplatesApiExists bool
 
 // Checks if a resource type is supported in the configured WSO2 IS version.
 // Returns true if:
-//   - Version is not configured (backward compatibility - version checking disabled)
 //   - minimum required version <= Configured version <= maximum supported version for the resource type
 //   - No version requirement is defined for the resource type
 func IsEntitySupportedInVersion(resourceType ResourceType) bool {
 
-	if SERVER_CONFIGS.ServerVersion == "" {
-		return true
-	}
-
 	minVersion, hasMin := EntityMinVersionRequirements[resourceType]
 	maxVersion, hasMax := EntityMaxSupportedVersion[resourceType]
 
-	if hasMin {
-		comparison, err := CompareVersions(SERVER_CONFIGS.ServerVersion, minVersion)
+	if hasMax {
+		// When server version is not configured, consider it as the latest version
+		if SERVER_CONFIGS.ServerVersion == "" {
+			return false
+		}
+		comparison, err := CompareVersions(SERVER_CONFIGS.ServerVersion, maxVersion)
+		// When server version is not properly configured, all resources are allowed with a warning logged at setup time
 		if err != nil {
-			log.Printf("Warning: Invalid version format. Configured: %s", SERVER_CONFIGS.ServerVersion)
-		} else if comparison < 0 {
-			log.Printf("Skipping %s: Supported from IS version %s or higher", resourceType, minVersion)
+			return true
+		} else if comparison > 0 {
+			log.Printf("Skipping %s: Supported up to IS version %s", resourceType, maxVersion)
 			return false
 		}
 	}
 
-	if hasMax {
-		comparison, err := CompareVersions(SERVER_CONFIGS.ServerVersion, maxVersion)
+	if hasMin {
+		if SERVER_CONFIGS.ServerVersion == "" {
+			return true
+		}
+		comparison, err := CompareVersions(SERVER_CONFIGS.ServerVersion, minVersion)
 		if err != nil {
-			log.Printf("Warning: Invalid version format. Configured: %s", SERVER_CONFIGS.ServerVersion)
-		} else if comparison > 0 {
-			log.Printf("Skipping %s: Supported up to IS version %s", resourceType, maxVersion)
+			return true
+		} else if comparison < 0 {
+			log.Printf("Skipping %s: Supported from IS version %s or higher", resourceType, minVersion)
 			return false
 		}
 	}
