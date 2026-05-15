@@ -63,6 +63,7 @@ func ExportAll(exportFilePath string, format string) {
 				utils.UpdateFailureSummary(utils.APPLICATIONS, app.Name)
 				log.Printf("Error while exporting application: %s. %s", app.Name, err)
 			} else {
+				utils.AddToIdentifierMap(utils.APPLICATIONS, app.Id, app.Name, utils.EXPORT)
 				utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.EXPORT)
 				log.Println("Application exported successfully: ", app.Name)
 			}

@@ -73,6 +73,7 @@ const (
 	WORKFLOWS             ResourceType = "Workflows"
 	API_RESOURCES         ResourceType = "ApiResources"
 	VALIDATION_RULES      ResourceType = "ValidationRules"
+	ORGANIZATIONS         ResourceType = "Organizations"
 )
 
 // Sub resource types
@@ -108,7 +109,9 @@ const MY_ACCOUNT = "My Account"
 const CARBON_SP = "wso2carbon-local-sp"
 const RESIDENT_APP = "Resident"
 const LOCAL_CLAIM_DIALECT = "local"
-const ADMIN = "admin"
+const ADMIN_ROLE = "admin"
+const ADMINISTRATOR_ROLE = "Administrator"
+const IMPERSONATOR_ROLE = "Impersonator"
 const OAUTH2 = "oauth2"
 const ALL_ITEMS = "all_items" // Wildcard to match all elements in an array
 
@@ -190,6 +193,12 @@ var claimArrayIdentifiers = map[string]string{
 	"claims":           "id",
 }
 
+var roleArrayIdentifiers = map[string]string{
+
+	"permissions": "value",
+	"properties":  "name",
+}
+
 var challengeQuestionsArrayIdentifiers = map[string]string{
 
 	"questions": "questionId",
@@ -233,6 +242,9 @@ var RESOURCE_IDENTIFIER_METADATA = map[ResourceType]ResourceIdentifierMeta{}
 var RESOURCE_REFERENCE_METADATA = map[ResourceType][]ResourceReferenceMeta{
 	WORKFLOWS: {
 		{ReferencedResourceType: ROLES, ReferencePaths: []string{"template.steps.[step=all_items].options.[entity=roles].values"}},
+	},
+	ROLES: {
+		{ReferencedResourceType: APPLICATIONS, ReferencePaths: []string{"audience.value"}},
 	},
 }
 

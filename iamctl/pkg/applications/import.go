@@ -90,7 +90,7 @@ func importApp(appId, appName, importFilePath string, exportAPIExists bool) erro
 		if appId == "" {
 			return importApplication(appName, importFilePath, modifiedFileData)
 		}
-		return updateApplication(appName, importFilePath, modifiedFileData)
+		return updateApplication(appId, appName, importFilePath, modifiedFileData)
 	}
 
 	format, err := utils.FormatFromExtension(filepath.Ext(importFilePath))
@@ -116,10 +116,11 @@ func importApp(appId, appName, importFilePath string, exportAPIExists bool) erro
 func importApplication(appName, importFilePath, modifiedFileData string) error {
 
 	log.Println("Creating new application: " + appName)
-	err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.APPLICATIONS)
+	resp, err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.APPLICATIONS)
 	if err != nil {
 		return fmt.Errorf("error when importing application: %s", err)
 	}
+	defer resp.Body.Close()
 
 	if oauthApp, err := isOauthApp(modifiedFileData); err != nil {
 		fmt.Println("Failed to check if the applications is an OAuth app:", err.Error())
@@ -129,18 +130,29 @@ func importApplication(appName, importFilePath, modifiedFileData string) error {
 		// Check if oauthConsumerSecret is given or else add an indicator to the summary informing a new secret is generated.
 		utils.AddNewSecretIndicatorToSummary(appName)
 	}
+
+	location := resp.Header.Get("Location")
+	if location == "" {
+		return fmt.Errorf("no Location header in response")
+	}
+	appId := path.Base(location)
+	utils.AddToIdentifierMap(utils.APPLICATIONS, appId, appName, utils.IMPORT)
+
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.IMPORT)
 	log.Println("Application imported successfully.")
 	return nil
 }
 
-func updateApplication(appName, importFilePath, modifiedFileData string) error {
+func updateApplication(appId, appName, importFilePath, modifiedFileData string) error {
 
 	log.Println("Updating application: " + appName)
-	err := utils.SendUpdateRequest("", importFilePath, modifiedFileData, utils.APPLICATIONS)
+	err := utils.SendUpdateRequest(appId, importFilePath, modifiedFileData, utils.APPLICATIONS)
 	if err != nil {
 		return fmt.Errorf("error when updating application: %s", err)
 	}
+
+	utils.AddToIdentifierMap(utils.APPLICATIONS, appId, appName, utils.IMPORT)
+
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.UPDATE)
 	log.Println("Application updated successfully.")
 	return nil
@@ -169,6 +181,14 @@ func importAppWithCRUD(appName string, appMap map[string]interface{}) error {
 	if newSecretCreated {
 		utils.AddNewSecretIndicatorToSummary(appName)
 	}
+
+	location := resp.Header.Get("Location")
+	if location == "" {
+		return fmt.Errorf("no Location header in response")
+	}
+	appId := path.Base(location)
+	utils.AddToIdentifierMap(utils.APPLICATIONS, appId, appName, utils.IMPORT)
+
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.IMPORT)
 	log.Println("Application imported successfully.")
 	return nil
@@ -203,6 +223,8 @@ func updateAppWithCRUD(appId, appName string, appMap map[string]interface{}) err
 	if err := updateInboundProtocols(appId, localProtocols); err != nil {
 		return fmt.Errorf("error updating inbound protocols: %w", err)
 	}
+
+	utils.AddToIdentifierMap(utils.APPLICATIONS, appId, appName, utils.IMPORT)
 
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.UPDATE)
 	log.Println("Application updated successfully.")

@@ -102,11 +102,12 @@ func importUserStore(userStoreId, userStoreName, userStoreFilePath string, expor
 func importUserStoreOperation(userStoreName, userStoreFilePath, modifiedFileData string) error {
 
 	log.Println("Creating new user store: " + userStoreName)
-	err := utils.SendImportRequest(userStoreFilePath, modifiedFileData, utils.USERSTORES)
+	resp, err := utils.SendImportRequest(userStoreFilePath, modifiedFileData, utils.USERSTORES)
 	if err != nil {
 		utils.UpdateFailureSummary(utils.USERSTORES, userStoreName)
 		return fmt.Errorf("error when importing user store: %s", err)
 	}
+	defer resp.Body.Close()
 	utils.UpdateSuccessSummary(utils.USERSTORES, utils.IMPORT)
 	log.Println("User store imported successfully.")
 	return nil

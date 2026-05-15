@@ -165,7 +165,7 @@ func SendExportRequest(resourceId, fileType string, resourceType ResourceType, e
 	return resp, fmt.Errorf("unexpected error while exporting the resource with status code: %s", strconv.FormatInt(int64(statusCode), 10))
 }
 
-func SendImportRequest(importFilePath, fileData string, resourceType ResourceType) error {
+func SendImportRequest(importFilePath, fileData string, resourceType ResourceType) (*http.Response, error) {
 
 	reqUrl := buildRequestUrl(IMPORT, resourceType, "")
 
@@ -173,7 +173,7 @@ func SendImportRequest(importFilePath, fileData string, resourceType ResourceTyp
 	var err error
 	_, err = io.WriteString(&buf, fileData)
 	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
+		return nil, fmt.Errorf("error when creating the import request: %s", err)
 	}
 
 	mime.AddExtensionType(".yml", "application/yaml")
@@ -192,12 +192,12 @@ func SendImportRequest(importFilePath, fileData string, resourceType ResourceTyp
 		"Content-Type":        []string{mimeType},
 	})
 	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
+		return nil, fmt.Errorf("error when creating the import request: %s", err)
 	}
 
 	_, err = io.Copy(part, &buf)
 	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
+		return nil, fmt.Errorf("error when creating the import request: %s", err)
 	}
 
 	request, err := http.NewRequest("POST", reqUrl, body)
@@ -206,7 +206,7 @@ func SendImportRequest(importFilePath, fileData string, resourceType ResourceTyp
 	defer request.Body.Close()
 
 	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
+		return nil, fmt.Errorf("error when creating the import request: %s", err)
 	}
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -217,16 +217,18 @@ func SendImportRequest(importFilePath, fileData string, resourceType ResourceTyp
 	}
 	resp, err := client.Do(request)
 	if err != nil {
-		return fmt.Errorf("error when sending the import request: %s", err)
+		return nil, fmt.Errorf("error when sending the import request: %s", err)
 	}
 
 	statusCode := resp.StatusCode
 	if statusCode == 201 {
-		return nil
+		return resp, nil
 	} else if error, ok := ErrorCodes[statusCode]; ok {
-		return fmt.Errorf("error response for the import request: %s", error)
+		resp.Body.Close()
+		return nil, fmt.Errorf("error response for the import request: %s", error)
 	}
-	return fmt.Errorf("unexpected error when importing resource: %s", resp.Status)
+	resp.Body.Close()
+	return nil, fmt.Errorf("unexpected error when importing resource: %s", resp.Status)
 }
 
 func SendUpdateRequest(resourceId, importFilePath, fileData string, resourceType ResourceType) error {
@@ -578,6 +580,8 @@ func getResourcePath(resourceType ResourceType) string {
 		return "api-resources"
 	case VALIDATION_RULES:
 		return "validation-rules"
+	case ORGANIZATIONS:
+		return "organizations"
 	}
 	return ""
 }
@@ -589,7 +593,11 @@ func getResourceBaseUrl(resourceType ResourceType) string {
 		basePath += "/o"
 	}
 	if resourceType == ROLES {
-		basePath += "/scim2/Roles/"
+		if RolesV2ApiExists {
+			basePath += "/scim2/v2/Roles/"
+		} else {
+			basePath += "/scim2/Roles/"
+		}
 	} else {
 		basePath += "/api/server/v1/" + getResourcePath(resourceType) + "/"
 	}
@@ -646,7 +654,7 @@ func addQueryParams(reqURL string, resourceType ResourceType, operation string) 
 		}
 	case ROLES:
 		if operation == GET {
-			queryParams.Set("excludedAttributes", "meta,users,groups")
+			queryParams.Set("excludedAttributes", "meta,users,groups,associatedApplications")
 		}
 	case CERTIFICATES:
 		if operation == GET {
