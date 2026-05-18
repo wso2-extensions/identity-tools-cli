@@ -44,7 +44,7 @@ const SCOPE string = "internal_application_mgt_update internal_application_mgt_c
 	"internal_workflow_association_view internal_workflow_association_create internal_workflow_association_update internal_workflow_association_delete " +
 	"internal_api_resource_view internal_api_resource_create internal_api_resource_update internal_api_resource_delete " +
 	"internal_validation_rule_mgt_update internal_governance_view internal_governance_update " +
-	"internal_organization_view " +
+	"internal_organization_view internal_organization_create internal_organization_update internal_organization_delete " +
 	"internal_notification_senders_view internal_notification_senders_create internal_notification_senders_update internal_notification_senders_delete " +
 	"internal_template_mgt_view internal_template_mgt_create internal_template_mgt_update internal_template_mgt_delete " +
 	"internal_action_mgt_view internal_action_mgt_create internal_action_mgt_update internal_action_mgt_delete"
