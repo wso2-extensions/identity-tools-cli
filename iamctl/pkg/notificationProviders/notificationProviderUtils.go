@@ -212,7 +212,7 @@ func maskAuthSecrets(resType utils.ResourceType, authType string, properties int
 			return addSecretWithMask(resType, properties, "apiKeyValue")
 		}
 	}
-	return properties, nil
+	return nil, fmt.Errorf("unknown authentication type %s", authType)
 }
 
 func addSecretWithMask(resType utils.ResourceType, properties interface{}, key string) (interface{}, error) {
