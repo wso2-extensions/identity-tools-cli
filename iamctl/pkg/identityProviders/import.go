@@ -79,6 +79,9 @@ func ImportAll(inputDirPath string) {
 			}
 		}
 	}
+	if exportAPIExists {
+		log.Println("Warn: Provisioning roles of identity providers are removed during import")
+	}
 }
 
 func importIdp(idpId string, idpName string, importFilePath string, exportAPIExists bool) error {

@@ -89,6 +89,9 @@ func ExportAll(exportFilePath string, format string) {
 			log.Println("Resident identity provider exported successfully")
 		}
 	}
+	if exportAPIExists {
+		log.Println("Warn: Provisioning roles of identity providers are not exported")
+	}
 }
 
 func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets bool) error {
@@ -124,12 +127,14 @@ func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets
 	if err != nil {
 		return fmt.Errorf("error while reading the response body when exporting IDP: %s. %s", fileName, err)
 	}
+	body = removeProvisioningRole(body)
 
 	idpKeywordMapping := getIdpKeywordMapping(fileInfo.ResourceName)
 	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, idpKeywordMapping, utils.IDENTITY_PROVIDERS)
 	if err != nil {
 		return fmt.Errorf("error while processing the exported content: %s", err)
 	}
+	modifiedFile = processIdpGroupFields(modifiedFile)
 
 	err = ioutil.WriteFile(exportedFileName, modifiedFile, 0644)
 	if err != nil {
