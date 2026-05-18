@@ -28,7 +28,8 @@ var ResourceOrder = []ResourceType{
 	CLAIMS,
 	USERSTORES,
 	IDENTITY_PROVIDERS, // Dependency: Claims, Userstores
-	APPLICATIONS,       // Dependency: Claims, Userstores, Identity Providers
+	API_RESOURCES,
+	APPLICATIONS, // Dependency: Claims, Userstores, Identity Providers, API Resources
 	OIDC_SCOPES,
 	ROLES, // Dependency: Applications
 	CHALLENGE_QUESTIONS,
@@ -37,6 +38,5 @@ var ResourceOrder = []ResourceType{
 	GOVERNANCE_CONNECTORS, // Dependency: Roles
 	CERTIFICATES,
 	WORKFLOWS, // Dependency: Roles
-	API_RESOURCES,
 	VALIDATION_RULES,
 }

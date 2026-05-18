@@ -42,7 +42,7 @@ func ImportAll(inputDirPath string) {
 		return
 	}
 
-	deployedResources, err := getApiResourceList()
+	deployedResources, err := GetApiResourceList(true)
 	if err != nil {
 		log.Println("Error retrieving the deployed API resource list:", err)
 		return
@@ -124,6 +124,16 @@ func createApiResource(resourceIdentifier string, requestBody []byte, format uti
 	}
 	defer resp.Body.Close()
 
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error reading create API response: %w", err)
+	}
+	var created ApiResource
+	if err := json.Unmarshal(body, &created); err != nil {
+		return fmt.Errorf("error parsing create API response: %w", err)
+	}
+	utils.AddToIdentifierMap(utils.API_RESOURCES, created.ID, resourceIdentifier, utils.IMPORT)
+
 	utils.UpdateSuccessSummary(utils.API_RESOURCES, utils.IMPORT)
 	log.Println("API resource created successfully.")
 	return nil
@@ -153,12 +163,13 @@ func updateApiResource(resourceId, resourceIdentifier string, requestBody []byte
 	}
 	defer resp.Body.Close()
 
+	utils.AddToIdentifierMap(utils.API_RESOURCES, resourceId, resourceIdentifier, utils.IMPORT)
 	utils.UpdateSuccessSummary(utils.API_RESOURCES, utils.UPDATE)
 	log.Println("API resource updated successfully.")
 	return nil
 }
 
-func removeDeletedDeployedApiResources(localFiles []os.FileInfo, deployedResources []apiResource) (remainingResources []apiResource) {
+func removeDeletedDeployedApiResources(localFiles []os.FileInfo, deployedResources []ApiResource) (remainingResources []ApiResource) {
 
 	if len(deployedResources) == 0 {
 		return deployedResources
@@ -193,7 +204,7 @@ func removeDeletedDeployedApiResources(localFiles []os.FileInfo, deployedResourc
 	return remainingResources
 }
 
-func removeDeletedDeployedScopes(localScopeMap map[string]string, deployedResources []apiResource) (failedResources map[string]struct{}) {
+func removeDeletedDeployedScopes(localScopeMap map[string]string, deployedResources []ApiResource) (failedResources map[string]struct{}) {
 
 	failedResources = make(map[string]struct{})
 
