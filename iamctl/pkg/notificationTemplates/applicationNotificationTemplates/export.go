@@ -69,8 +69,7 @@ func exportTemplatesOfApp(rt utils.ResourceType, typeId, appId, appName, appsDir
 
 	templates, err := getAppTemplatesList(rt, typeId, appId)
 	if err != nil {
-		log.Printf("Error retrieving templates list: %s", err)
-		return false, nil
+		return false, fmt.Errorf("error retrieving templates list: %w", err)
 	}
 	if len(templates) == 0 {
 		return false, nil
