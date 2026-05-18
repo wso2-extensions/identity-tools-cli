@@ -91,15 +91,22 @@ func getApiResourceCount(queryParams map[string]string) (int, error) {
 	}
 	defer resp.Body.Close()
 
+	statusCode := resp.StatusCode
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return 0, fmt.Errorf("error when reading API resource count response. %w", err)
 	}
-	var countResponse apiResourceListResponse
-	if err := json.Unmarshal(body, &countResponse); err != nil {
-		return 0, fmt.Errorf("error when unmarshalling API resource count response. %w", err)
+
+	if statusCode == 200 {
+		var countResponse apiResourceListResponse
+		if err := json.Unmarshal(body, &countResponse); err != nil {
+			return 0, fmt.Errorf("error when unmarshalling API resource count response. %w", err)
+		}
+		return countResponse.TotalResults, nil
+	} else if errMsg, ok := utils.ErrorCodes[statusCode]; ok {
+		return 0, fmt.Errorf("error while retrieving API resource count. Status code: %d, Error: %s", statusCode, errMsg)
 	}
-	return countResponse.TotalResults, nil
+	return 0, fmt.Errorf("unexpected error while retrieving API resource count. Status code: %d", statusCode)
 }
 
 func getDeployedApiResourceIdentifiers(resources []ApiResource) []string {
