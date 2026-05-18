@@ -71,6 +71,7 @@ type ToolConfigs struct {
 	EmailProviderConfigs       map[string]interface{} `json:"EMAIL_PROVIDERS"`
 	SmsProviderConfigs         map[string]interface{} `json:"SMS_PROVIDERS"`
 	SmsTemplateConfigs         map[string]interface{} `json:"SMS_TEMPLATES"`
+	ActionConfigs              map[string]interface{} `json:"ACTIONS"`
 }
 
 type KeywordConfigs struct {
@@ -92,6 +93,7 @@ type KeywordConfigs struct {
 	EmailProviderConfigs       map[string]interface{} `json:"EMAIL_PROVIDERS"`
 	SmsProviderConfigs         map[string]interface{} `json:"SMS_PROVIDERS"`
 	SmsTemplateConfigs         map[string]interface{} `json:"SMS_TEMPLATES"`
+	ActionConfigs              map[string]interface{} `json:"ACTIONS"`
 }
 
 var SERVER_CONFIGS ServerConfigs

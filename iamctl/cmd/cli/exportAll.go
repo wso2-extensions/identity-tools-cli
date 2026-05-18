@@ -21,6 +21,7 @@ package cli
 import (
 	"github.com/spf13/cobra"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
+	actions "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/actions"
 	apiResources "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/apiResources"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/applications"
 	certificates "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/certificates"
@@ -72,6 +73,7 @@ var exportAllCmd = &cobra.Command{
 			utils.EMAIL_PROVIDERS:       notificationProviders.ExportAllEmailProviders,
 			utils.SMS_PROVIDERS:         notificationProviders.ExportAllSmsProviders,
 			utils.SMS_TEMPLATES:         notificationTemplates.ExportAllSmsTemplates,
+			utils.ACTIONS:               actions.ExportAll,
 		}
 
 		for _, resourceType := range utils.ResourceOrder {

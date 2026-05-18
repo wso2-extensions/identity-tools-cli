@@ -622,6 +622,8 @@ func getResourcePath(resourceType ResourceType) string {
 		return "notification-senders/sms"
 	case SMS_TEMPLATES:
 		return "notification/sms/template-types"
+	case ACTIONS:
+		return "actions"
 	}
 	return ""
 }
