@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 
+	applicationNotificationTemplates "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/notificationTemplates/applicationNotificationTemplates"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
@@ -100,9 +101,16 @@ func importTemplateType(rt utils.ResourceType, localTypePath, displayName string
 	if err != nil {
 		return fmt.Errorf("error getting deployed templates: %w", err)
 	}
-	localFiles, err := ioutil.ReadDir(localTypePath)
-	if err != nil {
-		return fmt.Errorf("error reading local template files: %w", err)
+
+	orgDir := filepath.Join(localTypePath, orgTemplatesDir)
+	var localFiles []os.FileInfo
+	if _, err := os.Stat(orgDir); os.IsNotExist(err) {
+		localFiles = []os.FileInfo{}
+	} else {
+		localFiles, err = ioutil.ReadDir(orgDir)
+		if err != nil {
+			return fmt.Errorf("error reading local template files: %w", err)
+		}
 	}
 
 	if utils.TOOL_CONFIGS.AllowDelete {
@@ -115,7 +123,7 @@ func importTemplateType(rt utils.ResourceType, localTypePath, displayName string
 	keywordMapping := getTemplateKeywordMapping(rt, displayName)
 
 	for _, file := range localFiles {
-		filePath := filepath.Join(localTypePath, file.Name())
+		filePath := filepath.Join(orgDir, file.Name())
 		fileInfo := utils.GetFileInfo(filePath)
 		locale := fileInfo.ResourceName
 
@@ -124,6 +132,10 @@ func importTemplateType(rt utils.ResourceType, localTypePath, displayName string
 		if err != nil {
 			return fmt.Errorf("error importing template: %s. %w", locale, err)
 		}
+	}
+
+	if err := applicationNotificationTemplates.ImportTemplateType(rt, typeId, localTypePath, keywordMapping, logName); err != nil {
+		return fmt.Errorf("error while importing application templates: %w", err)
 	}
 
 	if existingType != "" {
@@ -216,15 +228,6 @@ func removeDeletedDeployedTypes(rt utils.ResourceType, localDirs []os.FileInfo, 
 		}
 
 		if _, isExported := exportedNames[deployedType.DisplayName]; isExported {
-			templates, err := getTemplatesList(rt, deployedType.ID)
-			if err != nil {
-				log.Printf("Error checking whether templates exist for type: %s", err.Error())
-				log.Printf("%s type: %s is excluded from deletion.", logName, deployedType.DisplayName)
-				continue
-			}
-			if len(templates) == 0 {
-				continue
-			}
 			log.Printf("%s type not found locally. Resetting: %s", logName, deployedType.DisplayName)
 			if err := resetTemplateType(rt, deployedType.ID); err != nil {
 				utils.UpdateFailureSummary(rt, deployedType.DisplayName)
@@ -261,7 +264,7 @@ func removeDeletedDeployedTemplates(rt utils.ResourceType, typeId string, localF
 		}
 		log.Printf("Template not found locally. Deleting: %s", template.Locale)
 		if err := utils.SendDeleteRequest(typeId+"/org-templates/"+template.Locale, rt); err != nil {
-			return fmt.Errorf("error deleting template: %s. %s", template.Locale, err)
+			return fmt.Errorf("error deleting template: %s. %w", template.Locale, err)
 		}
 	}
 	return nil

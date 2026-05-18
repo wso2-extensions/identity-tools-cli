@@ -28,6 +28,8 @@ import (
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
+const orgTemplatesDir = "OrganizationTemplates"
+
 type notificationTemplateType struct {
 	ID          string `json:"id"`
 	DisplayName string `json:"displayName"`
@@ -138,19 +140,19 @@ func getTemplateKeywordMapping(rt utils.ResourceType, typeName string) map[strin
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
 
-func getTemplateTypeId(displayName string, types []notificationTemplateType) string {
+func getTemplateTypeId(displayName string, existingTypes []notificationTemplateType) string {
 
-	for i := range types {
-		if types[i].DisplayName == displayName {
-			return types[i].ID
+	for i := range existingTypes {
+		if existingTypes[i].DisplayName == displayName {
+			return existingTypes[i].ID
 		}
 	}
 	return ""
 }
 
-func isTemplateExists(locale string, templates []notificationTemplate) bool {
+func isTemplateExists(locale string, existingTemplates []notificationTemplate) bool {
 
-	for _, t := range templates {
+	for _, t := range existingTemplates {
 		if t.Locale == locale {
 			return true
 		}

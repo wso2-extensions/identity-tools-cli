@@ -108,9 +108,9 @@ func getProviderKeywordMapping(resType utils.ResourceType, name string) map[stri
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
 
-func isProviderExists(name string, exisitingProviderList []notificationProvider) bool {
+func isProviderExists(name string, existingProviderList []notificationProvider) bool {
 
-	for _, provider := range exisitingProviderList {
+	for _, provider := range existingProviderList {
 		if provider.Name == name {
 			return true
 		}
