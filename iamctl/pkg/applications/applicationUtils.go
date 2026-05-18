@@ -30,7 +30,6 @@ import (
 	"text/tabwriter"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
-	"gopkg.in/yaml.v3"
 )
 
 type inboundProtocolRef struct {
@@ -63,13 +62,13 @@ var unsupportedInboundProtocols = map[string]struct{}{
 type AuthConfig struct {
 	InboundAuthenticationConfig struct {
 		InboundAuthenticationRequestConfigs []struct {
-			InboundAuthType              string `yaml:"inboundAuthType"`
-			InboundAuthKey               string `yaml:"inboundAuthKey"`
+			InboundAuthType              string `yaml:"inboundAuthType" json:"inboundAuthType"`
+			InboundAuthKey               string `yaml:"inboundAuthKey" json:"inboundAuthKey"`
 			InboundConfigurationProtocol struct {
-				OauthConsumerSecret string `yaml:"oauthConsumerSecret"`
-			} `yaml:"inboundConfigurationProtocol"`
-		} `yaml:"inboundAuthenticationRequestConfigs"`
-	} `yaml:"inboundAuthenticationConfig"`
+				OauthConsumerSecret string `yaml:"oauthConsumerSecret" json:"oauthConsumerSecret"`
+			} `yaml:"inboundConfigurationProtocol" json:"inboundConfigurationProtocol"`
+		} `yaml:"inboundAuthenticationRequestConfigs" json:"inboundAuthenticationRequestConfigs"`
+	} `yaml:"inboundAuthenticationConfig" json:"inboundAuthenticationConfig"`
 }
 
 func getDeployedAppNames() []string {
@@ -167,9 +166,9 @@ func getAppId(appName string, appList []Application) string {
 	return ""
 }
 
-func isOauthApp(fileData string) (bool, error) {
+func isOauthApp(fileData string, format utils.Format) (bool, error) {
 
-	config, err := unmarshalAuthConfig([]byte(fileData))
+	config, err := unmarshalAuthConfig([]byte(fileData), format)
 	if err != nil {
 		return false, err
 	}
@@ -182,10 +181,10 @@ func isOauthApp(fileData string) (bool, error) {
 	return false, nil
 }
 
-func unmarshalAuthConfig(data []byte) (AuthConfig, error) {
+func unmarshalAuthConfig(data []byte, format utils.Format) (AuthConfig, error) {
 
 	var config AuthConfig
-	if err := yaml.Unmarshal(data, &config); err != nil {
+	if _, err := utils.Deserialize(data, format, utils.APPLICATIONS, &config); err != nil {
 		return AuthConfig{}, fmt.Errorf("failed to unmarshal auth config: %s", err.Error())
 	}
 	return config, nil
@@ -194,38 +193,84 @@ func unmarshalAuthConfig(data []byte) (AuthConfig, error) {
 func maskOAuthConsumerSecret(fileContent []byte) []byte {
 
 	// Find and replace the value of oauthConsumerSecret with a mask.
-	pattern := "(?m)(^\\s*oauthConsumerSecret:\\s*)null\\s*$"
-	re := regexp.MustCompile(pattern)
-	maskedContent := re.ReplaceAllString(string(fileContent), "${1}"+utils.SENSITIVE_FIELD_MASK)
+	yamlPattern := regexp.MustCompile(`(?m)(^\s*oauthConsumerSecret:\s*)null\s*$`)
+	maskedContent := yamlPattern.ReplaceAllString(string(fileContent), "${1}"+utils.SENSITIVE_FIELD_MASK)
+
+	jsonPattern := regexp.MustCompile(`("oauthConsumerSecret":\s*)null`)
+	maskedContent = jsonPattern.ReplaceAllString(maskedContent, `${1}"`+utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES+`"`)
 
 	return []byte(maskedContent)
 }
 
-func isToolMgtApp(appId string) (bool, error) {
+func removeAssociatedRoles(fileContent []byte) []byte {
 
-	body, err := utils.SendGetRequest(utils.APPLICATIONS, appId+"/inbound-protocols/oidc")
-	if err != nil {
-		// 404 means no OIDC config — not the tool management app
-		if strings.Contains(err.Error(), "Resource not found") {
-			return false, nil
-		}
-		return false, err
-	}
-	var oidcConfig map[string]interface{}
-	if err := json.Unmarshal(body, &oidcConfig); err != nil {
-		return false, fmt.Errorf("error unmarshalling OIDC config: %w", err)
-	}
+	yamlPattern := regexp.MustCompile(`(?m)(^\s+roles:)[^\n]*\n(\s+-[^\n]*\n)*`)
+	result := yamlPattern.ReplaceAllString(string(fileContent), "${1} []\n")
 
-	clientId, _ := oidcConfig["clientId"].(string)
-	if clientId == utils.SERVER_CONFIGS.ClientId {
-		return true, nil
-	}
-	return false, nil
+	jsonPattern := regexp.MustCompile(`("roles"\s*:\s*)\[(?:\s*\{[^}]*\}\s*,?\s*)*\]`)
+	result = jsonPattern.ReplaceAllString(result, `${1}[]`)
+
+	return []byte(result)
 }
 
-func isOauthSecretGiven(modifiedFileData string) (bool, error) {
+func injectDeployedOAuthCredentials(appId, fileData string, format utils.Format) (string, error) {
 
-	config, err := unmarshalAuthConfig([]byte(modifiedFileData))
+	oidcConfig, err := getDeployedInboundProtocolConfig(appId, "oidc")
+	if err != nil {
+		return fileData, err
+	}
+	if oidcConfig == nil {
+		return fileData, nil
+	}
+	clientSecret, ok := oidcConfig["clientSecret"].(string)
+	if !ok {
+		return fileData, fmt.Errorf("clientSecret not found in deployed oidc config")
+	}
+	clientId, ok := oidcConfig["clientId"].(string)
+	if !ok {
+		return fileData, fmt.Errorf("clientId not found in deployed oidc config")
+	}
+	result := fileData
+
+	switch format {
+	case utils.FormatYAML:
+		re := regexp.MustCompile(`(?m)(^\s*oauthConsumerSecret:\s*)[^\n]*$`)
+		result = re.ReplaceAllString(result, "${1}"+clientSecret)
+		re = regexp.MustCompile(`(?m)(^\s*oauthConsumerKey:\s*)[^\n]*$`)
+		result = re.ReplaceAllString(result, "${1}"+clientId)
+		re = regexp.MustCompile(`(?m)(^\s*inboundAuthKey:\s*)[^\n]*$`)
+		result = re.ReplaceAllString(result, "${1}"+clientId)
+	case utils.FormatJSON:
+		re := regexp.MustCompile(`("oauthConsumerSecret":\s*)(?:null|"[^"]*")`)
+		result = re.ReplaceAllString(result, `${1}"`+clientSecret+`"`)
+		re = regexp.MustCompile(`("oauthConsumerKey":\s*)"[^"]*"`)
+		result = re.ReplaceAllString(result, `${1}"`+clientId+`"`)
+		re = regexp.MustCompile(`("inboundAuthKey":\s*)"[^"]*"`)
+		result = re.ReplaceAllString(result, `${1}"`+clientId+`"`)
+	}
+	return result, nil
+}
+
+func isToolMgtApp(appId string) (bool, error) {
+
+	oidcConfig, err := getDeployedInboundProtocolConfig(appId, "oidc")
+	if err != nil {
+		return false, err
+	}
+	if oidcConfig == nil {
+		return false, nil
+	}
+
+	clientId, ok := oidcConfig["clientId"].(string)
+	if !ok {
+		return false, fmt.Errorf("clientId not found in deployed oidc config")
+	}
+	return clientId == utils.SERVER_CONFIGS.ClientId, nil
+}
+
+func isOauthSecretGiven(modifiedFileData string, format utils.Format) (bool, error) {
+
+	config, err := unmarshalAuthConfig([]byte(modifiedFileData), format)
 	if err != nil {
 		return false, fmt.Errorf(err.Error())
 	}
@@ -393,18 +438,30 @@ func processInboundProtocolForUpdate(appId string, protocolMap map[string]interf
 	return protocolPath, nil
 }
 
-func injectDeployedReadOnlyFields(appId, protocolPath string, localConfig map[string]interface{}) error {
+func getDeployedInboundProtocolConfig(appId, protocolPath string) (map[string]interface{}, error) {
 
 	body, err := utils.SendGetRequest(utils.APPLICATIONS, appId+"/inbound-protocols/"+protocolPath)
 	if err != nil {
 		if strings.Contains(err.Error(), "Resource not found") {
-			return nil
+			return nil, nil
 		}
-		return fmt.Errorf("error retrieving deployed %s config: %w", protocolPath, err)
+		return nil, fmt.Errorf("error retrieving deployed %s config: %w", protocolPath, err)
 	}
 	var deployedConfig map[string]interface{}
 	if err := json.Unmarshal(body, &deployedConfig); err != nil {
-		return fmt.Errorf("error unmarshalling deployed %s config: %w", protocolPath, err)
+		return nil, fmt.Errorf("error unmarshalling deployed %s config: %w", protocolPath, err)
+	}
+	return deployedConfig, nil
+}
+
+func injectDeployedReadOnlyFields(appId, protocolPath string, localConfig map[string]interface{}) error {
+
+	deployedConfig, err := getDeployedInboundProtocolConfig(appId, protocolPath)
+	if err != nil {
+		return err
+	}
+	if deployedConfig == nil {
+		return nil
 	}
 
 	switch protocolPath {
