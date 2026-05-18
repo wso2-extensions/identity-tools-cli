@@ -498,6 +498,17 @@ func removeProvisioningRole(fileContent []byte) []byte {
 	return []byte(result)
 }
 
+func processIdpGroupFields(fileContent []byte) []byte {
+
+	combined := regexp.MustCompile(`(?m)^(\s+)-\s+idpGroupId:[^\n]*\n\s+(idpGroupName:[^\n]*)`)
+	result := combined.ReplaceAllString(string(fileContent), "${1}- ${2}")
+
+	idpId := regexp.MustCompile(`(?m)^\s+idpId:[^\n]*\n`)
+	result = idpId.ReplaceAllString(result, "")
+
+	return []byte(result)
+}
+
 func init() {
 
 	utils.DataPreprocessFuncs[utils.IDENTITY_PROVIDERS] = preprocessIdpKeys

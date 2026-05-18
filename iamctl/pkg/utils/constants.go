@@ -189,6 +189,7 @@ var idpExportAPIArrayIdentifiers = map[string]string{
 	"provisioningConnectorConfigs":  "name",
 	"federatedAuthenticatorConfigs": "name",
 	"provisioningProperties":        "name",
+	"idPGroupConfig":                "idpGroupName",
 }
 
 var idpGetAPIArrayIdentifiers = map[string]string{
