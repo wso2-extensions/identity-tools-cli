@@ -155,8 +155,12 @@ func getEmailTemplateKeywordMapping(typeName string) map[string]interface{} {
 
 func setNotificationTemplatesApiExists() {
 
-	res, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_NOTIFICATION_TEMPLATES_API)
+	if utils.SERVER_CONFIGS.ServerVersion == "" {
+		utils.NotificationTemplatesApiExists = true
+		return
+	}
 
+	res, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_NOTIFICATION_TEMPLATES_API)
 	// Use the Notification Templates API when the server version is not properly configured
 	if err != nil || res >= 0 {
 		utils.NotificationTemplatesApiExists = true
