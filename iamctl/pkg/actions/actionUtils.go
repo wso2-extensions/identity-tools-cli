@@ -26,14 +26,24 @@ import (
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
+const (
+	actionTypePreUpdatePassword   = "preUpdatePassword"
+	actionTypePreUpdateProfile    = "preUpdateProfile"
+	actionTypePreIssueAccessToken = "preIssueAccessToken"
+	actionTypePreIssueIdToken     = "preIssueIdToken"
+)
+
 type actionType struct {
 	ID   string
 	Self string `json:"self"`
 }
 
 type action struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	PasswordSharing struct {
+		Certificate string `json:"certificate"`
+	} `json:"passwordSharing"`
 }
 
 func getActionTypesList() ([]actionType, error) {
@@ -154,7 +164,6 @@ func replaceRuleReferences(actionMap map[string]interface{}) error {
 
 	ruleRaw, exists := actionMap["rule"]
 	if !exists {
-		actionMap["rule"] = map[string]interface{}{}
 		return nil
 	}
 	ruleMap, ok := ruleRaw.(map[string]interface{})
@@ -201,6 +210,66 @@ func replaceRuleReferences(actionMap map[string]interface{}) error {
 			}
 			exprMap["value"] = newVal
 		}
+	}
+	return nil
+}
+
+func addMissingFields(localMap map[string]interface{}, typeName, actionId string) error {
+
+	if _, inLocal := localMap["rule"]; !inLocal {
+		localMap["rule"] = map[string]interface{}{}
+	}
+
+	switch typeName {
+	case actionTypePreUpdatePassword, actionTypePreUpdateProfile:
+		if _, inLocal := localMap["attributes"]; !inLocal {
+			localMap["attributes"] = []interface{}{}
+		}
+		if typeName == actionTypePreUpdatePassword {
+			if err := addCertificateIfDeployed(localMap, typeName, actionId); err != nil {
+				return err
+			}
+		}
+	case actionTypePreIssueAccessToken, actionTypePreIssueIdToken:
+		localEndpoint, ok := localMap["endpoint"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for endpoint")
+		}
+		if _, inLocal := localEndpoint["allowedHeaders"]; !inLocal {
+			localEndpoint["allowedHeaders"] = []interface{}{}
+		}
+		if _, inLocal := localEndpoint["allowedParameters"]; !inLocal {
+			localEndpoint["allowedParameters"] = []interface{}{}
+		}
+	}
+	return nil
+}
+
+func addCertificateIfDeployed(localMap map[string]interface{}, typeName, actionId string) error {
+
+	psRaw, exists := localMap["passwordSharing"]
+	if !exists {
+		return nil
+	}
+	localPS, ok := psRaw.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for passwordSharing")
+	}
+	if _, inLocal := localPS["certificate"]; inLocal {
+		return nil
+	}
+
+	body, err := utils.SendGetRequest(utils.ACTIONS, typeName+"/"+actionId)
+	if err != nil {
+		return fmt.Errorf("error getting deployed action data: %w", err)
+	}
+	var deployed action
+	if _, err := utils.Deserialize(body, utils.FormatJSON, utils.ACTIONS, &deployed); err != nil {
+		return fmt.Errorf("error deserializing deployed action: %w", err)
+	}
+
+	if deployed.PasswordSharing.Certificate != "" {
+		localPS["certificate"] = ""
 	}
 	return nil
 }
