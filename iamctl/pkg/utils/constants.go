@@ -40,6 +40,7 @@ const ACTIONS_CONFIG = "ACTIONS"
 const ORGANIZATIONS_CONFIG = "ORGANIZATIONS"
 const BRANDING_PREFERENCES_CONFIG = "BRANDING_PREFERENCES"
 const CUSTOM_TEXTS_CONFIG = "CUSTOM_TEXTS"
+const FLOWS_CONFIG = "FLOWS"
 
 // Tool configs
 const EXCLUDE_CONFIG = "EXCLUDE"
@@ -87,6 +88,7 @@ const (
 	ACTIONS               ResourceType = "Actions"
 	BRANDING_PREFERENCES  ResourceType = "BrandingPreferences"
 	CUSTOM_TEXTS          ResourceType = "CustomTexts"
+	FLOWS                 ResourceType = "Flows"
 )
 
 // Parent resource types
@@ -129,6 +131,8 @@ const LOCAL_CLAIM_DIALECT = "local"
 const ADMIN_ROLE = "admin"
 const ADMINISTRATOR_ROLE = "Administrator"
 const IMPERSONATOR_ROLE = "Impersonator"
+const USER_ONBOARDING_GOVERNANCE_CATEGORY_NAME = "User Onboarding"
+const USER_ONBOARDING_GOVERNANCE_CATEGORY_ID = "VXNlciBPbmJvYXJkaW5n"
 const OAUTH2 = "oauth2"
 const ALL_ITEMS = "all_items" // Wildcard to match all elements in an array
 
@@ -265,6 +269,12 @@ var organizationArrayIdentifiers = map[string]string{
 
 	"attributes":   "key",
 	"ancestorPath": "id",
+}
+
+var flowArrayIdentifiers = map[string]string{
+
+	"steps":      "id",
+	"components": "id",
 }
 
 type ResourceIdentifierMeta struct {

@@ -48,7 +48,8 @@ const SCOPE string = "internal_application_mgt_update internal_application_mgt_c
 	"internal_notification_senders_view internal_notification_senders_create internal_notification_senders_update internal_notification_senders_delete " +
 	"internal_template_mgt_view internal_template_mgt_create internal_template_mgt_update internal_template_mgt_delete " +
 	"internal_action_mgt_view internal_action_mgt_create internal_action_mgt_update internal_action_mgt_delete " +
-	"internal_branding_preference_update"
+	"internal_branding_preference_update " +
+	"internal_flow_view internal_flow_update"
 
 const (
 	AppName       = "IAM-CTL"

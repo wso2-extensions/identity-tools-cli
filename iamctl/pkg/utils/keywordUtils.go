@@ -210,6 +210,8 @@ func GetArrayIdentifiers(resourceType ResourceType) map[string]string {
 		return actionArrayIdentifiers
 	case ORGANIZATIONS:
 		return organizationArrayIdentifiers
+	case FLOWS:
+		return flowArrayIdentifiers
 	default:
 		return make(map[string]string)
 	}

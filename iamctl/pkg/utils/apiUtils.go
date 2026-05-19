@@ -641,6 +641,8 @@ func getResourcePath(resourceType ResourceType) string {
 		return "branding-preference"
 	case CUSTOM_TEXTS:
 		return "branding-preference/text"
+	case FLOWS:
+		return "flow"
 	}
 	return ""
 }
