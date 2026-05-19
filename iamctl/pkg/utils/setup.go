@@ -134,9 +134,12 @@ func loadServerConfigs(envConfigPath string) (baseDir string, toolConfigPath str
 	sanitizeServerConfigs()
 
 	// Validate server version format
-	_, err := ParseVersion(SERVER_CONFIGS.ServerVersion)
-	if err != nil {
-		log.Println("Warn: Server version is not properly configured. Configure the server version properly to avoid failures.")
+	if SERVER_CONFIGS.ServerVersion != "" {
+		_, err := ParseVersion(SERVER_CONFIGS.ServerVersion)
+		if err != nil {
+			log.Println("Warn: Server version is not properly configured. Configure the server version properly to avoid failures.")
+			log.Printf("Error parsing server version: %s. Error: %s", SERVER_CONFIGS.ServerVersion, err)
+		}
 	}
 
 	// Get access token.

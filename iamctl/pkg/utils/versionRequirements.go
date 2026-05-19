@@ -50,9 +50,17 @@ var EntityMinVersionRequirements = map[ResourceType]string{
 
 // Maximum supported WSO2 Identity Server version for each resource type.
 // If a resource type is not present in this map, there is no upper version limit.
-const ()
+const (
+	MAX_VERSION_CERTIFICATES        = "6.1.0"
+	MAX_VERSION_SCRIPT_LIBRARIES    = "6.1.0"
+	MAX_VERSION_CHALLENGE_QUESTIONS = "6.1.0"
+)
 
-var EntityMaxSupportedVersion = map[ResourceType]string{}
+var EntityMaxSupportedVersion = map[ResourceType]string{
+	CERTIFICATES:        MAX_VERSION_CERTIFICATES,
+	SCRIPT_LIBRARIES:    MAX_VERSION_SCRIPT_LIBRARIES,
+	CHALLENGE_QUESTIONS: MAX_VERSION_CHALLENGE_QUESTIONS,
+}
 
 // Minimum WSO2 Identity Server version requirements for resource-specific APIs
 const (
