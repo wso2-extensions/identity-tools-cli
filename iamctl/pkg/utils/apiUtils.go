@@ -201,13 +201,13 @@ func SendImportRequest(importFilePath, fileData string, resourceType ResourceTyp
 	}
 
 	request, err := http.NewRequest("POST", reqUrl, body)
+	if err != nil {
+		return nil, fmt.Errorf("error when creating the import request: %s", err)
+	}
 	request.Header.Add("Content-Type", writer.FormDataContentType())
 	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
 	defer request.Body.Close()
 
-	if err != nil {
-		return nil, fmt.Errorf("error when creating the import request: %s", err)
-	}
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -268,13 +268,13 @@ func SendUpdateRequest(resourceId, importFilePath, fileData string, resourceType
 	}
 
 	request, err := http.NewRequest("PUT", formattedReqUrl, body)
+	if err != nil {
+		return fmt.Errorf("error when creating the import request: %s", err)
+	}
 	request.Header.Add("Content-Type", writer.FormDataContentType())
 	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
 	defer request.Body.Close()
 
-	if err != nil {
-		return fmt.Errorf("error when creating the import request: %s", err)
-	}
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
