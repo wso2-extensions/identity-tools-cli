@@ -38,6 +38,8 @@ const EMAIL_PROVIDERS_CONFIG = "EMAIL_PROVIDERS"
 const SMS_PROVIDERS_CONFIG = "SMS_PROVIDERS"
 const ACTIONS_CONFIG = "ACTIONS"
 const ORGANIZATIONS_CONFIG = "ORGANIZATIONS"
+const BRANDING_PREFERENCES_CONFIG = "BRANDING_PREFERENCES"
+const CUSTOM_TEXTS_CONFIG = "CUSTOM_TEXTS"
 
 // Tool configs
 const EXCLUDE_CONFIG = "EXCLUDE"
@@ -83,7 +85,12 @@ const (
 	SMS_PROVIDERS         ResourceType = "SmsProviders"
 	SMS_TEMPLATES         ResourceType = "SmsTemplates"
 	ACTIONS               ResourceType = "Actions"
+	BRANDING_PREFERENCES  ResourceType = "BrandingPreferences"
+	CUSTOM_TEXTS          ResourceType = "CustomTexts"
 )
+
+// Parent resource types
+const BRANDING ResourceType = "Branding"
 
 // Sub resource types
 const WORKFLOW_ASSOCIATIONS ResourceType = "WorkflowAssociations"

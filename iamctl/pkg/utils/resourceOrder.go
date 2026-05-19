@@ -44,4 +44,5 @@ var ResourceOrder = []ResourceType{
 	VALIDATION_RULES,
 	ACTIONS, // Dependency: Applications, Claims
 	ORGANIZATIONS,
+	BRANDING,
 }

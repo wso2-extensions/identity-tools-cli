@@ -299,16 +299,22 @@ func SendUpdateRequest(resourceId, importFilePath, fileData string, resourceType
 	return fmt.Errorf("unexpected error when importing resource: %s", resp.Status)
 }
 
-func SendDeleteRequest(resourceId string, resourceType ResourceType) error {
+func SendDeleteRequest(resourceId string, resourceType ResourceType, opts ...SendOption) error {
 
+	cfg := applySendOptions(opts)
 	reqUrl := buildRequestUrl(DELETE, resourceType, resourceId)
 	request, err := http.NewRequest("DELETE", reqUrl, bytes.NewBuffer(nil))
-	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
-	defer request.Body.Close()
-
 	if err != nil {
 		return fmt.Errorf("error when creating the delete request: %s", err)
 	}
+	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
+
+	query := request.URL.Query()
+	for k, v := range cfg.queryParams {
+		query.Add(k, v)
+	}
+	request.URL.RawQuery = query.Encode()
+	defer request.Body.Close()
 
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -331,9 +337,9 @@ func SendDeleteRequest(resourceId string, resourceType ResourceType) error {
 	return fmt.Errorf("unexpected error when deleting resource: %s", resp.Status)
 }
 
-func GetResourceData(resourceType ResourceType, resourceId string) (interface{}, error) {
+func GetResourceData(resourceType ResourceType, resourceId string, opts ...SendOption) (interface{}, error) {
 
-	body, err := SendGetRequest(resourceType, resourceId)
+	body, err := SendGetRequest(resourceType, resourceId, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -351,10 +357,12 @@ func WithContentType(ct string) SendOption {
 
 // WithPathSuffix appends a suffix to the request URL. Only used in POST requests
 func WithPathSuffix(suffix string) SendOption {
+
 	return func(c *sendConfig) { c.pathSuffix = suffix }
 }
 
 func WithQueryParams(params map[string]string) SendOption {
+
 	return func(c *sendConfig) { c.queryParams = params }
 }
 
@@ -378,6 +386,11 @@ func SendGetRequest(resourceType ResourceType, resourceId string, opts ...SendOp
 
 	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
 	request.Header.Set("Accept", cfg.contentType)
+	query := request.URL.Query()
+	for k, v := range cfg.queryParams {
+		query.Add(k, v)
+	}
+	request.URL.RawQuery = query.Encode()
 
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -624,6 +637,10 @@ func getResourcePath(resourceType ResourceType) string {
 		return "notification/sms/template-types"
 	case ACTIONS:
 		return "actions"
+	case BRANDING_PREFERENCES:
+		return "branding-preference"
+	case CUSTOM_TEXTS:
+		return "branding-preference/text"
 	}
 	return ""
 }
@@ -713,4 +730,9 @@ func addQueryParams(reqURL string, resourceType ResourceType, operation string) 
 
 	url.RawQuery = queryParams.Encode()
 	return url.String()
+}
+
+func IsResourceNotFound(err error) bool {
+
+	return err != nil && strings.Contains(err.Error(), ErrorCodes[404])
 }

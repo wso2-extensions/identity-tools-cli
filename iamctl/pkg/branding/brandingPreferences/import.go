@@ -1,0 +1,135 @@
+/**
+* Copyright (c) 2026, WSO2 LLC. (https://www.wso2.com).
+*
+* WSO2 LLC. licenses this file to you under the Apache License,
+* Version 2.0 (the "License"); you may not use this file except
+* in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied. See the License for the
+* specific language governing permissions and limitations
+* under the License.
+ */
+
+package brandingPreferences
+
+import (
+	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
+
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
+)
+
+func ImportAll(parentDir string) {
+
+	log.Println("Importing branding preferences...")
+	importFilePath := filepath.Join(parentDir, utils.BRANDING_PREFERENCES.String())
+
+	if !utils.IsEntitySupportedInVersion(utils.BRANDING_PREFERENCES) || utils.IsResourceTypeExcluded(utils.BRANDING_PREFERENCES) {
+		return
+	}
+	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
+		log.Println("No branding preferences to import.")
+		return
+	}
+
+	isDeployed, err := isBrandingPreferencesExist()
+	if err != nil {
+		log.Println("Error retrieving deployed branding preferences:", err)
+		return
+	}
+	filePath, fileExists, err := getBrandingPreferencesFilePath(importFilePath)
+	if err != nil {
+		log.Println("Error reading branding preferences file path:", err)
+		return
+	}
+
+	if !fileExists {
+		if utils.TOOL_CONFIGS.AllowDelete && isDeployed {
+			removeDeletedDeployedBrandingPreferences()
+		}
+		return
+	}
+
+	err = importBrandingPreferences(filePath, isDeployed)
+	if err != nil {
+		utils.UpdateFailureSummary(utils.BRANDING_PREFERENCES, resourceFileName)
+		log.Println("Error while importing branding preferences:", err)
+	}
+}
+
+func importBrandingPreferences(filePath string, exists bool) error {
+
+	format, err := utils.FormatFromExtension(filepath.Ext(filePath))
+	if err != nil {
+		return fmt.Errorf("unsupported file format for branding preferences: %w", err)
+	}
+	fileBytes, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("error when reading branding preferences file: %w", err)
+	}
+
+	keywordMapping := getBrandingPreferencesKeywordMapping()
+	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), keywordMapping)
+
+	jsonBody, err := utils.PrepareJSONRequestBody([]byte(modifiedFileData), format, utils.BRANDING_PREFERENCES)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return createBrandingPreferences(jsonBody)
+	}
+	return updateBrandingPreferences(jsonBody)
+}
+
+func createBrandingPreferences(jsonBody []byte) error {
+
+	log.Println("Creating branding preferences.")
+
+	resp, err := utils.SendPostRequest(utils.BRANDING_PREFERENCES, jsonBody)
+	if err != nil {
+		return fmt.Errorf("error when creating branding preferences: %w", err)
+	}
+	defer resp.Body.Close()
+
+	utils.UpdateSuccessSummary(utils.BRANDING_PREFERENCES, utils.IMPORT)
+	log.Println("Branding preferences created successfully.")
+	return nil
+}
+
+func updateBrandingPreferences(jsonBody []byte) error {
+
+	log.Println("Updating branding preferences.")
+
+	resp, err := utils.SendPutRequest(utils.BRANDING_PREFERENCES, "", jsonBody)
+	if err != nil {
+		return fmt.Errorf("error when updating branding preferences: %w", err)
+	}
+	defer resp.Body.Close()
+
+	utils.UpdateSuccessSummary(utils.BRANDING_PREFERENCES, utils.UPDATE)
+	log.Println("Branding preferences updated successfully.")
+	return nil
+}
+
+func removeDeletedDeployedBrandingPreferences() {
+
+	log.Printf("Branding preferences not found locally. Deleting preferences.")
+
+	if err := utils.SendDeleteRequest("", utils.BRANDING_PREFERENCES); err != nil {
+		utils.UpdateFailureSummary(utils.BRANDING_PREFERENCES, resourceFileName)
+		log.Println("Error while deleting branding preferences:", err)
+	} else {
+		utils.UpdateSuccessSummary(utils.BRANDING_PREFERENCES, utils.DELETE)
+		log.Println("Branding preferences deleted successfully.")
+	}
+}

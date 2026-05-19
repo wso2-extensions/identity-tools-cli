@@ -73,6 +73,8 @@ type ToolConfigs struct {
 	SmsTemplateConfigs         map[string]interface{} `json:"SMS_TEMPLATES"`
 	ActionConfigs              map[string]interface{} `json:"ACTIONS"`
 	OrganizationConfigs        map[string]interface{} `json:"ORGANIZATIONS"`
+	BrandingPreferenceConfigs  map[string]interface{} `json:"BRANDING_PREFERENCES"`
+	CustomTextConfigs          map[string]interface{} `json:"CUSTOM_TEXTS"`
 }
 
 type KeywordConfigs struct {
@@ -96,6 +98,8 @@ type KeywordConfigs struct {
 	SmsTemplateConfigs         map[string]interface{} `json:"SMS_TEMPLATES"`
 	ActionConfigs              map[string]interface{} `json:"ACTIONS"`
 	OrganizationConfigs        map[string]interface{} `json:"ORGANIZATIONS"`
+	BrandingPreferenceConfigs  map[string]interface{} `json:"BRANDING_PREFERENCES"`
+	CustomTextConfigs          map[string]interface{} `json:"CUSTOM_TEXTS"`
 }
 
 var SERVER_CONFIGS ServerConfigs
