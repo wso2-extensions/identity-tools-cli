@@ -206,7 +206,7 @@ func replaceRuleReferences(actionMap map[string]interface{}) error {
 			}
 			newVal, found := appMap[oldVal]
 			if !found {
-				return fmt.Errorf("referenced application '%s' has not been exported", oldVal)
+				return fmt.Errorf("referenced application '%s' has not been succesfuly handled", oldVal)
 			}
 			exprMap["value"] = newVal
 		}

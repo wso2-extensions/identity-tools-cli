@@ -55,7 +55,7 @@ func ImportTemplateType(rt utils.ResourceType, typeId, localTypePath string, key
 		appName := appDirEntry.Name()
 		appId, ok := appMap[appName]
 		if !ok {
-			return fmt.Errorf("referenced application with identifier '%s' has not been exported", appName)
+			return fmt.Errorf("referenced application with identifier '%s' has not been imported", appName)
 		}
 		localAppDirs[appName] = struct{}{}
 

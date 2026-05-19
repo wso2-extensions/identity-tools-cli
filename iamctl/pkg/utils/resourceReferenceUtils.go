@@ -114,7 +114,7 @@ func ReplaceValueAtPath(resourceData interface{}, path string, identifierMap map
 		}
 		newValue, exists := identifierMap[v]
 		if !exists {
-			return fmt.Errorf("referenced resource with identifier '%s' has not been exported", v)
+			return fmt.Errorf("referenced resource with identifier '%s' has not been succesfuly handled", v)
 		}
 		ReplaceValue(resourceData, path, newValue)
 	case []interface{}:
@@ -146,7 +146,7 @@ func ReplaceArrayReferences(arrayVal []interface{}, identifierMap map[string]str
 
 		newValue, exists := identifierMap[strElem]
 		if !exists {
-			return nil, fmt.Errorf("referenced resource with identifier '%s' has not been exported", strElem)
+			return nil, fmt.Errorf("referenced resource with identifier '%s' has not been succesfuly handled", strElem)
 		}
 		newArray[i] = newValue
 	}

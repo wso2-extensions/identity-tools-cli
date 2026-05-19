@@ -228,7 +228,7 @@ func validateApiResourceRef(reference, apiType string) error {
 	if apiType == "BUSINESS" {
 		resourceMap := utils.GetResourceIdentifierMap(utils.API_RESOURCES)
 		if _, ok := resourceMap[reference]; !ok {
-			return fmt.Errorf("referenced API resource with identifier '%s' has not been exported", reference)
+			return fmt.Errorf("referenced API resource with identifier '%s' has not been succesfuly handled", reference)
 		}
 	}
 	return nil
