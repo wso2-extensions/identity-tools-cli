@@ -112,16 +112,16 @@ func exportConnector(connectorId, connectorName, categoryId, categoryDir string,
 
 	exportedFileName := utils.GetExportedFilePath(categoryDir, connectorName, format)
 
-	modifiedData, err := utils.ProcessExportedData(connectorData, exportedFileName, format, keywordMapping, utils.GOVERNANCE_CONNECTORS)
-	if err != nil {
-		return fmt.Errorf("error while processing exported content: %w", err)
-	}
-
 	if connectorId == passwordExpiryConnectorId {
-		if err := processPasswordExpiryConnector(modifiedData, nil); err != nil {
+		if err := processPasswordExpiryConnector(connectorData, nil); err != nil {
 			return fmt.Errorf("error processing password expiry connector: %w", err)
 		}
 		log.Println("Warn: Group-based password expiry rules are not exported")
+	}
+
+	modifiedData, err := utils.ProcessExportedData(connectorData, exportedFileName, format, keywordMapping, utils.GOVERNANCE_CONNECTORS)
+	if err != nil {
+		return fmt.Errorf("error while processing exported content: %w", err)
 	}
 
 	modifiedFile, err := utils.Serialize(modifiedData, format, utils.GOVERNANCE_CONNECTORS)
