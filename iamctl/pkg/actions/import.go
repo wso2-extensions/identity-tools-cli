@@ -177,6 +177,9 @@ func updateAction(typeName, actionId, actionName, status string, actionMap map[s
 
 	log.Printf("Updating action: %s of type %s", actionName, typeName)
 
+	if err := addMissingFields(actionMap, typeName, actionId); err != nil {
+		return fmt.Errorf("error adding missing fields: %w", err)
+	}
 	jsonBody, err := utils.Serialize(actionMap, utils.FormatJSON, utils.ACTIONS)
 	if err != nil {
 		return fmt.Errorf("error when serializing action data: %w", err)
