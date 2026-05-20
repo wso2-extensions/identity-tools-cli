@@ -204,17 +204,29 @@ func processFederatedAuthenticators(idpId string, idpStruct idpConfig, idpMap ma
 		if err != nil {
 			return fmt.Errorf("error while retrieving federated authenticator %s: %w", authId, err)
 		}
-		if excludeSecrets {
-			fullAuthMap, ok := fullAuth.(map[string]interface{})
-			if !ok {
-				return fmt.Errorf("unexpected format for retrieved federated authenticator: %s", authId)
+		fullAuthMap, ok := fullAuth.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for retrieved federated authenticator: %s", authId)
+		}
+
+		definedBy, ok := fullAuthMap["definedBy"].(string)
+		if !ok {
+			return fmt.Errorf("unexpected format for definedBy field of federated authenticator: %s", authId)
+		}
+		if definedBy == "USER" {
+			if !excludeSecrets {
+				log.Println("Warn: Secrets exclusion cannot be disabled for custom external user authenticators. All secrets will be masked.")
 			}
+			if err := processEndpointAuthProperties(fullAuthMap); err != nil {
+				return fmt.Errorf("error processing endpoint auth properties for authenticator %s: %v", authId, err)
+			}
+		} else if excludeSecrets {
 			if err := maskSecretProperties(fullAuthMap, "meta/federated-authenticators/"+authId); err != nil {
 				return fmt.Errorf("error masking secrets for authenticator %s: %v", authId, err)
 			}
 		}
 
-		auths = append(auths, fullAuth)
+		auths = append(auths, fullAuthMap)
 	}
 	fedAuths["authenticators"] = auths
 
@@ -314,6 +326,58 @@ func processImplicitAssociation(idpMap map[string]interface{}) error {
 	if len(attrs) == 0 {
 		assoc["lookupAttribute"] = append(attrs, "")
 	}
+	return nil
+}
+
+func processEndpointAuthProperties(authenticatorMap map[string]interface{}) error {
+
+	endpoint, ok := authenticatorMap["endpoint"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for endpoint")
+	}
+	auth, ok := endpoint["authentication"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for endpoint authentication")
+	}
+	authType, ok := auth["type"].(string)
+	if !ok {
+		return fmt.Errorf("unexpected format for endpoint authentication type")
+	}
+
+	var props map[string]interface{}
+	if rawProps, exists := auth["properties"]; !exists {
+		props = map[string]interface{}{}
+	} else {
+		props, ok = rawProps.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for authentication properties")
+		}
+	}
+
+	switch authType {
+	case "NONE":
+	case "BASIC":
+		if _, exists := props["username"]; !exists {
+			props["username"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+		}
+		props["password"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+	case "BEARER":
+		props["accessToken"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+	case "API_KEY":
+		if _, exists := props["header"]; !exists {
+			props["header"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+		}
+		props["value"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+	case "CLIENT_CREDENTIAL":
+		props["clientSecret"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+	case "PASSWORD_CREDENTIAL":
+		props["clientSecret"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+		props["password"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+	default:
+		return fmt.Errorf("unknown endpoint authentication type: %s", authType)
+	}
+
+	auth["properties"] = props
 	return nil
 }
 
