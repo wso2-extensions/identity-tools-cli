@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"regexp"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -484,6 +485,31 @@ func patchIdp(idpId string, patchOps []map[string]interface{}) error {
 	}
 	defer resp.Body.Close()
 	return nil
+}
+
+func removeProvisioningRole(fileContent []byte) []byte {
+
+	yamlPattern := regexp.MustCompile(`(?m)(^\s*provisioningRole:)[^\n]*`)
+	result := yamlPattern.ReplaceAllString(string(fileContent), `${1} ""`)
+
+	jsonPattern := regexp.MustCompile(`("provisioningRole"\s*:\s*)"[^"]*"`)
+	result = jsonPattern.ReplaceAllString(result, `${1}""`)
+
+	return []byte(result)
+}
+
+func processIdpGroupFields(fileContent []byte) []byte {
+
+	idpGroupId := regexp.MustCompile(`(?m)^\s+-?\s*idpGroupId:[^\n]*\n`)
+	result := idpGroupId.ReplaceAllString(string(fileContent), "")
+
+	idpId := regexp.MustCompile(`(?m)^\s+-?\s*idpId:[^\n]*\n`)
+	result = idpId.ReplaceAllString(result, "")
+
+	subField := regexp.MustCompile(`(?m)^( +)  (idpGroupName:)`)
+	result = subField.ReplaceAllString(result, "${1}- ${2}")
+
+	return []byte(result)
 }
 
 func init() {
