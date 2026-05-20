@@ -492,8 +492,23 @@ func patchIdp(idpId string, patchOps []map[string]interface{}) error {
 	return nil
 }
 
+func removeOutboundProvisioningRoles(idpMap map[string]interface{}) error {
+
+	if shouldRemoveOutboundProvisioningRoles() {
+		roles, ok := idpMap["roles"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for roles")
+		}
+		delete(roles, "outboundProvisioningRoles")
+	}
+	return nil
+}
+
 func removeProvisioningRole(fileContent []byte) []byte {
 
+	if !shouldRemoveOutboundProvisioningRoles() {
+		return fileContent
+	}
 	yamlPattern := regexp.MustCompile(`(?m)(^\s*provisioningRole:)[^\n]*`)
 	result := yamlPattern.ReplaceAllString(string(fileContent), `${1} ""`)
 
@@ -520,4 +535,14 @@ func processIdpGroupFields(fileContent []byte) []byte {
 func init() {
 
 	utils.DataPreprocessFuncs[utils.IDENTITY_PROVIDERS] = preprocessIdpKeys
+}
+
+func shouldRemoveOutboundProvisioningRoles() bool {
+
+	if utils.SERVER_CONFIGS.ServerVersion == "" {
+		return true
+	}
+	cmp, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_OUTBOUND_PROV_GROUPS)
+	// Consider outbound provisioning groups exist when the server version is not properly configured
+	return err != nil || cmp >= 0
 }

@@ -89,8 +89,8 @@ func ExportAll(exportFilePath string, format string) {
 			log.Println("Resident identity provider exported successfully")
 		}
 	}
-	if exportAPIExists {
-		log.Println("Warn: Provisioning roles of identity providers are not exported")
+	if shouldRemoveOutboundProvisioningRoles() {
+		log.Println("Warn: Outbound provisioning groups of identity providers are not exported")
 	}
 }
 
@@ -204,6 +204,9 @@ func getIdp(idpId string, excludeSecrets bool) (map[string]interface{}, error) {
 	}
 	if err := processClaims(idpMap); err != nil {
 		return nil, fmt.Errorf("error while processing claims of IDP: %w", err)
+	}
+	if err := removeOutboundProvisioningRoles(idpMap); err != nil {
+		return nil, fmt.Errorf("error while processing outbound provisioning roles: %w", err)
 	}
 
 	return idpMap, nil

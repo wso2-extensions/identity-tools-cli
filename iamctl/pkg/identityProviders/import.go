@@ -79,8 +79,8 @@ func ImportAll(inputDirPath string) {
 			}
 		}
 	}
-	if exportAPIExists {
-		log.Println("Warn: Provisioning roles of identity providers are removed during import")
+	if shouldRemoveOutboundProvisioningRoles() {
+		log.Println("Warn: Outbound provisioning groups of identity providers are removed during import")
 	}
 }
 
