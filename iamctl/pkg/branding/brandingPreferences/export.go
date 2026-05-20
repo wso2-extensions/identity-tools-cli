@@ -37,7 +37,10 @@ func ExportAll(parentDir string, formatString string) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
-		os.MkdirAll(exportFilePath, 0700)
+		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
+			log.Println("Error creating branding preferences directory:", err)
+			return
+		}
 	}
 
 	err := exportBrandingPreferences(exportFilePath, formatString)

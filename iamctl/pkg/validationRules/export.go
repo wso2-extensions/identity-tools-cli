@@ -37,7 +37,10 @@ func ExportAll(exportFilePath string, format string) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
-		os.MkdirAll(exportFilePath, 0700)
+		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
+			log.Println("Error creating validation rules directory:", err)
+			return
+		}
 	}
 
 	err := exportValidationRules(exportFilePath, format)

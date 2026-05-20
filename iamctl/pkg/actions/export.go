@@ -47,7 +47,10 @@ func ExportAll(outputDirPath, format string) {
 	}
 
 	if _, err := os.Stat(actionsDir); os.IsNotExist(err) {
-		os.MkdirAll(actionsDir, 0700)
+		if err := os.MkdirAll(actionsDir, 0700); err != nil {
+			log.Println("Error creating actions directory:", err)
+			return
+		}
 	}
 
 	var typesWithActions []string
