@@ -188,7 +188,7 @@ func processPasswordExpiryConnector(data interface{}, deployedRuleNames []string
 			for i := 4; i < len(parts); i++ {
 				replacement, exists := roleMap[parts[i]]
 				if !exists {
-					return fmt.Errorf("referenced Role with identifier '%s' has not been succesfuly handled", parts[i])
+					return fmt.Errorf("referenced Role with identifier '%s' has not been successfully handled", parts[i])
 				}
 				parts[i] = replacement
 			}
