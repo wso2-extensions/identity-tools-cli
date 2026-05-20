@@ -36,15 +36,15 @@ func ExportAll(exportFilePath string, format string) {
 	// Export all applications to the Applications folder.
 	log.Println("Exporting applications...")
 	exportFilePath = filepath.Join(exportFilePath, utils.APPLICATIONS.String())
-	exportAPIExists := utils.ExportAPIExists(utils.APPLICATIONS)
-	deployedAppNames := getDeployedAppNames()
-
-	applicationAuthorizedApis.InitSupportedInVersion()
 	authAPIsOutputDir := applicationAuthorizedApis.GetOutputDirPath(exportFilePath)
 
 	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
 		return
 	}
+	exportAPIExists := utils.ExportAPIExists(utils.APPLICATIONS)
+	deployedAppNames := getDeployedAppNames()
+	applicationAuthorizedApis.InitSupportedInVersion()
+
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
 			log.Println("Error creating applications directory:", err)
