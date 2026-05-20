@@ -51,9 +51,11 @@ type idpConfig struct {
 			Connectors         []interface{} `json:"connectors" yaml:"connectors"`
 		} `json:"outboundConnectors" yaml:"outboundConnectors"`
 	} `json:"provisioning" yaml:"provisioning"`
-	Claims      interface{} `json:"claims" yaml:"claims"`
-	Roles       interface{} `json:"roles" yaml:"roles"`
-	Certificate *struct {
+	Claims              interface{} `json:"claims" yaml:"claims"`
+	Roles               interface{} `json:"roles" yaml:"roles"`
+	Groups              interface{} `json:"groups" yaml:"groups"`
+	ImplicitAssociation interface{} `json:"implicitAssociation" yaml:"implicitAssociation"`
+	Certificate         *struct {
 		Certificates []string `json:"certificates" yaml:"certificates"`
 		JwksUri      string   `json:"jwksUri" yaml:"jwksUri"`
 	} `json:"certificate" yaml:"certificate"`

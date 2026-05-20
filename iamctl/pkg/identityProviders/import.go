@@ -279,6 +279,30 @@ func updateIdpSubResources(idpId string, idpStruct idpConfig) error {
 		resp.Body.Close()
 	}
 
+	if idpStruct.Groups != nil {
+		body, err := json.Marshal(idpStruct.Groups)
+		if err != nil {
+			return fmt.Errorf("error marshalling groups: %w", err)
+		}
+		resp, err := utils.SendPutRequest(utils.IDENTITY_PROVIDERS, idpId+"/groups", body)
+		if err != nil {
+			return fmt.Errorf("error updating groups: %w", err)
+		}
+		resp.Body.Close()
+	}
+
+	if idpStruct.ImplicitAssociation != nil {
+		body, err := json.Marshal(idpStruct.ImplicitAssociation)
+		if err != nil {
+			return fmt.Errorf("error marshalling implicit association: %w", err)
+		}
+		resp, err := utils.SendPutRequest(utils.IDENTITY_PROVIDERS, idpId+"/implicit-association", body)
+		if err != nil {
+			return fmt.Errorf("error updating implicit association: %w", err)
+		}
+		resp.Body.Close()
+	}
+
 	if idpStruct.Provisioning != nil {
 		if idpStruct.Provisioning.Jit != nil {
 			body, err := json.Marshal(idpStruct.Provisioning.Jit)
