@@ -113,26 +113,40 @@ func processAuthProperties(actionMap map[string]interface{}) error {
 		return fmt.Errorf("unexpected format for authentication type")
 	}
 
+	var props map[string]interface{}
+	if rawProps, exists := auth["properties"]; !exists {
+		props = map[string]interface{}{}
+	} else {
+		props, ok = rawProps.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for authentication properties")
+		}
+	}
+
 	switch authType {
 	case "NONE":
-		auth["properties"] = map[string]interface{}{}
 	case "BASIC":
-		auth["properties"] = map[string]interface{}{
-			"username": utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES,
-			"password": utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES,
+		if _, exists := props["username"]; !exists {
+			props["username"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
 		}
+		props["password"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
 	case "BEARER":
-		auth["properties"] = map[string]interface{}{
-			"accessToken": utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES,
-		}
+		props["accessToken"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
 	case "API_KEY":
-		auth["properties"] = map[string]interface{}{
-			"header": utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES,
-			"value":  utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES,
+		if _, exists := props["header"]; !exists {
+			props["header"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
 		}
+		props["value"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+	case "CLIENT_CREDENTIAL":
+		props["clientSecret"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+	case "PASSWORD_CREDENTIAL":
+		props["clientSecret"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+		props["password"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
 	default:
 		return fmt.Errorf("unknown authentication type %s", authType)
 	}
+
+	auth["properties"] = props
 	return nil
 }
 
