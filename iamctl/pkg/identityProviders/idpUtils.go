@@ -296,6 +296,27 @@ func processClaims(idpMap map[string]interface{}) error {
 	return nil
 }
 
+func processImplicitAssociation(idpMap map[string]interface{}) error {
+
+	raw, exists := idpMap["implicitAssociation"]
+	if !exists {
+		return nil
+	}
+	assoc, ok := raw.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("invalid format for implicit association")
+	}
+
+	attrs, ok := assoc["lookupAttribute"].([]interface{})
+	if !ok {
+		return fmt.Errorf("invalid format for lookupAttribute in implicit association")
+	}
+	if len(attrs) == 0 {
+		assoc["lookupAttribute"] = append(attrs, "")
+	}
+	return nil
+}
+
 func maskSecretProperties(resourceMap map[string]interface{}, metaPath string) error {
 
 	body, err := utils.SendGetRequest(utils.IDENTITY_PROVIDERS, metaPath)
