@@ -64,12 +64,7 @@ func ExportAll(exportFilePath string, format string) {
 			if !utils.IsResourceExcluded(idp.Name, utils.TOOL_CONFIGS.IdpConfigs) {
 				log.Println("Exporting identity provider: ", idp.Name)
 
-				var err error
-				if exportAPIExists {
-					err = exportIdp(idp.Id, exportFilePath, format, excludeSecerts)
-				} else {
-					err = exportIdpWithCRUD(idp.Id, idp.Name, exportFilePath, format, excludeSecerts)
-				}
+				err := exportIdpWithCRUD(idp.Id, idp.Name, exportFilePath, format, excludeSecerts)
 				if err != nil {
 					utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, idp.Name)
 					log.Printf("Error while exporting identity providers: %s. %s", idp.Name, err)

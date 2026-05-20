@@ -94,10 +94,7 @@ func importIdp(idpId string, idpName string, importFilePath string, exportAPIExi
 	idpKeywordMapping := getIdpKeywordMapping(idpName)
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), idpKeywordMapping)
 
-	if exportAPIExists {
-		if idpId == "" {
-			return importIdentityProvider(idpName, importFilePath, modifiedFileData)
-		}
+	if exportAPIExists && idpId == utils.RESIDENT_IDP_NAME {
 		return updateIdentityProvider(idpId, idpName, importFilePath, modifiedFileData)
 	}
 
