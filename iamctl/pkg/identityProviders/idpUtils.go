@@ -74,6 +74,9 @@ var idpPatchSkipKeys = map[string]bool{
 	"provisioning":            true,
 	"claims":                  true,
 	"roles":                   true,
+	"groups":                  true,
+	"implicitAssociation":     true,
+	"templateId":              true,
 }
 
 func getIdpList() ([]identityProvider, error) {
