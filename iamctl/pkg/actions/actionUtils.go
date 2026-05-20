@@ -113,9 +113,14 @@ func processAuthProperties(actionMap map[string]interface{}) error {
 		return fmt.Errorf("unexpected format for authentication type")
 	}
 
-	props, exists := auth["properties"].(map[string]interface{})
-	if !exists {
+	var props map[string]interface{}
+	if rawProps, exists := auth["properties"]; !exists {
 		props = map[string]interface{}{}
+	} else {
+		props, ok = rawProps.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for authentication properties")
+		}
 	}
 
 	switch authType {
