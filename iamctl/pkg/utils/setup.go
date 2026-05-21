@@ -196,7 +196,7 @@ func loadToolConfigsFromFile(configFilePath string) (toolConfigs ToolConfigs) {
 		return toolConfigs
 	}
 
-	TOOL_CONFIGS.ExcludeSecrets = true
+	toolConfigs.ExcludeSecrets = true
 	err = json.Unmarshal(configFile, &toolConfigs)
 	if err != nil {
 		log.Fatalln("Tool configs are not in the correct format. Please check the config file.", err)
