@@ -125,7 +125,7 @@ func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets
 	body = removeProvisioningRole(body)
 
 	idpKeywordMapping := getIdpKeywordMapping(fileInfo.ResourceName)
-	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, idpKeywordMapping, utils.IDENTITY_PROVIDERS)
+	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, idpKeywordMapping, utils.IDENTITY_PROVIDERS_EXPORT_API)
 	if err != nil {
 		return fmt.Errorf("error while processing the exported content: %s", err)
 	}

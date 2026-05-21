@@ -98,6 +98,7 @@ const BRANDING ResourceType = "Branding"
 const WORKFLOW_ASSOCIATIONS ResourceType = "WorkflowAssociations"
 const API_RESOURCE_SCOPES ResourceType = "ApiResourceScopes"
 const APPLICATION_AUTHORIZED_APIS ResourceType = "ApplicationAuthorizedApis"
+const IDENTITY_PROVIDERS_EXPORT_API ResourceType = "IdentityProvidersExportAPI"
 
 // Config file names
 const SERVER_CONFIG_FILE = "serverConfig.json"
