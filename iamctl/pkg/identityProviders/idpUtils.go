@@ -308,6 +308,26 @@ func processClaims(idpMap map[string]interface{}) error {
 	return nil
 }
 
+func processGroups(idpMap map[string]interface{}) error {
+
+	raw, exists := idpMap["groups"]
+	if !exists {
+		return nil
+	}
+	groups, ok := raw.([]interface{})
+	if !ok {
+		return fmt.Errorf("invalid format for groups")
+	}
+	for _, grp := range groups {
+		group, ok := grp.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("invalid format for group")
+		}
+		delete(group, "id")
+	}
+	return nil
+}
+
 func processImplicitAssociation(idpMap map[string]interface{}) error {
 
 	raw, exists := idpMap["implicitAssociation"]

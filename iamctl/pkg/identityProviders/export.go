@@ -200,6 +200,9 @@ func getIdp(idpId string, excludeSecrets bool) (map[string]interface{}, error) {
 	if err := processClaims(idpMap); err != nil {
 		return nil, fmt.Errorf("error while processing claims of IDP: %w", err)
 	}
+	if err := processGroups(idpMap); err != nil {
+		return nil, fmt.Errorf("error while processing groups of IDP: %w", err)
+	}
 	if err := processImplicitAssociation(idpMap); err != nil {
 		return nil, fmt.Errorf("error while processing implicit association of IDP: %w", err)
 	}
