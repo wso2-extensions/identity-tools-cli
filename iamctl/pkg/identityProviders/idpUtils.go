@@ -215,7 +215,7 @@ func processFederatedAuthenticators(idpId string, idpStruct idpConfig, idpMap ma
 		}
 		if definedBy == "USER" {
 			if !excludeSecrets {
-				log.Println("Warn: Secrets exclusion cannot be disabled for custom external user authenticators. All secrets will be masked.")
+				log.Println("Warn: Secrets exclusion cannot be disabled for custom authenticators(service-based). All secrets will be masked.")
 			}
 			if err := processEndpointAuthProperties(fullAuthMap); err != nil {
 				return fmt.Errorf("error processing endpoint auth properties for authenticator %s: %v", authId, err)
