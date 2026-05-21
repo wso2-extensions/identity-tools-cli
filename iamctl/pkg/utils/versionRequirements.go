@@ -76,6 +76,7 @@ const (
 	MIN_VERSION_ASSOCIATION_SHARING_ACROSS_WORKFLOWS = "7.3.0"
 	MIN_VERSION_WORKFLOW_ASSOCIATION_RULES           = "7.3.0"
 	MIN_VERSION_OUTBOUND_PROV_GROUPS                 = "7.3.0"
+	MIN_VERSION_ROLE_CLAIM_REMOVED                   = "6.0.0"
 )
 
 var ExportAPIMinVersionRequirements = map[ResourceType]string{
