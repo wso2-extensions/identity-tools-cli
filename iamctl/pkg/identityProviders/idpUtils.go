@@ -421,10 +421,6 @@ func maskSecretProperties(resourceMap map[string]interface{}, metaPath string) e
 
 func preprocessIdpKeys(data interface{}) (interface{}, error) {
 
-	if utils.ExportAPIExists(utils.IDENTITY_PROVIDERS) {
-		return data, nil
-	}
-
 	data = utils.ConvertToStringKeyMap(data)
 	d, ok := data.(map[string]interface{})
 	if !ok {

@@ -201,6 +201,7 @@ var idpGetAPIArrayIdentifiers = map[string]string{
 	"claimMappings":      "localClaim.uri",
 	"roleMappings":       "localRole",
 	"provisioningClaims": "claim.uri",
+	"groups":             "name",
 }
 
 var userStoreArrayIdentifiers = map[string]string{
