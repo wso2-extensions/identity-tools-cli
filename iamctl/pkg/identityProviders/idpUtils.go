@@ -398,6 +398,13 @@ func processEndpointAuthProperties(authenticatorMap map[string]interface{}) erro
 	}
 
 	auth["properties"] = props
+
+	if _, exists := endpoint["allowedHeaders"]; !exists {
+		endpoint["allowedHeaders"] = []interface{}{}
+	}
+	if _, exists := endpoint["allowedParameters"]; !exists {
+		endpoint["allowedParameters"] = []interface{}{}
+	}
 	return nil
 }
 
