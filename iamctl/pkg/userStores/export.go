@@ -55,7 +55,7 @@ func ExportAll(exportFilePath string, format string) {
 	if err != nil {
 		log.Println("Error: when exporting user stores.", err)
 	} else {
-		if !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.ApplicationConfigs) {
+		if !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.UserStoreConfigs) {
 			log.Println("Warn: Secrets exclusion cannot be disabled for user stores. All secrets will be masked.")
 		}
 		for _, userstore := range userstores {
