@@ -304,6 +304,17 @@ func processClaims(idpMap map[string]interface{}) error {
 		}
 		if len(claim) == 0 {
 			claims[claimKey] = map[string]interface{}{"uri": ""}
+			continue
+		}
+
+		if claimKey == "roleClaim" {
+			roleClaimUri, ok := claim["uri"].(string)
+			if !ok {
+				return fmt.Errorf("invalid format for roleClaim uri")
+			}
+			if shouldRemoveRoleClaim() && roleClaimUri == "http://wso2.org/claims/role" {
+				claim["uri"] = ""
+			}
 		}
 	}
 	return nil
@@ -680,5 +691,15 @@ func shouldRemoveOutboundProvisioningRoles() bool {
 	}
 	cmp, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_OUTBOUND_PROV_GROUPS)
 	// Consider outbound provisioning groups exist when the server version is not properly configured
+	return err != nil || cmp >= 0
+}
+
+func shouldRemoveRoleClaim() bool {
+
+	if utils.SERVER_CONFIGS.ServerVersion == "" {
+		return true
+	}
+	cmp, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_ROLE_CLAIM_REMOVED)
+	// Consider role claim unsupported when the server version is not properly configured
 	return err != nil || cmp >= 0
 }
