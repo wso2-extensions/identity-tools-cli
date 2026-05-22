@@ -534,32 +534,50 @@ func buildCertificatePatchOps(idpId string, localIdpStruct idpConfig) ([]map[str
 
 	deployedCert := deployedIdp.Certificate
 	localCert := localIdpStruct.Certificate
-
 	if deployedCert == nil && localCert == nil {
 		return nil, nil
 	}
 
 	deployedHasJwks := deployedCert != nil && deployedCert.JwksUri != ""
-	deployedHasCerts := deployedCert != nil && len(deployedCert.Certificates) > 0
 	localHasJwks := localCert != nil && localCert.JwksUri != ""
-	localHasCerts := localCert != nil && len(localCert.Certificates) > 0
+
+	localCertSet := make(map[string]bool)
+	if localCert != nil {
+		for _, c := range localCert.Certificates {
+			localCertSet[c] = true
+		}
+	}
+	deployedCertSet := make(map[string]bool)
+	if deployedCert != nil {
+		for _, c := range deployedCert.Certificates {
+			deployedCertSet[c] = true
+		}
+	}
 
 	var patchOps []map[string]interface{}
 
-	// Remove first, then add (order matters for mutually exclusive fields)
+	// JwksUri: removal (remove before add; mutually exclusive with certificates)
 	if deployedHasJwks && !localHasJwks {
 		patchOps = append(patchOps, map[string]interface{}{
 			"operation": "REMOVE",
 			"path":      "/certificate/jwksUri",
 		})
 	}
-	if deployedHasCerts && !localHasCerts {
-		patchOps = append(patchOps, map[string]interface{}{
-			"operation": "REMOVE",
-			"path":      "/certificate/certificates/0",
-		})
+
+	// Certificates: removals (descending index to keep remaining indexes stable)
+	if deployedCert != nil {
+		for i := len(deployedCert.Certificates) - 1; i >= 0; i-- {
+			if !localCertSet[deployedCert.Certificates[i]] {
+				patchOps = append(patchOps, map[string]interface{}{
+					"operation": "REMOVE",
+					"path":      fmt.Sprintf("/certificate/certificates/%d", i),
+					"value":     nil,
+				})
+			}
+		}
 	}
 
+	// JwksUri: addition or replacement
 	if localHasJwks {
 		op := "ADD"
 		if deployedHasJwks {
@@ -571,18 +589,27 @@ func buildCertificatePatchOps(idpId string, localIdpStruct idpConfig) ([]map[str
 			"value":     localCert.JwksUri,
 		})
 	}
-	if localHasCerts {
-		op := "ADD"
-		if deployedHasCerts {
-			op = "REPLACE"
-		}
-		patchOps = append(patchOps, map[string]interface{}{
-			"operation": op,
-			"path":      "/certificate/certificates/0",
-			"value":     localCert.Certificates[0],
-		})
-	}
 
+	// Certificates: additions (appended after the surviving certs)
+	if localCert != nil {
+		keptCount := 0
+		for c := range deployedCertSet {
+			if localCertSet[c] {
+				keptCount++
+			}
+		}
+		addIndex := keptCount
+		for _, c := range localCert.Certificates {
+			if !deployedCertSet[c] {
+				patchOps = append(patchOps, map[string]interface{}{
+					"operation": "ADD",
+					"path":      fmt.Sprintf("/certificate/certificates/%d", addIndex),
+					"value":     c,
+				})
+				addIndex++
+			}
+		}
+	}
 	return patchOps, nil
 }
 
