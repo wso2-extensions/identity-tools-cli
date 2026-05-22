@@ -64,12 +64,7 @@ func ExportAll(exportFilePath string, format string) {
 			if !utils.IsResourceExcluded(idp.Name, utils.TOOL_CONFIGS.IdpConfigs) {
 				log.Println("Exporting identity provider: ", idp.Name)
 
-				var err error
-				if exportAPIExists {
-					err = exportIdp(idp.Id, exportFilePath, format, excludeSecerts)
-				} else {
-					err = exportIdpWithCRUD(idp.Id, idp.Name, exportFilePath, format, excludeSecerts)
-				}
+				err := exportIdpWithCRUD(idp.Id, idp.Name, exportFilePath, format, excludeSecerts)
 				if err != nil {
 					utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, idp.Name)
 					log.Printf("Error while exporting identity providers: %s. %s", idp.Name, err)
@@ -89,8 +84,8 @@ func ExportAll(exportFilePath string, format string) {
 			log.Println("Resident identity provider exported successfully")
 		}
 	}
-	if exportAPIExists {
-		log.Println("Warn: Provisioning roles of identity providers are not exported")
+	if shouldRemoveOutboundProvisioningRoles() {
+		log.Println("Warn: Outbound provisioning groups of identity providers are not exported")
 	}
 }
 
@@ -130,7 +125,7 @@ func exportIdp(idpId string, outputDirPath string, format string, excludeSecrets
 	body = removeProvisioningRole(body)
 
 	idpKeywordMapping := getIdpKeywordMapping(fileInfo.ResourceName)
-	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, idpKeywordMapping, utils.IDENTITY_PROVIDERS)
+	modifiedFile, err := utils.ProcessExportedContent(exportedFileName, body, idpKeywordMapping, utils.IDENTITY_PROVIDERS_EXPORT_API)
 	if err != nil {
 		return fmt.Errorf("error while processing the exported content: %s", err)
 	}
@@ -204,6 +199,15 @@ func getIdp(idpId string, excludeSecrets bool) (map[string]interface{}, error) {
 	}
 	if err := processClaims(idpMap); err != nil {
 		return nil, fmt.Errorf("error while processing claims of IDP: %w", err)
+	}
+	if err := processGroups(idpMap); err != nil {
+		return nil, fmt.Errorf("error while processing groups of IDP: %w", err)
+	}
+	if err := processImplicitAssociation(idpMap); err != nil {
+		return nil, fmt.Errorf("error while processing implicit association of IDP: %w", err)
+	}
+	if err := removeOutboundProvisioningRoles(idpMap); err != nil {
+		return nil, fmt.Errorf("error while processing outbound provisioning roles: %w", err)
 	}
 
 	return idpMap, nil

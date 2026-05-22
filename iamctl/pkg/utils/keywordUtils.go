@@ -184,10 +184,9 @@ func GetArrayIdentifiers(resourceType ResourceType) map[string]string {
 		}
 		return appGetAPIArrayIdentifiers
 	case IDENTITY_PROVIDERS:
-		if ExportAPIExists(IDENTITY_PROVIDERS) {
-			return idpExportAPIArrayIdentifiers
-		}
 		return idpGetAPIArrayIdentifiers
+	case IDENTITY_PROVIDERS_EXPORT_API:
+		return idpExportAPIArrayIdentifiers
 	case USERSTORES:
 		return userStoreArrayIdentifiers
 	case CLAIMS:

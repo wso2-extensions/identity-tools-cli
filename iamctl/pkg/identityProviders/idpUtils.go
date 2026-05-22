@@ -51,9 +51,11 @@ type idpConfig struct {
 			Connectors         []interface{} `json:"connectors" yaml:"connectors"`
 		} `json:"outboundConnectors" yaml:"outboundConnectors"`
 	} `json:"provisioning" yaml:"provisioning"`
-	Claims      interface{} `json:"claims" yaml:"claims"`
-	Roles       interface{} `json:"roles" yaml:"roles"`
-	Certificate *struct {
+	Claims              interface{} `json:"claims" yaml:"claims"`
+	Roles               interface{} `json:"roles" yaml:"roles"`
+	Groups              interface{} `json:"groups" yaml:"groups"`
+	ImplicitAssociation interface{} `json:"implicitAssociation" yaml:"implicitAssociation"`
+	Certificate         *struct {
 		Certificates []string `json:"certificates" yaml:"certificates"`
 		JwksUri      string   `json:"jwksUri" yaml:"jwksUri"`
 	} `json:"certificate" yaml:"certificate"`
@@ -74,6 +76,9 @@ var idpPatchSkipKeys = map[string]bool{
 	"provisioning":            true,
 	"claims":                  true,
 	"roles":                   true,
+	"groups":                  true,
+	"implicitAssociation":     true,
+	"templateId":              true,
 }
 
 func getIdpList() ([]identityProvider, error) {
@@ -199,17 +204,30 @@ func processFederatedAuthenticators(idpId string, idpStruct idpConfig, idpMap ma
 		if err != nil {
 			return fmt.Errorf("error while retrieving federated authenticator %s: %w", authId, err)
 		}
-		if excludeSecrets {
-			fullAuthMap, ok := fullAuth.(map[string]interface{})
-			if !ok {
-				return fmt.Errorf("unexpected format for retrieved federated authenticator: %s", authId)
+		fullAuthMap, ok := fullAuth.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for retrieved federated authenticator: %s", authId)
+		}
+
+		definedByRaw, exists := fullAuthMap["definedBy"]
+		definedBy, ok := definedByRaw.(string)
+		if exists && !ok {
+			return fmt.Errorf("unexpected format for definedBy field of federated authenticator: %s", authId)
+		}
+		if definedBy == "USER" {
+			if !excludeSecrets {
+				log.Println("Warn: Secrets exclusion cannot be disabled for custom authenticators(service-based). All secrets will be masked.")
 			}
+			if err := processEndpointAuthProperties(fullAuthMap); err != nil {
+				return fmt.Errorf("error processing endpoint auth properties for authenticator %s: %v", authId, err)
+			}
+		} else if excludeSecrets {
 			if err := maskSecretProperties(fullAuthMap, "meta/federated-authenticators/"+authId); err != nil {
 				return fmt.Errorf("error masking secrets for authenticator %s: %v", authId, err)
 			}
 		}
 
-		auths = append(auths, fullAuth)
+		auths = append(auths, fullAuthMap)
 	}
 	fedAuths["authenticators"] = auths
 
@@ -291,6 +309,106 @@ func processClaims(idpMap map[string]interface{}) error {
 	return nil
 }
 
+func processGroups(idpMap map[string]interface{}) error {
+
+	raw, exists := idpMap["groups"]
+	if !exists {
+		return nil
+	}
+	groups, ok := raw.([]interface{})
+	if !ok {
+		return fmt.Errorf("invalid format for groups")
+	}
+	for _, grp := range groups {
+		group, ok := grp.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("invalid format for group")
+		}
+		delete(group, "id")
+	}
+	return nil
+}
+
+func processImplicitAssociation(idpMap map[string]interface{}) error {
+
+	raw, exists := idpMap["implicitAssociation"]
+	if !exists {
+		return nil
+	}
+	assoc, ok := raw.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("invalid format for implicit association")
+	}
+
+	attrs, ok := assoc["lookupAttribute"].([]interface{})
+	if !ok {
+		return fmt.Errorf("invalid format for lookupAttribute in implicit association")
+	}
+	if len(attrs) == 0 {
+		assoc["lookupAttribute"] = append(attrs, "")
+	}
+	return nil
+}
+
+func processEndpointAuthProperties(authenticatorMap map[string]interface{}) error {
+
+	endpoint, ok := authenticatorMap["endpoint"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for endpoint")
+	}
+	auth, ok := endpoint["authentication"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for endpoint authentication")
+	}
+	authType, ok := auth["type"].(string)
+	if !ok {
+		return fmt.Errorf("unexpected format for endpoint authentication type")
+	}
+
+	var props map[string]interface{}
+	if rawProps, exists := auth["properties"]; !exists {
+		props = map[string]interface{}{}
+	} else {
+		props, ok = rawProps.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for authentication properties")
+		}
+	}
+
+	switch authType {
+	case "NONE":
+	case "BASIC":
+		if _, exists := props["username"]; !exists {
+			props["username"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+		}
+		props["password"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+	case "BEARER":
+		props["accessToken"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+	case "API_KEY":
+		if _, exists := props["header"]; !exists {
+			props["header"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+		}
+		props["value"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+	case "CLIENT_CREDENTIAL":
+		props["clientSecret"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+	case "PASSWORD_CREDENTIAL":
+		props["clientSecret"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+		props["password"] = utils.SENSITIVE_FIELD_MASK_WITHOUT_QUOTES
+	default:
+		return fmt.Errorf("unknown endpoint authentication type: %s", authType)
+	}
+
+	auth["properties"] = props
+
+	if _, exists := endpoint["allowedHeaders"]; !exists {
+		endpoint["allowedHeaders"] = []interface{}{}
+	}
+	if _, exists := endpoint["allowedParameters"]; !exists {
+		endpoint["allowedParameters"] = []interface{}{}
+	}
+	return nil
+}
+
 func maskSecretProperties(resourceMap map[string]interface{}, metaPath string) error {
 
 	body, err := utils.SendGetRequest(utils.IDENTITY_PROVIDERS, metaPath)
@@ -330,10 +448,6 @@ func maskSecretProperties(resourceMap map[string]interface{}, metaPath string) e
 }
 
 func preprocessIdpKeys(data interface{}) (interface{}, error) {
-
-	if utils.ExportAPIExists(utils.IDENTITY_PROVIDERS) {
-		return data, nil
-	}
 
 	data = utils.ConvertToStringKeyMap(data)
 	d, ok := data.(map[string]interface{})
@@ -487,8 +601,23 @@ func patchIdp(idpId string, patchOps []map[string]interface{}) error {
 	return nil
 }
 
+func removeOutboundProvisioningRoles(idpMap map[string]interface{}) error {
+
+	if shouldRemoveOutboundProvisioningRoles() {
+		roles, ok := idpMap["roles"].(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for roles")
+		}
+		delete(roles, "outboundProvisioningRoles")
+	}
+	return nil
+}
+
 func removeProvisioningRole(fileContent []byte) []byte {
 
+	if !shouldRemoveOutboundProvisioningRoles() {
+		return fileContent
+	}
 	yamlPattern := regexp.MustCompile(`(?m)(^\s*provisioningRole:)[^\n]*`)
 	result := yamlPattern.ReplaceAllString(string(fileContent), `${1} ""`)
 
@@ -515,4 +644,14 @@ func processIdpGroupFields(fileContent []byte) []byte {
 func init() {
 
 	utils.DataPreprocessFuncs[utils.IDENTITY_PROVIDERS] = preprocessIdpKeys
+}
+
+func shouldRemoveOutboundProvisioningRoles() bool {
+
+	if utils.SERVER_CONFIGS.ServerVersion == "" {
+		return true
+	}
+	cmp, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_OUTBOUND_PROV_GROUPS)
+	// Consider outbound provisioning groups exist when the server version is not properly configured
+	return err != nil || cmp >= 0
 }

@@ -79,8 +79,8 @@ func ImportAll(inputDirPath string) {
 			}
 		}
 	}
-	if exportAPIExists {
-		log.Println("Warn: Provisioning roles of identity providers are removed during import")
+	if shouldRemoveOutboundProvisioningRoles() {
+		log.Println("Warn: Outbound provisioning groups of identity providers are removed during import")
 	}
 }
 
@@ -94,10 +94,7 @@ func importIdp(idpId string, idpName string, importFilePath string, exportAPIExi
 	idpKeywordMapping := getIdpKeywordMapping(idpName)
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), idpKeywordMapping)
 
-	if exportAPIExists {
-		if idpId == "" {
-			return importIdentityProvider(idpName, importFilePath, modifiedFileData)
-		}
+	if exportAPIExists && idpId == utils.RESIDENT_IDP_NAME {
 		return updateIdentityProvider(idpId, idpName, importFilePath, modifiedFileData)
 	}
 
@@ -275,6 +272,30 @@ func updateIdpSubResources(idpId string, idpStruct idpConfig) error {
 		resp, err := utils.SendPutRequest(utils.IDENTITY_PROVIDERS, idpId+"/roles", body)
 		if err != nil {
 			return fmt.Errorf("error updating roles: %w", err)
+		}
+		resp.Body.Close()
+	}
+
+	if idpStruct.Groups != nil {
+		body, err := json.Marshal(idpStruct.Groups)
+		if err != nil {
+			return fmt.Errorf("error marshalling groups: %w", err)
+		}
+		resp, err := utils.SendPutRequest(utils.IDENTITY_PROVIDERS, idpId+"/groups", body)
+		if err != nil {
+			return fmt.Errorf("error updating groups: %w", err)
+		}
+		resp.Body.Close()
+	}
+
+	if idpStruct.ImplicitAssociation != nil {
+		body, err := json.Marshal(idpStruct.ImplicitAssociation)
+		if err != nil {
+			return fmt.Errorf("error marshalling implicit association: %w", err)
+		}
+		resp, err := utils.SendPutRequest(utils.IDENTITY_PROVIDERS, idpId+"/implicit-association", body)
+		if err != nil {
+			return fmt.Errorf("error updating implicit association: %w", err)
 		}
 		resp.Body.Close()
 	}
