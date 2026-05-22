@@ -192,11 +192,11 @@ func loadToolConfigsFromFile(configFilePath string) (toolConfigs ToolConfigs) {
 		log.Fatalln("Error when reading the tool config file.", err.Error())
 	}
 
+	toolConfigs.ExcludeSecrets = true
 	if len(configFile) == 0 {
 		return toolConfigs
 	}
 
-	toolConfigs.ExcludeSecrets = true
 	err = json.Unmarshal(configFile, &toolConfigs)
 	if err != nil {
 		log.Fatalln("Tool configs are not in the correct format. Please check the config file.", err)
