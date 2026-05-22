@@ -209,8 +209,9 @@ func processFederatedAuthenticators(idpId string, idpStruct idpConfig, idpMap ma
 			return fmt.Errorf("unexpected format for retrieved federated authenticator: %s", authId)
 		}
 
-		definedBy, ok := fullAuthMap["definedBy"].(string)
-		if !ok {
+		definedByRaw, exists := fullAuthMap["definedBy"]
+		definedBy, ok := definedByRaw.(string)
+		if exists && !ok {
 			return fmt.Errorf("unexpected format for definedBy field of federated authenticator: %s", authId)
 		}
 		if definedBy == "USER" {
