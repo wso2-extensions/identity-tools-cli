@@ -189,7 +189,7 @@ deployedResourcess:
 			log.Printf("User store: %s is a system user store. Skipping deletion.", userstore.Name)
 			continue
 		}
-		if utils.IsResourceExcluded(userstore.Name, utils.TOOL_CONFIGS.ApplicationConfigs) {
+		if utils.IsResourceExcluded(userstore.Name, utils.TOOL_CONFIGS.UserStoreConfigs) {
 			log.Printf("Userstore: %s is excluded from deletion.\n", userstore.Name)
 			continue
 		}
