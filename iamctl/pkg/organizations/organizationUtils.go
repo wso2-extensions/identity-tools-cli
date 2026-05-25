@@ -120,6 +120,11 @@ func prepareOrganizationPostBody(requestBody []byte, format utils.Format, parent
 	status := orgData["status"]
 	delete(orgData, "status")
 
+	// orgHandle is removed from POST requests for Asgardeo
+	if utils.SERVER_CONFIGS.ServerVersion == "" {
+		delete(orgData, "orgHandle")
+	}
+
 	jsonBody, err := utils.Serialize(orgData, utils.FormatJSON, utils.ORGANIZATIONS)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error serializing to JSON: %w", err)
