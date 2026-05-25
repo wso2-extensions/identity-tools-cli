@@ -27,9 +27,10 @@ import (
 )
 
 type organization struct {
-	Id     string `json:"id"`
-	Name   string `json:"name"`
-	Status string `json:"status"`
+	Id        string `json:"id"`
+	Name      string `json:"name"`
+	OrgHandle string `json:"orgHandle"`
+	Status    string `json:"status"`
 }
 
 type organizationsResponse struct {
@@ -81,27 +82,27 @@ func getOrganizationList() ([]organization, error) {
 	return nil, fmt.Errorf("unknown error while retrieving list")
 }
 
-func getDeployedOrganizationNames(orgs []organization) []string {
+func getDeployedOrgResourceNames(orgs []organization) []string {
 
-	var orgNames []string
+	var names []string
 	for _, o := range orgs {
-		orgNames = append(orgNames, o.Name)
+		names = append(names, getOrgResourceName(o))
 	}
-	return orgNames
+	return names
 }
 
-func getOrganizationKeywordMapping(orgName string) map[string]interface{} {
+func getOrganizationKeywordMapping(resourceName string) map[string]interface{} {
 
 	if utils.KEYWORD_CONFIGS.OrganizationConfigs != nil {
-		return utils.ResolveAdvancedKeywordMapping(orgName, utils.KEYWORD_CONFIGS.OrganizationConfigs)
+		return utils.ResolveAdvancedKeywordMapping(resourceName, utils.KEYWORD_CONFIGS.OrganizationConfigs)
 	}
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
 
-func getOrgId(orgName string, list []organization) string {
+func getOrgId(resourceName string, list []organization) string {
 
 	for _, o := range list {
-		if o.Name == orgName {
+		if getOrgResourceName(o) == resourceName {
 			return o.Id
 		}
 	}
@@ -158,4 +159,13 @@ func patchOrganizationStatus(orgId string, rawStatus interface{}) error {
 	resp.Body.Close()
 
 	return nil
+}
+
+func getOrgResourceName(org organization) string {
+
+	// Uses org name as the resource identifier in Asgardeo, org handle for IS.
+	if utils.SERVER_CONFIGS.ServerVersion == "" {
+		return org.Name
+	}
+	return org.OrgHandle
 }

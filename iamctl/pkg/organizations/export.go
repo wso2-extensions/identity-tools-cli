@@ -49,28 +49,29 @@ func ExportAll(exportFilePath string, format string) {
 		}
 	} else {
 		if utils.TOOL_CONFIGS.AllowDelete {
-			deployedOrgNames := getDeployedOrganizationNames(orgs)
-			utils.RemoveDeletedLocalResources(exportFilePath, deployedOrgNames)
+			deployedOrgs := getDeployedOrgResourceNames(orgs)
+			utils.RemoveDeletedLocalResources(exportFilePath, deployedOrgs)
 		}
 	}
 
 	for _, org := range orgs {
-		if !utils.IsResourceExcluded(org.Name, utils.TOOL_CONFIGS.OrganizationConfigs) {
-			log.Println("Exporting organization: ", org.Name)
+		resourceName := getOrgResourceName(org)
+		if !utils.IsResourceExcluded(resourceName, utils.TOOL_CONFIGS.OrganizationConfigs) {
+			log.Println("Exporting organization: ", resourceName)
 
-			err := exportOrganization(org.Id, org.Name, exportFilePath, format)
+			err := exportOrganization(org.Id, resourceName, exportFilePath, format)
 			if err != nil {
-				utils.UpdateFailureSummary(utils.ORGANIZATIONS, org.Name)
-				log.Printf("Error while exporting organization: %s. %s", org.Name, err)
+				utils.UpdateFailureSummary(utils.ORGANIZATIONS, resourceName)
+				log.Printf("Error while exporting organization: %s. %s", resourceName, err)
 			} else {
 				utils.UpdateSuccessSummary(utils.ORGANIZATIONS, utils.EXPORT)
-				log.Println("Organization exported successfully: ", org.Name)
+				log.Println("Organization exported successfully: ", resourceName)
 			}
 		}
 	}
 }
 
-func exportOrganization(orgId, orgName, outputDirPath, formatString string) error {
+func exportOrganization(orgId, resourceName, outputDirPath, formatString string) error {
 
 	org, err := utils.GetResourceData(utils.ORGANIZATIONS, orgId)
 	if err != nil {
@@ -78,9 +79,9 @@ func exportOrganization(orgId, orgName, outputDirPath, formatString string) erro
 	}
 
 	format := utils.FormatFromString(formatString)
-	exportedFileName := utils.GetExportedFilePath(outputDirPath, orgName, format)
+	exportedFileName := utils.GetExportedFilePath(outputDirPath, resourceName, format)
 
-	orgKeywordMapping := getOrganizationKeywordMapping(orgName)
+	orgKeywordMapping := getOrganizationKeywordMapping(resourceName)
 	modifiedOrg, err := utils.ProcessExportedData(org, exportedFileName, format, orgKeywordMapping, utils.ORGANIZATIONS)
 	if err != nil {
 		return fmt.Errorf("error while processing exported content: %w", err)
