@@ -72,7 +72,8 @@ func ImportAll(inputDirPath string) {
 
 func importUserStore(userStoreId, userStoreName, userStoreFilePath string, exportAPIexists bool) error {
 
-	if userStoreName == utils.AGENT_USERSTORE || userStoreName == utils.DEFAULT_USERSTORE {
+	// AGENT and DEFAULT user stores are not allowed to be modified in Asgardeo
+	if utils.SERVER_CONFIGS.ServerVersion == "" && (userStoreName == utils.AGENT_USERSTORE || userStoreName == utils.DEFAULT_USERSTORE) {
 		log.Printf("User store: %s is a system user store. Skipping import.", userStoreName)
 		return nil
 	}
@@ -183,7 +184,8 @@ deployedResourcess:
 				continue deployedResourcess
 			}
 		}
-		if userstore.Name == utils.AGENT_USERSTORE || userstore.Name == utils.DEFAULT_USERSTORE {
+		// DEFAULT is a Asgardeo only system user store
+		if (utils.SERVER_CONFIGS.ServerVersion == "" && userstore.Name == utils.DEFAULT_USERSTORE) || userstore.Name == utils.AGENT_USERSTORE {
 			log.Printf("User store: %s is a system user store. Skipping deletion.", userstore.Name)
 			continue
 		}
