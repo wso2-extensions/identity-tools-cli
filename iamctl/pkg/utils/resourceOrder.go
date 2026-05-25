@@ -25,11 +25,11 @@ package utils
 * IMPORTANT: This order is critical because some resources may have dependencies on others.
  */
 var ResourceOrder = []ResourceType{
-	CLAIMS,
 	USERSTORES,
-	IDENTITY_PROVIDERS, // Dependency: Claims, Userstores
+	CLAIMS,             // Dependency: User Stores
+	IDENTITY_PROVIDERS, // Dependency: Claims, User Stores
 	API_RESOURCES,
-	APPLICATIONS, // Dependency: Claims, Userstores, Identity Providers, API Resources
+	APPLICATIONS, // Dependency: Claims, User Stores, Identity Providers, API Resources
 	OIDC_SCOPES,
 	ROLES, // Dependency: Applications
 	CHALLENGE_QUESTIONS,
