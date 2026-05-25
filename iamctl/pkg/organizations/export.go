@@ -49,8 +49,8 @@ func ExportAll(exportFilePath string, format string) {
 		}
 	} else {
 		if utils.TOOL_CONFIGS.AllowDelete {
-			deployedOrgs := getDeployedOrgResourceNames(orgs)
-			utils.RemoveDeletedLocalResources(exportFilePath, deployedOrgs)
+			deployedResourceNames := getDeployedOrgResourceNames(orgs)
+			utils.RemoveDeletedLocalResources(exportFilePath, deployedResourceNames)
 		}
 	}
 
