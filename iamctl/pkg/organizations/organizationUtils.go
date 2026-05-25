@@ -27,10 +27,9 @@ import (
 )
 
 type organization struct {
-	Id        string `json:"id"`
-	Name      string `json:"name"`
-	OrgHandle string `json:"orgHandle"`
-	Status    string `json:"status"`
+	Id     string `json:"id"`
+	Name   string `json:"name"`
+	Status string `json:"status"`
 }
 
 type organizationsResponse struct {
@@ -82,27 +81,27 @@ func getOrganizationList() ([]organization, error) {
 	return nil, fmt.Errorf("unknown error while retrieving list")
 }
 
-func getDeployedOrganizationHandles(orgs []organization) []string {
+func getDeployedOrganizationNames(orgs []organization) []string {
 
-	var handles []string
+	var orgNames []string
 	for _, o := range orgs {
-		handles = append(handles, o.OrgHandle)
+		orgNames = append(orgNames, o.Name)
 	}
-	return handles
+	return orgNames
 }
 
-func getOrganizationKeywordMapping(orgHandle string) map[string]interface{} {
+func getOrganizationKeywordMapping(orgName string) map[string]interface{} {
 
 	if utils.KEYWORD_CONFIGS.OrganizationConfigs != nil {
-		return utils.ResolveAdvancedKeywordMapping(orgHandle, utils.KEYWORD_CONFIGS.OrganizationConfigs)
+		return utils.ResolveAdvancedKeywordMapping(orgName, utils.KEYWORD_CONFIGS.OrganizationConfigs)
 	}
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
 
-func getOrgId(orgHandle string, list []organization) string {
+func getOrgId(orgName string, list []organization) string {
 
 	for _, o := range list {
-		if o.OrgHandle == orgHandle {
+		if o.Name == orgName {
 			return o.Id
 		}
 	}
