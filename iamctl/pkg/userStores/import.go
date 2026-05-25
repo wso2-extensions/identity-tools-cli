@@ -72,6 +72,10 @@ func ImportAll(inputDirPath string) {
 
 func importUserStore(userStoreId, userStoreName, userStoreFilePath string, exportAPIexists bool) error {
 
+	if userStoreName == utils.AGENT_USERSTORE || userStoreName == utils.DEFAULT_USERSTORE {
+		log.Printf("User store: %s is a system user store. Skipping import.", userStoreName)
+		return nil
+	}
 	fileBytes, err := ioutil.ReadFile(userStoreFilePath)
 	if err != nil {
 		return fmt.Errorf("error when reading the file for user store: %s", err)
@@ -178,6 +182,10 @@ deployedResourcess:
 			if userstore.Name == utils.GetFileInfo(file.Name()).ResourceName {
 				continue deployedResourcess
 			}
+		}
+		if userstore.Name == utils.AGENT_USERSTORE || userstore.Name == utils.DEFAULT_USERSTORE {
+			log.Printf("User store: %s is a system user store. Skipping deletion.", userstore.Name)
+			continue
 		}
 		if utils.IsResourceExcluded(userstore.Name, utils.TOOL_CONFIGS.ApplicationConfigs) {
 			log.Printf("Userstore: %s is excluded from deletion.\n", userstore.Name)
