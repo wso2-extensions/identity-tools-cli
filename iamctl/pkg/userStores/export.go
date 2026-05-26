@@ -78,6 +78,9 @@ func ExportAll(exportFilePath string, format string) {
 			}
 		}
 	}
+	if (utils.IsResourceTypeExcluded(utils.CLAIMS) || utils.IsResourceExcluded(utils.LOCAL_CLAIM_DIALECT_URI, utils.TOOL_CONFIGS.ClaimConfigs)) && exportAPIExists {
+		log.Println("Warn: Local claim dialect is excluded from export. Export local claims to persist claim attribute mappings of user stores.")
+	}
 }
 
 func exportUserStore(userStoreId string, outputDirPath string, format string) error {

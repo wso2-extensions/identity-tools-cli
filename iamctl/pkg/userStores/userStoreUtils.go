@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"regexp"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -102,4 +103,15 @@ func getUserStoreId(userStoreName string) (string, error) {
 		}
 	}
 	return "", nil
+}
+
+func removeClaimAttributeMappings(fileContent string) string {
+
+	yamlPattern := regexp.MustCompile(`(?m)(^\s*claimAttributeMappings:)[^\n]*\n([ \t]+[^\n]+\n)*`)
+	result := yamlPattern.ReplaceAllString(fileContent, "${1} []\n")
+
+	jsonPattern := regexp.MustCompile(`("claimAttributeMappings"\s*:\s*)\[(?:\s*\{[^}]*\}\s*,?\s*)*\]`)
+	result = jsonPattern.ReplaceAllString(result, `${1}[]`)
+
+	return result
 }
