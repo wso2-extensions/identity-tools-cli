@@ -88,6 +88,9 @@ func getIdpList() ([]identityProvider, error) {
 		log.Println("Error: when retrieving IDP count. Retrieving only the default count.", err)
 	}
 	var list idpList
+	if idpCount == 0 {
+		return []identityProvider{}, nil
+	}
 	resp, err := utils.SendGetListRequest(utils.IDENTITY_PROVIDERS, idpCount)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve available IDP list. %w", err)
