@@ -137,6 +137,13 @@ const USER_ONBOARDING_GOVERNANCE_CATEGORY_ID = "VXNlciBPbmJvYXJkaW5n"
 const OAUTH2 = "oauth2"
 const ALL_ITEMS = "all_items" // Wildcard to match all elements in an array
 
+// Resource types that are supported in sub-organizations
+var entitySupportedInSubOrg = map[ResourceType]bool{
+	APPLICATIONS:       true,
+	IDENTITY_PROVIDERS: true,
+	USERSTORES:         true,
+}
+
 // Error codes
 var ErrorCodes = map[int]string{
 

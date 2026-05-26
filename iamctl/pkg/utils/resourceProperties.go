@@ -80,6 +80,18 @@ func IsResourceTypeExcluded(resourceType ResourceType) bool {
 	return false
 }
 
+func IsEntitySupportedInOrg(resourceType ResourceType) bool {
+
+	if !IsSubOrganization() {
+		return true
+	}
+	if entitySupportedInSubOrg[resourceType] {
+		return true
+	}
+	log.Printf("Skipping %s: Not supported in sub organizations", resourceType)
+	return false
+}
+
 func ResolveAdvancedKeywordMapping(resourceName string, resourceConfigs map[string]interface{}) map[string]interface{} {
 
 	defaultKeywordMapping := KEYWORD_CONFIGS.KeywordMappings

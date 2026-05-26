@@ -37,7 +37,7 @@ func ImportAll(inputDirPath string) {
 	}
 	importFilePath := filepath.Join(inputDirPath, utils.CERTIFICATES.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.CERTIFICATES) || utils.IsResourceTypeExcluded(utils.CERTIFICATES) {
+	if !utils.IsEntitySupportedInVersion(utils.CERTIFICATES) || !utils.IsEntitySupportedInOrg(utils.CERTIFICATES) || utils.IsResourceTypeExcluded(utils.CERTIFICATES) {
 		return
 	}
 	var files []os.FileInfo

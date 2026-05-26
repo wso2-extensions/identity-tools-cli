@@ -34,13 +34,9 @@ import (
 func ImportAll(inputDirPath string) {
 
 	log.Println("Importing claims...")
-	if utils.IsSubOrganization() {
-		log.Println("Importing claims for sub organization not supported.")
-		return
-	}
 	importFilePath := filepath.Join(inputDirPath, utils.CLAIMS.String())
 
-	if utils.IsResourceTypeExcluded(utils.CLAIMS) {
+	if !utils.IsEntitySupportedInOrg(utils.CLAIMS) || utils.IsResourceTypeExcluded(utils.CLAIMS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {

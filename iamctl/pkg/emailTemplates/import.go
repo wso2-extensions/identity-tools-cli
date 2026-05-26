@@ -44,7 +44,7 @@ func ImportAllLegacyApi(inputDirPath string) {
 	log.Println("Importing email templates...")
 	importFilePath := filepath.Join(inputDirPath, utils.EMAIL_TEMPLATES.String())
 
-	if utils.IsResourceTypeExcluded(utils.EMAIL_TEMPLATES) {
+	if !utils.IsEntitySupportedInOrg(utils.EMAIL_TEMPLATES) || utils.IsResourceTypeExcluded(utils.EMAIL_TEMPLATES) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {

@@ -34,7 +34,7 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing flows...")
 	importFilePath := filepath.Join(inputDirPath, utils.FLOWS.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.FLOWS) || utils.IsResourceTypeExcluded(utils.FLOWS) {
+	if !utils.IsEntitySupportedInVersion(utils.FLOWS) || !utils.IsEntitySupportedInOrg(utils.FLOWS) || utils.IsResourceTypeExcluded(utils.FLOWS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {

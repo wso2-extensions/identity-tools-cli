@@ -33,7 +33,7 @@ func ExportAll(exportFilePath string, format string) {
 	log.Println("Exporting governance connectors...")
 	exportFilePath = filepath.Join(exportFilePath, utils.GOVERNANCE_CONNECTORS.String())
 
-	if utils.IsResourceTypeExcluded(utils.GOVERNANCE_CONNECTORS) {
+	if !utils.IsEntitySupportedInOrg(utils.GOVERNANCE_CONNECTORS) || utils.IsResourceTypeExcluded(utils.GOVERNANCE_CONNECTORS) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {

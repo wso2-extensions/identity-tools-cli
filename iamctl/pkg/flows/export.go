@@ -33,7 +33,7 @@ func ExportAll(exportFilePath string, format string) {
 	log.Println("Exporting flows...")
 	exportFilePath = filepath.Join(exportFilePath, utils.FLOWS.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.FLOWS) || utils.IsResourceTypeExcluded(utils.FLOWS) {
+	if !utils.IsEntitySupportedInVersion(utils.FLOWS) || !utils.IsEntitySupportedInOrg(utils.FLOWS) || utils.IsResourceTypeExcluded(utils.FLOWS) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {

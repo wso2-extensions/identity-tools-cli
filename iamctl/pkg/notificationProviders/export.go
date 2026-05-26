@@ -38,7 +38,7 @@ func exportAll(resType utils.ResourceType, exportFilePath string, format string)
 		log.Println("Exporting email providers for super tenant not supported.")
 		return
 	}
-	if !utils.IsEntitySupportedInVersion(resType) || utils.IsResourceTypeExcluded(resType) {
+	if !utils.IsEntitySupportedInVersion(resType) || !utils.IsEntitySupportedInOrg(resType) || utils.IsResourceTypeExcluded(resType) {
 		return
 	}
 

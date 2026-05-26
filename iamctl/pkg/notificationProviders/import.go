@@ -38,7 +38,7 @@ func importAll(resType utils.ResourceType, inputDirPath string) {
 		log.Println("Importing email providers for super tenant not supported.")
 		return
 	}
-	if !utils.IsEntitySupportedInVersion(resType) || utils.IsResourceTypeExcluded(resType) {
+	if !utils.IsEntitySupportedInVersion(resType) || !utils.IsEntitySupportedInOrg(resType) || utils.IsResourceTypeExcluded(resType) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {

@@ -33,7 +33,7 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing OIDC scopes...")
 	importFilePath := filepath.Join(inputDirPath, utils.OIDC_SCOPES.String())
 
-	if utils.IsResourceTypeExcluded(utils.OIDC_SCOPES) {
+	if !utils.IsEntitySupportedInOrg(utils.OIDC_SCOPES) || utils.IsResourceTypeExcluded(utils.OIDC_SCOPES) {
 		return
 	}
 	var files []os.FileInfo
