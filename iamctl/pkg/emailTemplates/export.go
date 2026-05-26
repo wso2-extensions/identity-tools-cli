@@ -44,7 +44,7 @@ func ExportAllLegacyApi(exportFilePath string, format string) {
 	log.Println("Exporting email templates...")
 	exportFilePath = filepath.Join(exportFilePath, utils.EMAIL_TEMPLATES.String())
 
-	if utils.IsResourceTypeExcluded(utils.EMAIL_TEMPLATES) {
+	if !utils.IsEntitySupportedInOrg(utils.EMAIL_TEMPLATES) || utils.IsResourceTypeExcluded(utils.EMAIL_TEMPLATES) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {

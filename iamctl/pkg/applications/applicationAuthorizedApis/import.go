@@ -28,7 +28,7 @@ import (
 
 func ImportAPIs(appId, appName, appsImportDirPath string) error {
 
-	if !SupportedInVersion {
+	if !IsSupported {
 		return nil
 	}
 

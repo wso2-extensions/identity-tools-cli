@@ -35,7 +35,7 @@ func ExportAll(rt utils.ResourceType, exportFilePath string, format string) {
 	log.Printf("Exporting %s...", logName)
 	exportFilePath = filepath.Join(exportFilePath, rt.String())
 
-	if !utils.IsEntitySupportedInVersion(rt) || utils.IsResourceTypeExcluded(rt) {
+	if !utils.IsEntitySupportedInVersion(rt) || !utils.IsEntitySupportedInOrg(rt) || utils.IsResourceTypeExcluded(rt) {
 		return
 	}
 

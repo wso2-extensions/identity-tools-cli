@@ -33,7 +33,7 @@ func ExportAll(exportFilePath string, format string) {
 	log.Println("Exporting script libraries...")
 	exportFilePath = filepath.Join(exportFilePath, utils.SCRIPT_LIBRARIES.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.SCRIPT_LIBRARIES) || utils.IsResourceTypeExcluded(utils.SCRIPT_LIBRARIES) {
+	if !utils.IsEntitySupportedInVersion(utils.SCRIPT_LIBRARIES) || !utils.IsEntitySupportedInOrg(utils.SCRIPT_LIBRARIES) || utils.IsResourceTypeExcluded(utils.SCRIPT_LIBRARIES) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {

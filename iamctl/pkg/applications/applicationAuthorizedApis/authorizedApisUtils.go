@@ -38,12 +38,12 @@ type AuthorizedScope struct {
 	Name string `json:"name"`
 }
 
-var SupportedInVersion bool
+var IsSupported bool
 var apiResourcesMap map[string]string
 
-func InitSupportedInVersion() {
+func InitIsSupported() {
 
-	SupportedInVersion = utils.IsEntitySupportedInVersion(utils.APPLICATION_AUTHORIZED_APIS)
+	IsSupported = utils.IsEntitySupportedInVersion(utils.APPLICATION_AUTHORIZED_APIS) && utils.IsEntitySupportedInOrg(utils.APPLICATION_AUTHORIZED_APIS)
 }
 
 func GetAPIResources() error {

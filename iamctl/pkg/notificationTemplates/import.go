@@ -35,7 +35,7 @@ func ImportAll(rt utils.ResourceType, inputDirPath string) {
 	log.Printf("Importing %s...", logName)
 	importFilePath := filepath.Join(inputDirPath, rt.String())
 
-	if !utils.IsEntitySupportedInVersion(rt) || utils.IsResourceTypeExcluded(rt) {
+	if !utils.IsEntitySupportedInVersion(rt) || !utils.IsEntitySupportedInOrg(rt) || utils.IsResourceTypeExcluded(rt) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {

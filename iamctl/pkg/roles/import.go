@@ -34,7 +34,7 @@ func ImportAll(inputDirPath string) {
 	importFilePath := filepath.Join(inputDirPath, utils.ROLES.String())
 	setRolesV2ApiExists()
 
-	if utils.IsResourceTypeExcluded(utils.ROLES) {
+	if !utils.IsEntitySupportedInOrg(utils.ROLES) || utils.IsResourceTypeExcluded(utils.ROLES) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {

@@ -33,7 +33,7 @@ func ExportAll(outputDirPath, format string) {
 	log.Println("Exporting actions...")
 	actionsDir := filepath.Join(outputDirPath, utils.ACTIONS.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.ACTIONS) || utils.IsResourceTypeExcluded(utils.ACTIONS) {
+	if !utils.IsEntitySupportedInVersion(utils.ACTIONS) || !utils.IsEntitySupportedInOrg(utils.ACTIONS) || utils.IsResourceTypeExcluded(utils.ACTIONS) {
 		return
 	}
 	types, err := getActionTypesList()

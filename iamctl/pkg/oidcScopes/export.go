@@ -33,7 +33,7 @@ func ExportAll(exportFilePath string, format string) {
 	log.Println("Exporting OIDC scopes...")
 	exportFilePath = filepath.Join(exportFilePath, utils.OIDC_SCOPES.String())
 
-	if utils.IsResourceTypeExcluded(utils.OIDC_SCOPES) {
+	if !utils.IsEntitySupportedInOrg(utils.OIDC_SCOPES) || utils.IsResourceTypeExcluded(utils.OIDC_SCOPES) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {

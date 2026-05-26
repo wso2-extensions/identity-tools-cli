@@ -33,7 +33,7 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing governance connectors...")
 	importFilePath := filepath.Join(inputDirPath, utils.GOVERNANCE_CONNECTORS.String())
 
-	if utils.IsResourceTypeExcluded(utils.GOVERNANCE_CONNECTORS) {
+	if !utils.IsEntitySupportedInOrg(utils.GOVERNANCE_CONNECTORS) || utils.IsResourceTypeExcluded(utils.GOVERNANCE_CONNECTORS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {

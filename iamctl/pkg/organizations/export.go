@@ -33,7 +33,7 @@ func ExportAll(exportFilePath string, format string) {
 	log.Println("Exporting organizations...")
 	exportFilePath = filepath.Join(exportFilePath, utils.ORGANIZATIONS.String())
 
-	if utils.IsResourceTypeExcluded(utils.ORGANIZATIONS) {
+	if !utils.IsEntitySupportedInOrg(utils.ORGANIZATIONS) || utils.IsResourceTypeExcluded(utils.ORGANIZATIONS) {
 		return
 	}
 	orgs, err := getOrganizationList()

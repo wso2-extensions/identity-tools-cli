@@ -36,7 +36,7 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing applications...")
 	importFilePath := filepath.Join(inputDirPath, utils.APPLICATIONS.String())
 	exportAPIExists := utils.ExportAPIExists(utils.APPLICATIONS)
-	applicationAuthorizedApis.InitSupportedInVersion()
+	applicationAuthorizedApis.InitIsSupported()
 
 	if utils.IsResourceTypeExcluded(utils.APPLICATIONS) {
 		return
@@ -46,7 +46,7 @@ func ImportAll(inputDirPath string) {
 		return
 	}
 
-	if applicationAuthorizedApis.SupportedInVersion {
+	if applicationAuthorizedApis.IsSupported {
 		err := applicationAuthorizedApis.GetAPIResources()
 		if err != nil {
 			log.Println("Error retrieving API resource list: ", err)

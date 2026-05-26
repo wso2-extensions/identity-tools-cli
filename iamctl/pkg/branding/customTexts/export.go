@@ -33,7 +33,7 @@ func ExportAll(parentDir string, formatString string) {
 	log.Println("Exporting custom texts...")
 	exportFilePath := filepath.Join(parentDir, utils.CUSTOM_TEXTS.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.CUSTOM_TEXTS) || utils.IsResourceTypeExcluded(utils.CUSTOM_TEXTS) {
+	if !utils.IsEntitySupportedInVersion(utils.CUSTOM_TEXTS) || !utils.IsEntitySupportedInOrg(utils.CUSTOM_TEXTS) || utils.IsResourceTypeExcluded(utils.CUSTOM_TEXTS) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
