@@ -54,6 +54,9 @@ func GetApiResourceList(limitToBusinessApis bool) ([]ApiResource, error) {
 	if err != nil {
 		return nil, err
 	}
+	if totalResults == 0 {
+		return []ApiResource{}, nil
+	}
 
 	var listResponse apiResourceListResponse
 	resp, err := utils.SendGetListRequest(utils.API_RESOURCES, totalResults,
