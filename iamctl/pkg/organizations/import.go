@@ -65,20 +65,20 @@ func ImportAll(inputDirPath string) {
 	for _, file := range files {
 		orgFilePath := filepath.Join(importFilePath, file.Name())
 		fileInfo := utils.GetFileInfo(orgFilePath)
-		orgHandle := fileInfo.ResourceName
+		resourceName := fileInfo.ResourceName
 
-		if !utils.IsResourceExcluded(orgHandle, utils.TOOL_CONFIGS.OrganizationConfigs) {
-			orgId := getOrgId(orgHandle, existingList)
-			err := importOrganization(orgHandle, orgId, orgFilePath)
+		if !utils.IsResourceExcluded(resourceName, utils.TOOL_CONFIGS.OrganizationConfigs) {
+			orgId := getOrgId(resourceName, existingList)
+			err := importOrganization(resourceName, orgId, orgFilePath)
 			if err != nil {
 				log.Println("Error importing organization: ", err)
-				utils.UpdateFailureSummary(utils.ORGANIZATIONS, orgHandle)
+				utils.UpdateFailureSummary(utils.ORGANIZATIONS, resourceName)
 			}
 		}
 	}
 }
 
-func importOrganization(orgHandle, orgId, importFilePath string) error {
+func importOrganization(resourceName, orgId, importFilePath string) error {
 
 	format, err := utils.FormatFromExtension(filepath.Ext(importFilePath))
 	if err != nil {
@@ -90,18 +90,18 @@ func importOrganization(orgHandle, orgId, importFilePath string) error {
 		return fmt.Errorf("error when reading the file for organization: %w", err)
 	}
 
-	orgKeywordMapping := getOrganizationKeywordMapping(orgHandle)
+	orgKeywordMapping := getOrganizationKeywordMapping(resourceName)
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), orgKeywordMapping)
 
 	if orgId == "" {
-		return createOrganization([]byte(modifiedFileData), format, orgHandle)
+		return createOrganization([]byte(modifiedFileData), format, resourceName)
 	}
-	return updateOrganization(orgId, []byte(modifiedFileData), format, orgHandle)
+	return updateOrganization(orgId, []byte(modifiedFileData), format, resourceName)
 }
 
-func createOrganization(requestBody []byte, format utils.Format, orgHandle string) error {
+func createOrganization(requestBody []byte, format utils.Format, resourceName string) error {
 
-	log.Println("Creating new organization: " + orgHandle)
+	log.Println("Creating new organization: " + resourceName)
 
 	jsonBody, status, err := prepareOrganizationPostBody(requestBody, format, curOrgId)
 	if err != nil {
@@ -132,9 +132,9 @@ func createOrganization(requestBody []byte, format utils.Format, orgHandle strin
 	return nil
 }
 
-func updateOrganization(orgId string, requestBody []byte, format utils.Format, orgHandle string) error {
+func updateOrganization(orgId string, requestBody []byte, format utils.Format, resourceName string) error {
 
-	log.Println("Updating organization: " + orgHandle)
+	log.Println("Updating organization: " + resourceName)
 
 	updateBody, err := utils.PrepareJSONRequestBody(requestBody, format, utils.ORGANIZATIONS,
 		"id", "orgHandle", "type", "parent", "permissions", "created", "lastModified", "hasChildren", "ancestorPath")
@@ -166,18 +166,19 @@ func removeDeletedDeployedOrganizations(localFiles []os.FileInfo, deployedOrgs [
 	}
 
 	for _, org := range deployedOrgs {
-		if _, existsLocally := localResourceNames[org.OrgHandle]; existsLocally {
+		resourceName := getOrgResourceName(org)
+		if _, existsLocally := localResourceNames[resourceName]; existsLocally {
 			continue
 		}
-		if utils.IsResourceExcluded(org.OrgHandle, utils.TOOL_CONFIGS.OrganizationConfigs) {
-			log.Println("Organization is excluded from deletion:", org.OrgHandle)
+		if utils.IsResourceExcluded(resourceName, utils.TOOL_CONFIGS.OrganizationConfigs) {
+			log.Println("Organization is excluded from deletion:", resourceName)
 			continue
 		}
 
-		log.Printf("Organization: %s not found locally. Deleting organization.\n", org.OrgHandle)
+		log.Printf("Organization: %s not found locally. Deleting organization.\n", resourceName)
 		if err := utils.SendDeleteRequest(org.Id, utils.ORGANIZATIONS); err != nil {
-			utils.UpdateFailureSummary(utils.ORGANIZATIONS, org.OrgHandle)
-			log.Println("Error deleting organization:", org.OrgHandle, err)
+			utils.UpdateFailureSummary(utils.ORGANIZATIONS, resourceName)
+			log.Println("Error deleting organization:", resourceName, err)
 		} else {
 			utils.UpdateSuccessSummary(utils.ORGANIZATIONS, utils.DELETE)
 		}

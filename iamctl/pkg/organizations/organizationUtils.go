@@ -82,27 +82,27 @@ func getOrganizationList() ([]organization, error) {
 	return nil, fmt.Errorf("unknown error while retrieving list")
 }
 
-func getDeployedOrganizationHandles(orgs []organization) []string {
+func getDeployedOrgResourceNames(orgs []organization) []string {
 
-	var handles []string
+	var names []string
 	for _, o := range orgs {
-		handles = append(handles, o.OrgHandle)
+		names = append(names, getOrgResourceName(o))
 	}
-	return handles
+	return names
 }
 
-func getOrganizationKeywordMapping(orgHandle string) map[string]interface{} {
+func getOrganizationKeywordMapping(resourceName string) map[string]interface{} {
 
 	if utils.KEYWORD_CONFIGS.OrganizationConfigs != nil {
-		return utils.ResolveAdvancedKeywordMapping(orgHandle, utils.KEYWORD_CONFIGS.OrganizationConfigs)
+		return utils.ResolveAdvancedKeywordMapping(resourceName, utils.KEYWORD_CONFIGS.OrganizationConfigs)
 	}
 	return utils.KEYWORD_CONFIGS.KeywordMappings
 }
 
-func getOrgId(orgHandle string, list []organization) string {
+func getOrgId(resourceName string, list []organization) string {
 
 	for _, o := range list {
-		if o.OrgHandle == orgHandle {
+		if getOrgResourceName(o) == resourceName {
 			return o.Id
 		}
 	}
@@ -120,6 +120,11 @@ func prepareOrganizationPostBody(requestBody []byte, format utils.Format, parent
 	orgData["parentId"] = parentId
 	status := orgData["status"]
 	delete(orgData, "status")
+
+	// orgHandle is removed from POST requests for Asgardeo
+	if utils.SERVER_CONFIGS.ServerVersion == "" {
+		delete(orgData, "orgHandle")
+	}
 
 	jsonBody, err := utils.Serialize(orgData, utils.FormatJSON, utils.ORGANIZATIONS)
 	if err != nil {
@@ -154,4 +159,13 @@ func patchOrganizationStatus(orgId string, rawStatus interface{}) error {
 	resp.Body.Close()
 
 	return nil
+}
+
+func getOrgResourceName(org organization) string {
+
+	// Uses org name as the resource identifier in Asgardeo, org handle for IS.
+	if utils.SERVER_CONFIGS.ServerVersion == "" {
+		return org.Name
+	}
+	return org.OrgHandle
 }
