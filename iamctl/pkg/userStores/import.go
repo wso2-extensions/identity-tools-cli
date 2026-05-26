@@ -68,6 +68,9 @@ func ImportAll(inputDirPath string) {
 			}
 		}
 	}
+	if (utils.IsResourceTypeExcluded(utils.CLAIMS) || utils.IsResourceExcluded(utils.LOCAL_CLAIM_DIALECT_URI, utils.TOOL_CONFIGS.ClaimConfigs)) && exportAPIexists {
+		log.Println("Warn: Local claim dialect is excluded from import. Import local claims to persist claim attribute mappings of user stores.")
+	}
 }
 
 func importUserStore(userStoreId, userStoreName, userStoreFilePath string, exportAPIexists bool) error {
@@ -87,6 +90,7 @@ func importUserStore(userStoreId, userStoreName, userStoreFilePath string, expor
 	modifiedFileData := utils.ReplaceKeywords(string(fileBytes), userStoreKeywordMapping)
 
 	if exportAPIexists {
+		modifiedFileData = removeClaimAttributeMappings(modifiedFileData)
 		if userStoreId == "" {
 			return importUserStoreOperation(userStoreName, userStoreFilePath, modifiedFileData)
 		}
