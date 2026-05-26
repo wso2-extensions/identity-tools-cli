@@ -27,7 +27,7 @@ import (
 
 func ExportAPIs(appId, appName, appsOutputDirPath, formatString string) error {
 
-	if !SupportedInVersion {
+	if !IsSupported {
 		return nil
 	}
 	outputDirPath := GetOutputDirPath(appsOutputDirPath)

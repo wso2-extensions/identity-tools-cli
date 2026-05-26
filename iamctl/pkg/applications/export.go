@@ -43,7 +43,7 @@ func ExportAll(exportFilePath string, format string) {
 	}
 	exportAPIExists := utils.ExportAPIExists(utils.APPLICATIONS)
 	deployedAppNames := getDeployedAppNames()
-	applicationAuthorizedApis.InitSupportedInVersion()
+	applicationAuthorizedApis.InitIsSupported()
 
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
@@ -56,7 +56,7 @@ func ExportAll(exportFilePath string, format string) {
 		}
 	}
 
-	if applicationAuthorizedApis.SupportedInVersion {
+	if applicationAuthorizedApis.IsSupported {
 		if _, err := os.Stat(authAPIsOutputDir); os.IsNotExist(err) {
 			if err := os.MkdirAll(authAPIsOutputDir, 0700); err != nil {
 				log.Println("Error creating authorized APIs directory:", err)

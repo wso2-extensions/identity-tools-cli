@@ -88,7 +88,7 @@ func IsEntitySupportedInOrg(resourceType ResourceType) bool {
 	if entitySupportedInSubOrg[resourceType] {
 		return true
 	}
-	log.Printf("Skipping %s: Not supported in sub organizations", resourceType)
+	log.Printf("Skipping %s: Not supported for sub organizations", resourceType)
 	return false
 }
 
