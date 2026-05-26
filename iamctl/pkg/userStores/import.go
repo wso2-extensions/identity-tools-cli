@@ -72,6 +72,11 @@ func ImportAll(inputDirPath string) {
 
 func importUserStore(userStoreId, userStoreName, userStoreFilePath string, exportAPIexists bool) error {
 
+	// AGENT and DEFAULT user stores are not allowed to be modified in Asgardeo
+	if utils.SERVER_CONFIGS.ServerVersion == "" && (userStoreName == utils.AGENT_USERSTORE || userStoreName == utils.DEFAULT_USERSTORE) {
+		log.Printf("User store: %s is a system user store. Skipping import.", userStoreName)
+		return nil
+	}
 	fileBytes, err := ioutil.ReadFile(userStoreFilePath)
 	if err != nil {
 		return fmt.Errorf("error when reading the file for user store: %s", err)
@@ -179,7 +184,12 @@ deployedResourcess:
 				continue deployedResourcess
 			}
 		}
-		if utils.IsResourceExcluded(userstore.Name, utils.TOOL_CONFIGS.ApplicationConfigs) {
+		// DEFAULT is a Asgardeo only system user store
+		if (utils.SERVER_CONFIGS.ServerVersion == "" && userstore.Name == utils.DEFAULT_USERSTORE) || userstore.Name == utils.AGENT_USERSTORE {
+			log.Printf("User store: %s is a system user store. Skipping deletion.", userstore.Name)
+			continue
+		}
+		if utils.IsResourceExcluded(userstore.Name, utils.TOOL_CONFIGS.UserStoreConfigs) {
 			log.Printf("Userstore: %s is excluded from deletion.\n", userstore.Name)
 			continue
 		}
