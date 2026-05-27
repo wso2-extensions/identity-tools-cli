@@ -109,7 +109,7 @@ func getOrgId(resourceName string, list []organization) string {
 	return ""
 }
 
-func prepareOrganizationPostBody(requestBody []byte, format utils.Format, parentId string) ([]byte, interface{}, error) {
+func prepareOrganizationPostBody(requestBody []byte, format utils.Format, parentId string) (reqBody []byte, status interface{}, err error) {
 
 	orgData, err := utils.DeserializeToMap(requestBody, format, utils.ORGANIZATIONS,
 		"id", "parent", "version", "permissions", "created", "lastModified", "hasChildren", "ancestorPath")
@@ -118,7 +118,7 @@ func prepareOrganizationPostBody(requestBody []byte, format utils.Format, parent
 	}
 
 	orgData["parentId"] = parentId
-	status := orgData["status"]
+	status = orgData["status"]
 	delete(orgData, "status")
 
 	// orgHandle is removed from POST requests for Asgardeo
@@ -126,11 +126,57 @@ func prepareOrganizationPostBody(requestBody []byte, format utils.Format, parent
 		delete(orgData, "orgHandle")
 	}
 
+	if err := addCreatorAttributes(orgData); err != nil {
+		return nil, nil, err
+	}
+
 	jsonBody, err := utils.Serialize(orgData, utils.FormatJSON, utils.ORGANIZATIONS)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error serializing to JSON: %w", err)
 	}
 	return jsonBody, status, nil
+}
+
+func addCreatorAttributes(orgData map[string]interface{}) error {
+
+	if utils.TOOL_CONFIGS.OrganizationConfigs == nil {
+		return nil
+	}
+
+	creatorId, hasId := utils.TOOL_CONFIGS.OrganizationConfigs["CREATOR_ID"]
+	creatorUsername, hasUsername := utils.TOOL_CONFIGS.OrganizationConfigs["CREATOR_USERNAME"]
+	if !hasId || !hasUsername {
+		return nil
+	}
+
+	idStr, idOk := creatorId.(string)
+	if !idOk {
+		return fmt.Errorf("unexpected format for CREATOR_ID in organization configs")
+	}
+	usernameStr, usernameOk := creatorUsername.(string)
+	if !usernameOk {
+		return fmt.Errorf("unexpected format for CREATOR_USERNAME in organization configs")
+	}
+	if idStr == "" || usernameStr == "" {
+		return nil
+	}
+
+	var attributes []interface{}
+	if existing, hasAttr := orgData["attributes"]; hasAttr {
+		attrArr, ok := existing.([]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for attributes field")
+		}
+		attributes = attrArr
+	}
+
+	attributes = append(attributes,
+		map[string]interface{}{"key": "creator.id", "value": idStr},
+		map[string]interface{}{"key": "creator.username", "value": usernameStr},
+	)
+
+	orgData["attributes"] = attributes
+	return nil
 }
 
 func patchOrganizationStatus(orgId string, rawStatus interface{}) error {
