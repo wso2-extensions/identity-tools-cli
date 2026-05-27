@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strconv"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -58,58 +59,32 @@ func GetApiResourceList(limitToBusinessApis bool) ([]ApiResource, error) {
 		return []ApiResource{}, nil
 	}
 
+	queryParams["limit"] = strconv.Itoa(totalResults)
 	var listResponse apiResourceListResponse
-	resp, err := utils.SendGetListRequest(utils.API_RESOURCES, totalResults,
+	body, err := utils.SendGetListRequest(utils.API_RESOURCES,
 		utils.WithQueryParams(queryParams))
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving API resource list. %w", err)
 	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("error when reading the retrieved API resource list. %w", err)
-		}
-
-		err = json.Unmarshal(body, &listResponse)
-		if err != nil {
-			return nil, fmt.Errorf("error when unmarshalling the retrieved API resource list. %w", err)
-		}
-
-		return listResponse.APIResources, nil
-	} else if errMsg, ok := utils.ErrorCodes[statusCode]; ok {
-		return nil, fmt.Errorf("error while retrieving API resource list. Status code: %d, Error: %s", statusCode, errMsg)
+	if err = json.Unmarshal(body, &listResponse); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling the retrieved API resource list. %w", err)
 	}
-	return nil, fmt.Errorf("error while retrieving API resource list")
+	return listResponse.APIResources, nil
 }
 
 func getApiResourceCount(queryParams map[string]string) (int, error) {
 
-	resp, err := utils.SendGetListRequest(utils.API_RESOURCES, 1,
+	queryParams["limit"] = "1"
+	body, err := utils.SendGetListRequest(utils.API_RESOURCES,
 		utils.WithQueryParams(queryParams))
 	if err != nil {
 		return 0, fmt.Errorf("error while retrieving API resource count. %w", err)
 	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return 0, fmt.Errorf("error when reading API resource count response. %w", err)
+	var countResponse apiResourceListResponse
+	if err := json.Unmarshal(body, &countResponse); err != nil {
+		return 0, fmt.Errorf("error when unmarshalling API resource count response. %w", err)
 	}
-
-	if statusCode == 200 {
-		var countResponse apiResourceListResponse
-		if err := json.Unmarshal(body, &countResponse); err != nil {
-			return 0, fmt.Errorf("error when unmarshalling API resource count response. %w", err)
-		}
-		return countResponse.TotalResults, nil
-	} else if errMsg, ok := utils.ErrorCodes[statusCode]; ok {
-		return 0, fmt.Errorf("error while retrieving API resource count. Status code: %d, Error: %s", statusCode, errMsg)
-	}
-	return 0, fmt.Errorf("unexpected error while retrieving API resource count. Status code: %d", statusCode)
+	return countResponse.TotalResults, nil
 }
 
 func getDeployedApiResourceIdentifiers(resources []ApiResource) []string {

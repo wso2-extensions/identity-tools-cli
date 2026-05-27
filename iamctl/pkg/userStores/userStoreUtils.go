@@ -21,7 +21,6 @@ package userstores
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"regexp"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
@@ -42,30 +41,14 @@ type UserStoreConfigurations struct {
 func getUserStoreList() ([]userStore, error) {
 
 	var list []userStore
-	resp, err := utils.SendGetListRequest(utils.USERSTORES, -1)
+	body, err := utils.SendGetListRequest(utils.USERSTORES)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving user store list. %w", err)
 	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("error when reading the retrieved user store list. %w", err)
-		}
-
-		err = json.Unmarshal(body, &list)
-		if err != nil {
-			return nil, fmt.Errorf("error when unmarshalling the retrieved user store list. %w", err)
-		}
-		resp.Body.Close()
-
-		return list, nil
-	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		return nil, fmt.Errorf("error while retrieving user store list. Status code: %d, Error: %s", statusCode, error)
+	if err = json.Unmarshal(body, &list); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling the retrieved user store list. %w", err)
 	}
-	return nil, fmt.Errorf("unexpected error while retrieving user store list")
+	return list, nil
 }
 
 func getDeployedUserstoreNames() []string {

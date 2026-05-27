@@ -21,7 +21,6 @@ package organizations
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -55,31 +54,16 @@ func GetCurrentOrganizationId() (id string, err error) {
 
 func getOrganizationList() ([]organization, error) {
 
-	resp, err := utils.SendGetListRequest(utils.ORGANIZATIONS, -1,
+	body, err := utils.SendGetListRequest(utils.ORGANIZATIONS,
 		utils.WithQueryParams(map[string]string{"recursive": "false"}))
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving list. %w", err)
 	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("error when reading the retrieved list. %w", err)
-		}
-
-		var wrapper organizationsResponse
-		err = json.Unmarshal(body, &wrapper)
-		if err != nil {
-			return nil, fmt.Errorf("error when unmarshalling the retrieved list. %w", err)
-		}
-		return wrapper.Organizations, nil
-
-	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		return nil, fmt.Errorf("Status code: %d, Error: %s", statusCode, error)
+	var wrapper organizationsResponse
+	if err = json.Unmarshal(body, &wrapper); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling the retrieved list. %w", err)
 	}
-	return nil, fmt.Errorf("unknown error while retrieving list")
+	return wrapper.Organizations, nil
 }
 
 func getDeployedOrgResourceNames(orgs []organization) []string {

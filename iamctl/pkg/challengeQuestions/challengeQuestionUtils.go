@@ -21,7 +21,6 @@ package challengeQuestions
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -33,26 +32,14 @@ type challengeSet struct {
 func getChallengeSetList() ([]challengeSet, error) {
 
 	var list []challengeSet
-	resp, err := utils.SendGetListRequest(utils.CHALLENGE_QUESTIONS, -1)
+	body, err := utils.SendGetListRequest(utils.CHALLENGE_QUESTIONS)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving challenge question set list. %w", err)
 	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("error when reading the retrieved challenge question set list. %w", err)
-		}
-		if err = json.Unmarshal(body, &list); err != nil {
-			return nil, fmt.Errorf("error when unmarshalling the retrieved challenge question set list. %w", err)
-		}
-		return list, nil
-	} else if errMsg, ok := utils.ErrorCodes[statusCode]; ok {
-		return nil, fmt.Errorf("error while retrieving challenge question set list. Status code: %d, Error: %s", statusCode, errMsg)
+	if err = json.Unmarshal(body, &list); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling the retrieved challenge question set list. %w", err)
 	}
-	return nil, fmt.Errorf("error while retrieving challenge question set list")
+	return list, nil
 }
 
 func getDeployedChallengeSetIds() []string {

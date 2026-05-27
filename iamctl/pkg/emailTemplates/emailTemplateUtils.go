@@ -39,26 +39,14 @@ type emailTemplate struct {
 func getEmailTemplateTypeList() ([]emailTemplateType, error) {
 
 	var list []emailTemplateType
-	resp, err := utils.SendGetListRequest(utils.EMAIL_TEMPLATES, -1)
+	body, err := utils.SendGetListRequest(utils.EMAIL_TEMPLATES)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving email template type list. %w", err)
 	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("error when reading the retrieved email template type list. %w", err)
-		}
-		if err = json.Unmarshal(body, &list); err != nil {
-			return nil, fmt.Errorf("error when unmarshalling the retrieved email template type list. %w", err)
-		}
-		return list, nil
-	} else if errMsg, ok := utils.ErrorCodes[statusCode]; ok {
-		return nil, fmt.Errorf("error while retrieving email template type list. Status code: %d, Error: %s", statusCode, errMsg)
+	if err = json.Unmarshal(body, &list); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling the retrieved email template type list. %w", err)
 	}
-	return nil, fmt.Errorf("error while retrieving email template type list")
+	return list, nil
 }
 
 func getDeployedEmailTemplateTypeNames() []string {

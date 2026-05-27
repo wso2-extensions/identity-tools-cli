@@ -530,36 +530,50 @@ func SendPatchRequest(resourceType ResourceType, resourceId string, requestBody 
 	return resp, nil
 }
 
-func SendGetListRequest(resourceType ResourceType, resourceLimit int, opts ...SendOption) (*http.Response, error) {
+func SendGetListRequest(resourceType ResourceType, opts ...SendOption) ([]byte, error) {
 
 	cfg := applySendOptions(opts)
-	var reqUrl = buildRequestUrl(LIST, resourceType, "")
+	reqUrl := buildRequestUrl(LIST, resourceType, "")
 	reqUrl = addQueryParams(reqUrl, resourceType, LIST)
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	req, err := http.NewRequest("GET", reqUrl, bytes.NewBuffer(nil))
 	if err != nil {
-		return nil, fmt.Errorf("error creating Get List request: %w", err)
+		return nil, fmt.Errorf("error creating GET list request: %w", err)
 	}
 	req.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
-	req.Header.Set("accept", "*/*")
+	req.Header.Set("Accept", MEDIA_TYPE_JSON)
 
 	query := req.URL.Query()
-	if resourceLimit != -1 {
-		query.Add("limit", strconv.Itoa(resourceLimit))
-	}
 	for k, v := range cfg.queryParams {
 		query.Add(k, v)
 	}
 	req.URL.RawQuery = query.Encode()
 	defer req.Body.Close()
 
-	httpClient := &http.Client{}
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve available resource list. %w", err)
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
 	}
-	return resp, nil
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error sending GET list request. %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		if errMsg, ok := ErrorCodes[resp.StatusCode]; ok {
+			return nil, fmt.Errorf("error response for the GET list request. Error: %s", errMsg)
+		}
+		return nil, fmt.Errorf("unexpected error when sending GET list request: %d", resp.StatusCode)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response body: %w", err)
+	}
+	return body, nil
 }
 
 func SendCustomRequest(method, reqURL string, body []byte, contentType string) (*http.Response, error) {

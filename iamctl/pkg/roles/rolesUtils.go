@@ -21,7 +21,6 @@ package roles
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/organizations"
@@ -49,30 +48,14 @@ type rolePatchRequest struct {
 
 func getRoleList() ([]role, error) {
 
-	resp, err := utils.SendGetListRequest(utils.ROLES, -1)
+	body, err := utils.SendGetListRequest(utils.ROLES)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving role list: %w", err)
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		if errMsg, ok := utils.ErrorCodes[resp.StatusCode]; ok {
-			return nil, fmt.Errorf("error while retrieving roles list. Status: %d, Error: %s", resp.StatusCode, errMsg)
-		}
-		return nil, fmt.Errorf("error while retrieving roles list. Status: %d", resp.StatusCode)
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error when reading the retrieved roles list: %w", err)
-	}
-
 	var listResp roleListResponse
-	err = json.Unmarshal(body, &listResp)
-	if err != nil {
+	if err = json.Unmarshal(body, &listResp); err != nil {
 		return nil, fmt.Errorf("error when unmarshalling the retrieved roles list: %w", err)
 	}
-
 	return listResp.Resources, nil
 }
 
