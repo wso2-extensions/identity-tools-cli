@@ -24,7 +24,6 @@ import (
 	"log"
 	"path"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
@@ -38,11 +37,6 @@ type Application struct {
 	Id               string               `json:"id"`
 	Name             string               `json:"name"`
 	InboundProtocols []inboundProtocolRef `json:"inboundProtocols"`
-}
-
-type AppList struct {
-	AppCount     int           `json:"totalResults"`
-	Applications []Application `json:"applications"`
 }
 
 var protocolPathToKey = map[string]string{
@@ -80,32 +74,23 @@ func getDeployedAppNames(apps []Application) []string {
 
 func getAppList() ([]Application, error) {
 
-	totalAppCount, err := getTotalAppCount()
-	if err != nil {
-		return nil, fmt.Errorf("error while retrieving application count: %w", err)
-	}
-	var list AppList
-	body, err := utils.SendGetListRequest(utils.APPLICATIONS, utils.WithQueryParams(map[string]string{"limit": strconv.Itoa(totalAppCount)}))
+	data, err := utils.SendPaginatedGetListRequest(
+		utils.APPLICATIONS,
+		"totalResults",
+		"count",
+		"offset",
+		"limit",
+		"applications",
+		0,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving application list: %w", err)
 	}
-	if err = json.Unmarshal(body, &list); err != nil {
-		return nil, fmt.Errorf("error when unmarshalling the retrieved application list: %w", err)
+	var apps []Application
+	if err := json.Unmarshal(data, &apps); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling application list: %w", err)
 	}
-	return list.Applications, nil
-}
-
-func getTotalAppCount() (count int, err error) {
-
-	var list AppList
-	body, err := utils.SendGetListRequest(utils.APPLICATIONS)
-	if err != nil {
-		return -1, fmt.Errorf("failed to retrieve available app list. %w", err)
-	}
-	if err = json.Unmarshal(body, &list); err != nil {
-		return -1, fmt.Errorf("error when unmarshalling the retrieved app list. %w", err)
-	}
-	return list.AppCount, nil
+	return apps, nil
 }
 
 func getAppKeywordMapping(appName string) map[string]interface{} {
