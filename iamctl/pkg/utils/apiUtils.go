@@ -576,6 +576,74 @@ func SendGetListRequest(resourceType ResourceType, opts ...SendOption) ([]byte, 
 	return body, nil
 }
 
+func SendPaginatedGetListRequest(resourceType ResourceType, totField, curCountField, offsetField, limitField, resultsField string, startIndex int, opts ...SendOption) ([]byte, error) {
+
+	cfg := applySendOptions(opts)
+
+	firstBody, err := SendGetListRequest(resourceType, WithQueryParams(cfg.queryParams))
+	if err != nil {
+		return nil, err
+	}
+	var firstResponse map[string]interface{}
+	if err := json.Unmarshal(firstBody, &firstResponse); err != nil {
+		return nil, fmt.Errorf("error parsing paginated list response: %w", err)
+	}
+
+	totalCount, err := extractIntField(firstResponse, totField)
+	if err != nil {
+		return nil, fmt.Errorf("error reading %s from response: %w", totField, err)
+	}
+	pageSize, err := extractIntField(firstResponse, curCountField)
+	if err != nil {
+		return nil, fmt.Errorf("error reading %s from response: %w", curCountField, err)
+	}
+	allResults, err := extractResultsArray(firstResponse, resultsField)
+	if err != nil {
+		return nil, fmt.Errorf("error reading results array from response: %w", err)
+	}
+
+	if totalCount <= pageSize || pageSize == 0 {
+		data, err := json.Marshal(allResults)
+		if err != nil {
+			return nil, fmt.Errorf("error marshalling initial results: %w", err)
+		}
+		return data, nil
+	}
+
+	for nextOffset := startIndex + pageSize; len(allResults) < totalCount; nextOffset += pageSize {
+		pageParams := make(map[string]string)
+		for k, v := range cfg.queryParams {
+			pageParams[k] = v
+		}
+		pageParams[offsetField] = strconv.Itoa(nextOffset)
+		pageParams[limitField] = strconv.Itoa(pageSize)
+
+		pageBody, err := SendGetListRequest(resourceType, WithQueryParams(pageParams))
+		if err != nil {
+			return nil, err
+		}
+		var pageResponse map[string]interface{}
+		if err := json.Unmarshal(pageBody, &pageResponse); err != nil {
+			return nil, fmt.Errorf("error parsing paginated list response: %w", err)
+		}
+
+		pageResults, err := extractResultsArray(pageResponse, resultsField)
+		if err != nil {
+			return nil, fmt.Errorf("error reading results array from response: %w", err)
+		}
+		if len(pageResults) == 0 {
+			break
+		}
+		allResults = append(allResults, pageResults...)
+	}
+
+	data, err := json.Marshal(allResults)
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling combined results: %w", err)
+	}
+	return data, nil
+}
+
 func SendCustomRequest(method, reqURL string, body []byte, contentType string) (*http.Response, error) {
 
 	var reqBody io.Reader
@@ -751,4 +819,30 @@ func addQueryParams(reqURL string, resourceType ResourceType, operation string) 
 func IsResourceNotFound(err error) bool {
 
 	return err != nil && strings.Contains(err.Error(), ErrorCodes[404])
+}
+
+func extractIntField(m map[string]interface{}, field string) (int, error) {
+
+	val, ok := m[field]
+	if !ok {
+		return 0, fmt.Errorf("field %q not found in response", field)
+	}
+	f, ok := val.(float64)
+	if !ok {
+		return 0, fmt.Errorf("unexpected type for field %q", field)
+	}
+	return int(f), nil
+}
+
+func extractResultsArray(m map[string]interface{}, field string) ([]interface{}, error) {
+
+	val, ok := m[field]
+	if !ok {
+		return []interface{}{}, nil
+	}
+	arr, ok := val.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected format for results field %q", field)
+	}
+	return arr, nil
 }
