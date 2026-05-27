@@ -21,13 +21,11 @@ package applications
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"os"
 	"path"
 	"regexp"
+	"strconv"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -71,9 +69,8 @@ type AuthConfig struct {
 	} `yaml:"inboundAuthenticationConfig" json:"inboundAuthenticationConfig"`
 }
 
-func getDeployedAppNames() []string {
+func getDeployedAppNames(apps []Application) []string {
 
-	apps := getAppList()
 	var appNames []string
 	for _, app := range apps {
 		appNames = append(appNames, app.Name)
@@ -81,71 +78,34 @@ func getDeployedAppNames() []string {
 	return appNames
 }
 
-func getAppList() (spIdList []Application) {
+func getAppList() ([]Application, error) {
 
 	totalAppCount, err := getTotalAppCount()
 	if err != nil {
-		log.Println("Error while retrieving application count. Retrieving only the default count.", err)
+		return nil, fmt.Errorf("error while retrieving application count: %w", err)
 	}
 	var list AppList
-	resp, err := utils.SendGetListRequest(utils.APPLICATIONS, totalAppCount)
+	body, err := utils.SendGetListRequest(utils.APPLICATIONS, utils.WithQueryParams(map[string]string{"limit": strconv.Itoa(totalAppCount)}))
 	if err != nil {
-		log.Println("Error while retrieving application list", err)
+		return nil, fmt.Errorf("error while retrieving application list: %w", err)
 	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		writer := new(tabwriter.Writer)
-		writer.Init(os.Stdout, 8, 8, 0, '\t', 0)
-		defer writer.Flush()
-
-		err = json.Unmarshal(body, &list)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		resp.Body.Close()
-
-		spIdList = list.Applications
-	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		log.Println(error)
-	} else {
-		log.Println("Error while retrieving application list")
+	if err = json.Unmarshal(body, &list); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling the retrieved application list: %w", err)
 	}
-	return spIdList
+	return list.Applications, nil
 }
 
 func getTotalAppCount() (count int, err error) {
 
 	var list AppList
-	resp, err := utils.SendGetListRequest(utils.APPLICATIONS, -1)
+	body, err := utils.SendGetListRequest(utils.APPLICATIONS)
 	if err != nil {
 		return -1, fmt.Errorf("failed to retrieve available app list. %w", err)
 	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return -1, fmt.Errorf("error when reading the retrieved app list. %w", err)
-		}
-
-		err = json.Unmarshal(body, &list)
-		if err != nil {
-			return -1, fmt.Errorf("error when unmarshalling the retrieved app list. %w", err)
-		}
-		resp.Body.Close()
-
-		return list.AppCount, nil
-	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		return -1, fmt.Errorf("error while retrieving app count. Status code: %d, Error: %s", statusCode, error)
+	if err = json.Unmarshal(body, &list); err != nil {
+		return -1, fmt.Errorf("error when unmarshalling the retrieved app list. %w", err)
 	}
-	return -1, fmt.Errorf("error while retrieving application count")
+	return list.AppCount, nil
 }
 
 func getAppKeywordMapping(appName string) map[string]interface{} {
