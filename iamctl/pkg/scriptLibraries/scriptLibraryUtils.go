@@ -30,21 +30,25 @@ type scriptLibrary struct {
 	Description string `json:"description"`
 }
 
-type scriptLibraryListResponse struct {
-	ScriptLibraries []scriptLibrary `json:"scriptLibraries"`
-}
-
 func getScriptLibraryList() ([]scriptLibrary, error) {
 
-	body, err := utils.SendGetListRequest(utils.SCRIPT_LIBRARIES)
+	data, err := utils.SendPaginatedGetListRequest(
+		utils.SCRIPT_LIBRARIES,
+		"totalResults",
+		"count",
+		"offset",
+		"limit",
+		"scriptLibraries",
+		0,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving script library list. %w", err)
 	}
-	var listResponse scriptLibraryListResponse
-	if err = json.Unmarshal(body, &listResponse); err != nil {
-		return nil, fmt.Errorf("error when unmarshalling the retrieved script library list. %w", err)
+	var libraries []scriptLibrary
+	if err := json.Unmarshal(data, &libraries); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling script library list. %w", err)
 	}
-	return listResponse.ScriptLibraries, nil
+	return libraries, nil
 }
 
 func getDeployedScriptLibraryNames() []string {
@@ -99,4 +103,3 @@ func getScriptLibraryData(libraryName string) (map[string]interface{}, error) {
 	dataMap["content"] = string(contentBytes)
 	return dataMap, nil
 }
-
