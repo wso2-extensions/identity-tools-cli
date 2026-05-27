@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"log"
 	"regexp"
-	"strconv"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -33,10 +32,6 @@ type identityProvider struct {
 	Name string `json:"name"`
 }
 
-type idpList struct {
-	IdpCount          int                `json:"totalResults"`
-	IdentityProviders []identityProvider `json:"identityProviders"`
-}
 type idpConfig struct {
 	Id                      string `json:"id" yaml:"id"`
 	Name                    string `json:"name" yaml:"name"`
@@ -83,36 +78,23 @@ var idpPatchSkipKeys = map[string]bool{
 
 func getIdpList() ([]identityProvider, error) {
 
-	idpCount, err := getTotalIdpCount()
+	data, err := utils.SendPaginatedGetListRequest(
+		utils.IDENTITY_PROVIDERS,
+		"totalResults",
+		"count",
+		"offset",
+		"limit",
+		"identityProviders",
+		0,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("error while retrieving IDP count: %w", err)
+		return nil, fmt.Errorf("error while retrieving IDP list. %w", err)
 	}
-	var list idpList
-	if idpCount == 0 {
-		return []identityProvider{}, nil
+	var idps []identityProvider
+	if err := json.Unmarshal(data, &idps); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling IDP list. %w", err)
 	}
-	body, err := utils.SendGetListRequest(utils.IDENTITY_PROVIDERS,
-		utils.WithQueryParams(map[string]string{"limit": strconv.Itoa(idpCount)}))
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve available IDP list. %w", err)
-	}
-	if err = json.Unmarshal(body, &list); err != nil {
-		return nil, fmt.Errorf("error when unmarshalling the retrieved IDP list. %w", err)
-	}
-	return list.IdentityProviders, nil
-}
-
-func getTotalIdpCount() (count int, err error) {
-
-	var list idpList
-	body, err := utils.SendGetListRequest(utils.IDENTITY_PROVIDERS)
-	if err != nil {
-		return -1, fmt.Errorf("failed to retrieve available IDP list. %w", err)
-	}
-	if err = json.Unmarshal(body, &list); err != nil {
-		return -1, fmt.Errorf("error when unmarshalling the retrieved IDP list. %w", err)
-	}
-	return list.IdpCount, nil
+	return idps, nil
 }
 
 func getDeployedIdpNames() []string {
