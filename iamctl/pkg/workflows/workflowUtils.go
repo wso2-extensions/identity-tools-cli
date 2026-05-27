@@ -33,10 +33,6 @@ type workflow struct {
 	Name string `json:"name"`
 }
 
-type workflowListResponse struct {
-	Workflows []workflow `json:"workflows"`
-}
-
 type workflowAssociation struct {
 	ID           string `json:"id"`
 	Name         string `json:"associationName"`
@@ -57,28 +53,44 @@ var exportedAssociationNames []string
 
 func getWorkflowList() ([]workflow, error) {
 
-	body, err := utils.SendGetListRequest(utils.WORKFLOWS)
+	data, err := utils.SendPaginatedGetListRequest(
+		utils.WORKFLOWS,
+		"totalResults",
+		"count",
+		"offset",
+		"limit",
+		"workflows",
+		0,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving workflow list: %w", err)
 	}
-	var listResponse workflowListResponse
-	if err = json.Unmarshal(body, &listResponse); err != nil {
-		return nil, fmt.Errorf("error when unmarshalling the retrieved workflow list: %w", err)
+	var workflows []workflow
+	if err := json.Unmarshal(data, &workflows); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling workflow list: %w", err)
 	}
-	return listResponse.Workflows, nil
+	return workflows, nil
 }
 
 func getWorkflowAssociationsList() ([]workflowAssociation, error) {
 
-	body, err := utils.SendGetListRequest(utils.WORKFLOW_ASSOCIATIONS)
+	data, err := utils.SendPaginatedGetListRequest(
+		utils.WORKFLOW_ASSOCIATIONS,
+		"totalResults",
+		"count",
+		"offset",
+		"limit",
+		"workflowAssociations",
+		0,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving workflow association list: %w", err)
 	}
-	var listResponse workflowAssociationListResponse
-	if err := json.Unmarshal(body, &listResponse); err != nil {
-		return nil, fmt.Errorf("error when unmarshalling the retrieved workflow association list: %w", err)
+	var associations []workflowAssociation
+	if err := json.Unmarshal(data, &associations); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling workflow association list: %w", err)
 	}
-	return listResponse.WorkflowAssociations, nil
+	return associations, nil
 }
 
 func getDeployedWorkflowNames(workflows []workflow) []string {
