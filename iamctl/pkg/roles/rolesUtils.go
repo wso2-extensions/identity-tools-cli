@@ -32,10 +32,6 @@ type role struct {
 	DisplayName string `json:"displayName"`
 }
 
-type roleListResponse struct {
-	Resources []role `json:"Resources"`
-}
-
 type patchOperation struct {
 	Op    string                 `json:"op"`
 	Value map[string]interface{} `json:"value"`
@@ -48,15 +44,23 @@ type rolePatchRequest struct {
 
 func getRoleList() ([]role, error) {
 
-	body, err := utils.SendGetListRequest(utils.ROLES)
+	data, err := utils.SendPaginatedGetListRequest(
+		utils.ROLES,
+		"totalResults",
+		"itemsPerPage",
+		"startIndex",
+		"count",
+		"Resources",
+		1,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving role list: %w", err)
 	}
-	var listResp roleListResponse
-	if err = json.Unmarshal(body, &listResp); err != nil {
-		return nil, fmt.Errorf("error when unmarshalling the retrieved roles list: %w", err)
+	var roles []role
+	if err := json.Unmarshal(data, &roles); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling roles list: %w", err)
 	}
-	return listResp.Resources, nil
+	return roles, nil
 }
 
 func getDeployedRoleLocalFileNames(roles []role) []string {
