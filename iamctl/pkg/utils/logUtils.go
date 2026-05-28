@@ -21,6 +21,7 @@ package utils
 import (
 	"fmt"
 	"log"
+	"strings"
 )
 
 type Summary struct {
@@ -45,13 +46,49 @@ var (
 	ResourceSummaries map[string]ResourceSummary
 )
 
+var CURRENT_LOG_LEVEL LogLevel = LogLevelInfo
+
+func resolveLogLevel(levelStr string) LogLevel {
+
+	switch strings.ToUpper(strings.TrimSpace(levelStr)) {
+	case "DEBUG":
+		return LogLevelDebug
+	case "WARN":
+		return LogLevelWarn
+	case "ERROR":
+		return LogLevelError
+	default:
+		return LogLevelInfo
+	}
+}
+
+func levelPrefix(level LogLevel) string {
+
+	switch level {
+	case LogLevelDebug:
+		return "DEBUG:"
+	case LogLevelWarn:
+		return "WARN:"
+	case LogLevelError:
+		return "ERROR:"
+	default:
+		return "INFO:"
+	}
+}
+
 func PrintLog(level LogLevel, resourceType ResourceType, resourceName string, msg string) {
+
+	if level < CURRENT_LOG_LEVEL {
+		return
+	}
+	prefix := levelPrefix(level)
+
 	if resourceType == NoResource {
-		log.Println(msg)
+		log.Printf("%s %s", prefix, msg)
 	} else if resourceName == "" {
-		log.Printf("%s - %s", resourceType, msg)
+		log.Printf("%s %s - %s", prefix, resourceType, msg)
 	} else {
-		log.Printf("%s - %s - %s", resourceType, resourceName, msg)
+		log.Printf("%s %s - %s - %s", prefix, resourceType, resourceName, msg)
 	}
 }
 

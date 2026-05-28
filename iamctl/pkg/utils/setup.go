@@ -32,6 +32,11 @@ import (
 	"strings"
 )
 
+type LogsConfig struct {
+	LogLevel           string `json:"LOG_LEVEL"`
+	LogRequestPayloads bool   `json:"LOG_REQUEST_PAYLOADS"`
+}
+
 type oAuthResponse struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
@@ -77,6 +82,7 @@ type ToolConfigs struct {
 	BrandingPreferenceConfigs  map[string]interface{} `json:"BRANDING_PREFERENCES"`
 	CustomTextConfigs          map[string]interface{} `json:"CUSTOM_TEXTS"`
 	FlowConfigs                map[string]interface{} `json:"FLOWS"`
+	Logs                       LogsConfig             `json:"LOGS"`
 }
 
 type KeywordConfigs struct {
@@ -113,6 +119,7 @@ func LoadConfigs(envConfigPath string) (baseDir string) {
 
 	baseDir, toolConfigFile, keywordConfigPath := loadServerConfigs(envConfigPath)
 	TOOL_CONFIGS = loadToolConfigsFromFile(toolConfigFile)
+	CURRENT_LOG_LEVEL = resolveLogLevel(TOOL_CONFIGS.Logs.LogLevel)
 	KEYWORD_CONFIGS = loadKeywordConfigsFromFile(keywordConfigPath)
 	return baseDir
 }
