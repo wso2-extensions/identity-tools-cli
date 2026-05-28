@@ -34,7 +34,7 @@ func ImportAll(inputDirPath string) {
 	log.Println("Importing organizations...")
 	importFilePath := filepath.Join(inputDirPath, utils.ORGANIZATIONS.String())
 
-	if !utils.IsEntitySupportedInOrg(utils.ORGANIZATIONS) || utils.IsResourceTypeExcluded(utils.ORGANIZATIONS) {
+	if !utils.IsEntitySupportedInVersion(utils.ORGANIZATIONS) || !utils.IsEntitySupportedInOrg(utils.ORGANIZATIONS) || utils.IsResourceTypeExcluded(utils.ORGANIZATIONS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
