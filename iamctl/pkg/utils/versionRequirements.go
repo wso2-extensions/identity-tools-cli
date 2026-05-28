@@ -32,6 +32,7 @@ const (
 	MIN_VERSION_BRANDING_PREFERENCES        = "7.0.0"
 	MIN_VERSION_CUSTOM_TEXTS                = "7.0.0"
 	MIN_VERSION_FLOWS                       = "7.2.0"
+	MIN_VERSION_ORGANIZATIONS               = "7.0.0"
 )
 
 var EntityMinVersionRequirements = map[ResourceType]string{
@@ -46,6 +47,7 @@ var EntityMinVersionRequirements = map[ResourceType]string{
 	BRANDING_PREFERENCES:        MIN_VERSION_BRANDING_PREFERENCES,
 	CUSTOM_TEXTS:                MIN_VERSION_CUSTOM_TEXTS,
 	FLOWS:                       MIN_VERSION_FLOWS,
+	ORGANIZATIONS:               MIN_VERSION_ORGANIZATIONS,
 }
 
 // Maximum supported WSO2 Identity Server version for each resource type.
