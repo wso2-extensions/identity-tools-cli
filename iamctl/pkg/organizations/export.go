@@ -21,7 +21,6 @@ package organizations
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,7 +29,7 @@ import (
 
 func ExportAll(exportFilePath string, format string) {
 
-	log.Println("Exporting organizations...")
+	utils.PrintLog(utils.LogLevelInfo, utils.ORGANIZATIONS, "", "Exporting organizations...")
 	exportFilePath = filepath.Join(exportFilePath, utils.ORGANIZATIONS.String())
 
 	if !utils.IsEntitySupportedInVersion(utils.ORGANIZATIONS) || !utils.IsEntitySupportedInOrg(utils.ORGANIZATIONS) || utils.IsResourceTypeExcluded(utils.ORGANIZATIONS) {
@@ -38,13 +37,13 @@ func ExportAll(exportFilePath string, format string) {
 	}
 	orgs, err := getOrganizationList()
 	if err != nil {
-		log.Println("Error retrieving organizations list:", err)
+		utils.PrintLog(utils.LogLevelError, utils.ORGANIZATIONS, "", fmt.Sprintf("Error retrieving organizations list: %s", err))
 		return
 	}
 
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Println("Error creating organizations directory:", err)
+			utils.PrintLog(utils.LogLevelError, utils.ORGANIZATIONS, "", fmt.Sprintf("Error creating organizations directory: %s", err))
 			return
 		}
 	} else {
@@ -57,15 +56,15 @@ func ExportAll(exportFilePath string, format string) {
 	for _, org := range orgs {
 		resourceName := getOrgResourceName(org)
 		if !utils.IsResourceExcluded(resourceName, utils.TOOL_CONFIGS.OrganizationConfigs) {
-			log.Println("Exporting organization: ", resourceName)
+			utils.PrintLog(utils.LogLevelInfo, utils.ORGANIZATIONS, resourceName, "Exporting")
 
 			err := exportOrganization(org.Id, resourceName, exportFilePath, format)
 			if err != nil {
 				utils.UpdateFailureSummary(utils.ORGANIZATIONS, resourceName)
-				log.Printf("Error while exporting organization: %s. %s", resourceName, err)
+				utils.PrintLog(utils.LogLevelError, utils.ORGANIZATIONS, resourceName, fmt.Sprintf("Error while exporting: %s", err))
 			} else {
 				utils.UpdateSuccessSummary(utils.ORGANIZATIONS, utils.EXPORT)
-				log.Println("Organization exported successfully: ", resourceName)
+				utils.PrintLog(utils.LogLevelInfo, utils.ORGANIZATIONS, resourceName, "Exported successfully")
 			}
 		}
 	}

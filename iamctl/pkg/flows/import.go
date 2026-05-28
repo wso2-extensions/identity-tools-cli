@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -31,20 +30,20 @@ import (
 
 func ImportAll(inputDirPath string) {
 
-	log.Println("Importing flows...")
+	utils.PrintLog(utils.LogLevelInfo, utils.FLOWS, "", "Importing flows...")
 	importFilePath := filepath.Join(inputDirPath, utils.FLOWS.String())
 
 	if !utils.IsEntitySupportedInVersion(utils.FLOWS) || !utils.IsEntitySupportedInOrg(utils.FLOWS) || utils.IsResourceTypeExcluded(utils.FLOWS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Println("No flows to import.")
+		utils.PrintLog(utils.LogLevelInfo, utils.FLOWS, "", "No flows to import.")
 		return
 	}
 
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Println("Error reading flows directory:", err)
+		utils.PrintLog(utils.LogLevelError, utils.FLOWS, "", fmt.Sprintf("Error reading flows directory: %s", err))
 		return
 	}
 
@@ -56,7 +55,7 @@ func ImportAll(inputDirPath string) {
 		if !utils.IsResourceExcluded(name, utils.TOOL_CONFIGS.FlowConfigs) {
 			id, ok := flowTypes[name]
 			if !ok {
-				log.Printf("Error importing flow: %s. Unknown flow type", name)
+				utils.PrintLog(utils.LogLevelError, utils.FLOWS, name, "Error importing flow: unknown flow type")
 				utils.UpdateFailureSummary(utils.FLOWS, name)
 				continue
 			}
@@ -64,7 +63,7 @@ func ImportAll(inputDirPath string) {
 			err := importFlow(name, id, flowFilePath)
 			if err != nil {
 				utils.UpdateFailureSummary(utils.FLOWS, name)
-				log.Printf("Error importing flow: %s. %s\n", name, err)
+				utils.PrintLog(utils.LogLevelError, utils.FLOWS, name, fmt.Sprintf("Error importing flow: %s", err))
 			}
 		}
 	}
@@ -95,7 +94,7 @@ func importFlow(name, id, importFilePath string) error {
 
 func updateFlow(name, id string, data []byte, format utils.Format) error {
 
-	log.Println("Updating flow:", name)
+	utils.PrintLog(utils.LogLevelInfo, utils.FLOWS, name, "Updating flow")
 
 	dataMap, err := utils.DeserializeToMap(data, format, utils.FLOWS)
 	if err != nil {
@@ -126,7 +125,7 @@ func updateFlow(name, id string, data []byte, format utils.Format) error {
 	}
 
 	utils.UpdateSuccessSummary(utils.FLOWS, utils.UPDATE)
-	log.Println("Flow updated successfully:", name)
+	utils.PrintLog(utils.LogLevelInfo, utils.FLOWS, name, "Updated successfully")
 	return nil
 }
 

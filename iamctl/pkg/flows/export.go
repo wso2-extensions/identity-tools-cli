@@ -21,7 +21,6 @@ package flows
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,7 +29,7 @@ import (
 
 func ExportAll(exportFilePath string, format string) {
 
-	log.Println("Exporting flows...")
+	utils.PrintLog(utils.LogLevelInfo, utils.FLOWS, "", "Exporting flows...")
 	exportFilePath = filepath.Join(exportFilePath, utils.FLOWS.String())
 
 	if !utils.IsEntitySupportedInVersion(utils.FLOWS) || !utils.IsEntitySupportedInOrg(utils.FLOWS) || utils.IsResourceTypeExcluded(utils.FLOWS) {
@@ -38,7 +37,7 @@ func ExportAll(exportFilePath string, format string) {
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Println("Error creating flows directory:", err)
+			utils.PrintLog(utils.LogLevelError, utils.FLOWS, "", fmt.Sprintf("Error creating flows directory: %s", err))
 			return
 		}
 	}
@@ -46,19 +45,19 @@ func ExportAll(exportFilePath string, format string) {
 	var exportedFlowNames []string
 	for name, id := range flowTypes {
 		if !utils.IsResourceExcluded(name, utils.TOOL_CONFIGS.FlowConfigs) {
-			log.Println("Exporting flow:", name)
+			utils.PrintLog(utils.LogLevelInfo, utils.FLOWS, name, "Exporting")
 
 			exists, err := exportFlow(name, id, exportFilePath, format)
 			if err != nil {
 				utils.UpdateFailureSummary(utils.FLOWS, name)
-				log.Printf("Error while exporting flow: %s. %s", name, err)
+				utils.PrintLog(utils.LogLevelError, utils.FLOWS, name, fmt.Sprintf("Error while exporting: %s", err))
 			} else {
 				if exists {
 					exportedFlowNames = append(exportedFlowNames, name)
 					utils.UpdateSuccessSummary(utils.FLOWS, utils.EXPORT)
-					log.Println("Flow exported successfully:", name)
+					utils.PrintLog(utils.LogLevelInfo, utils.FLOWS, name, "Exported successfully")
 				} else {
-					log.Printf("Flow: %s is not configured", name)
+					utils.PrintLog(utils.LogLevelInfo, utils.FLOWS, name, "Not configured")
 				}
 			}
 		}

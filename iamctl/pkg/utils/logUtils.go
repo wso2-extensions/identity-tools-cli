@@ -20,6 +20,7 @@ package utils
 
 import (
 	"fmt"
+	"log"
 )
 
 type Summary struct {
@@ -43,6 +44,16 @@ var (
 	SummaryData       Summary
 	ResourceSummaries map[string]ResourceSummary
 )
+
+func PrintLog(level LogLevel, resourceType ResourceType, resourceName string, msg string) {
+	if resourceType == NoResource {
+		log.Println(msg)
+	} else if resourceName == "" {
+		log.Printf("%s - %s", resourceType, msg)
+	} else {
+		log.Printf("%s - %s - %s", resourceType, resourceName, msg)
+	}
+}
 
 func PrintSummary(Operation string) {
 

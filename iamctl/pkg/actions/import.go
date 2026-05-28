@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -31,24 +30,24 @@ import (
 
 func ImportAll(inputDirPath string) {
 
-	log.Println("Importing actions...")
+	utils.PrintLog(utils.LogLevelInfo, utils.ACTIONS, "", "Importing actions...")
 	importFilePath := filepath.Join(inputDirPath, utils.ACTIONS.String())
 
 	if !utils.IsEntitySupportedInVersion(utils.ACTIONS) || !utils.IsEntitySupportedInOrg(utils.ACTIONS) || utils.IsResourceTypeExcluded(utils.ACTIONS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Println("No actions to import.")
+		utils.PrintLog(utils.LogLevelInfo, utils.ACTIONS, "", "No actions to import.")
 		return
 	}
 
 	deployedTypes, err := getActionTypesList()
 	if err != nil {
-		log.Println("Error retrieving action types list:", err)
+		utils.PrintLog(utils.LogLevelError, utils.ACTIONS, "", fmt.Sprintf("Error retrieving action types list: %s", err))
 	}
 	typeFolders, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Println("Error reading action type directories: ", err)
+		utils.PrintLog(utils.LogLevelError, utils.ACTIONS, "", fmt.Sprintf("Error reading action type directories: %s", err))
 		return
 	}
 
@@ -66,7 +65,7 @@ func ImportAll(inputDirPath string) {
 			err := importActionType(importFilePath, typeName)
 			if err != nil {
 				utils.UpdateFailureSummary(utils.ACTIONS, typeName)
-				log.Printf("Error importing action type %s: %s", typeName, err)
+				utils.PrintLog(utils.LogLevelError, utils.ACTIONS, typeName, fmt.Sprintf("Error importing action type: %s", err))
 			}
 		}
 	}
@@ -141,7 +140,7 @@ func importAction(typeName, actionId, actionName, filePath string) error {
 
 func createAction(typeName, actionName, status string, actionMap map[string]interface{}) error {
 
-	log.Printf("Creating new action: %s of type %s", actionName, typeName)
+	utils.PrintLog(utils.LogLevelInfo, utils.ACTIONS, actionName, fmt.Sprintf("Creating new action of type %s", typeName))
 
 	delete(actionMap, "version")
 	jsonBody, err := utils.Serialize(actionMap, utils.FormatJSON, utils.ACTIONS)
@@ -169,13 +168,13 @@ func createAction(typeName, actionName, status string, actionMap map[string]inte
 	}
 
 	utils.UpdateSuccessSummary(utils.ACTIONS, utils.IMPORT)
-	log.Println("Action imported successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.ACTIONS, actionName, "Imported successfully")
 	return nil
 }
 
 func updateAction(typeName, actionId, actionName, status string, actionMap map[string]interface{}) error {
 
-	log.Printf("Updating action: %s of type %s", actionName, typeName)
+	utils.PrintLog(utils.LogLevelInfo, utils.ACTIONS, actionName, fmt.Sprintf("Updating action of type %s", typeName))
 
 	if err := addMissingFields(actionMap, typeName, actionId); err != nil {
 		return fmt.Errorf("error adding missing fields: %w", err)
@@ -196,7 +195,7 @@ func updateAction(typeName, actionId, actionName, status string, actionMap map[s
 	}
 
 	utils.UpdateSuccessSummary(utils.ACTIONS, utils.UPDATE)
-	log.Println("Action updated successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.ACTIONS, actionName, "Updated successfully")
 	return nil
 }
 
@@ -214,17 +213,17 @@ func removeDeletedDeployedActionTypes(localDirs []os.FileInfo, deployedTypes []a
 			continue
 		}
 		if utils.IsResourceExcluded(deployedType.ID, utils.TOOL_CONFIGS.ActionConfigs) {
-			log.Printf("Action type: %s is excluded from deletion.", deployedType.ID)
+			utils.PrintLog(utils.LogLevelInfo, utils.ACTIONS, deployedType.ID, "Excluded from deletion.")
 			continue
 		}
 		actions, err := getActionsList(deployedType.ID)
 		if err != nil {
-			log.Printf("Error retrieving deployed actions for type %s: %s", deployedType.ID, err)
+			utils.PrintLog(utils.LogLevelError, utils.ACTIONS, deployedType.ID, fmt.Sprintf("Error retrieving deployed actions: %s", err))
 			continue
 		}
 		if err := removeDeletedDeployedActions(deployedType.ID, nil, actions); err != nil {
 			utils.UpdateFailureSummary(utils.ACTIONS, deployedType.ID)
-			log.Printf("Error deleting actions for type %s: %s", deployedType.ID, err)
+			utils.PrintLog(utils.LogLevelError, utils.ACTIONS, deployedType.ID, fmt.Sprintf("Error deleting actions: %s", err))
 		}
 	}
 }
@@ -245,7 +244,7 @@ func removeDeletedDeployedActions(typeName string, localFiles []os.FileInfo, dep
 		if _, existsLocally := localResourceNames[action.Name]; existsLocally {
 			continue
 		}
-		log.Printf("Action: %s of type %s not found locally. Deleting action.\n", action.Name, typeName)
+		utils.PrintLog(utils.LogLevelInfo, utils.ACTIONS, action.Name, fmt.Sprintf("Not found locally. Deleting action of type %s.", typeName))
 		if err := utils.SendDeleteRequest(typeName+"/"+action.ID, utils.ACTIONS); err != nil {
 			return fmt.Errorf("error deleting action: %s. %w", action.Name, err)
 		} else {

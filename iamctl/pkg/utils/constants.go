@@ -140,6 +140,19 @@ const USER_ONBOARDING_GOVERNANCE_CATEGORY_ID = "VXNlciBPbmJvYXJkaW5n"
 const OAUTH2 = "oauth2"
 const ALL_ITEMS = "all_items" // Wildcard to match all elements in an array
 
+// Log levels
+type LogLevel int
+
+const (
+	LogLevelDebug LogLevel = iota // 0 — most verbose
+	LogLevelInfo                  // 1 — default
+	LogLevelWarn                  // 2
+	LogLevelError                 // 3 — least verbose
+)
+
+// NoResource is used with PrintLog when there is no resource type context.
+const NoResource ResourceType = ""
+
 // Resource types that are supported in sub-organizations
 var entitySupportedInSubOrg = map[ResourceType]bool{
 	APPLICATIONS:       true,

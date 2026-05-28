@@ -21,7 +21,6 @@ package notificationTemplates
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -32,30 +31,30 @@ import (
 func ImportAll(rt utils.ResourceType, inputDirPath string) {
 
 	logName := getTemplateLogName(rt)
-	log.Printf("Importing %s...", logName)
+	utils.PrintLog(utils.LogLevelInfo, rt, "", fmt.Sprintf("Importing %s...", logName))
 	importFilePath := filepath.Join(inputDirPath, rt.String())
 
 	if !utils.IsEntitySupportedInVersion(rt) || !utils.IsEntitySupportedInOrg(rt) || utils.IsResourceTypeExcluded(rt) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Printf("No %s to import.", logName)
+		utils.PrintLog(utils.LogLevelInfo, rt, "", fmt.Sprintf("No %s to import.", logName))
 		return
 	}
 
 	deployedTypes, err := getTemplateTypeList(rt)
 	if err != nil {
-		log.Printf("Error while retrieving the %s list: %s", logName, err)
+		utils.PrintLog(utils.LogLevelError, rt, "", fmt.Sprintf("Error while retrieving the list: %s", err))
 		return
 	}
 	localTypeDirs, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Printf("Error reading %s directory: %s", logName, err)
+		utils.PrintLog(utils.LogLevelError, rt, "", fmt.Sprintf("Error reading directory: %s", err))
 		return
 	}
 	exportedTypeNames, err := readLocalTemplateTypeNames(importFilePath, rt)
 	if err != nil {
-		log.Printf("Error reading %s type list: %s", logName, err)
+		utils.PrintLog(utils.LogLevelError, rt, "", fmt.Sprintf("Error reading type list: %s", err))
 		utils.UpdateFailureSummary(rt, "TemplateTypes")
 		return
 	}
@@ -75,7 +74,7 @@ func ImportAll(rt utils.ResourceType, inputDirPath string) {
 			err := importTemplateType(rt, localTypePath, displayName, deployedTypes, logName)
 			if err != nil {
 				utils.UpdateFailureSummary(rt, displayName)
-				log.Printf("Error: when importing %s type: %s. %s", logName, displayName, err)
+				utils.PrintLog(utils.LogLevelError, rt, displayName, fmt.Sprintf("Error when importing: %s", err))
 			}
 		}
 	}
@@ -86,14 +85,14 @@ func importTemplateType(rt utils.ResourceType, localTypePath, displayName string
 	var typeId string
 	existingType := getTemplateTypeId(displayName, deployedTypes)
 	if existingType == "" {
-		log.Printf("Creating new %s type: %s", logName, displayName)
+		utils.PrintLog(utils.LogLevelInfo, rt, displayName, fmt.Sprintf("Creating new %s type", logName))
 		createdId, err := createTemplateType(rt, displayName)
 		if err != nil {
 			return fmt.Errorf("error creating template type: %w", err)
 		}
 		typeId = createdId
 	} else {
-		log.Printf("Updating %s type: %s", logName, displayName)
+		utils.PrintLog(utils.LogLevelInfo, rt, displayName, fmt.Sprintf("Updating %s type", logName))
 		typeId = existingType
 	}
 
@@ -140,10 +139,10 @@ func importTemplateType(rt utils.ResourceType, localTypePath, displayName string
 
 	if existingType != "" {
 		utils.UpdateSuccessSummary(rt, utils.UPDATE)
-		log.Printf("Template type updated successfully: %s", displayName)
+		utils.PrintLog(utils.LogLevelInfo, rt, displayName, "Updated successfully")
 	} else {
 		utils.UpdateSuccessSummary(rt, utils.IMPORT)
-		log.Printf("Template type imported successfully: %s", displayName)
+		utils.PrintLog(utils.LogLevelInfo, rt, displayName, "Imported successfully")
 	}
 
 	return nil
@@ -223,22 +222,22 @@ func removeDeletedDeployedTypes(rt utils.ResourceType, localDirs []os.FileInfo, 
 			continue
 		}
 		if utils.IsResourceExcluded(deployedType.DisplayName, getTemplateResourceConfig(rt)) {
-			log.Printf("%s type: %s is excluded from deletion.", logName, deployedType.DisplayName)
+			utils.PrintLog(utils.LogLevelInfo, rt, deployedType.DisplayName, fmt.Sprintf("%s type excluded from deletion.", logName))
 			continue
 		}
 
 		if _, isExported := exportedNames[deployedType.DisplayName]; isExported {
-			log.Printf("%s type not found locally. Resetting: %s", logName, deployedType.DisplayName)
+			utils.PrintLog(utils.LogLevelInfo, rt, deployedType.DisplayName, fmt.Sprintf("%s type not found locally. Resetting.", logName))
 			if err := resetTemplateType(rt, deployedType.ID); err != nil {
 				utils.UpdateFailureSummary(rt, deployedType.DisplayName)
-				log.Printf("Error resetting %s type: %s. %s", logName, deployedType.DisplayName, err)
+				utils.PrintLog(utils.LogLevelError, rt, deployedType.DisplayName, fmt.Sprintf("Error resetting %s type: %s", logName, err))
 				continue
 			}
 		} else {
-			log.Printf("%s type not found locally. Deleting: %s", logName, deployedType.DisplayName)
+			utils.PrintLog(utils.LogLevelInfo, rt, deployedType.DisplayName, fmt.Sprintf("%s type not found locally. Deleting.", logName))
 			if err := utils.SendDeleteRequest(deployedType.ID, rt); err != nil {
 				utils.UpdateFailureSummary(rt, deployedType.DisplayName)
-				log.Printf("Error deleting %s type: %s. %s", logName, deployedType.DisplayName, err)
+				utils.PrintLog(utils.LogLevelError, rt, deployedType.DisplayName, fmt.Sprintf("Error deleting %s type: %s", logName, err))
 				continue
 			}
 		}
@@ -262,7 +261,7 @@ func removeDeletedDeployedTemplates(rt utils.ResourceType, typeId string, localF
 		if _, existsLocally := localLocales[template.Locale]; existsLocally {
 			continue
 		}
-		log.Printf("Template not found locally. Deleting: %s", template.Locale)
+		utils.PrintLog(utils.LogLevelInfo, rt, template.Locale, "Template not found locally. Deleting.")
 		if err := utils.SendDeleteRequest(typeId+"/org-templates/"+template.Locale, rt); err != nil {
 			return fmt.Errorf("error deleting template: %s. %w", template.Locale, err)
 		}

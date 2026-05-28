@@ -21,7 +21,6 @@ package identityproviders
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"regexp"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
@@ -170,7 +169,7 @@ func processFederatedAuthenticators(idpId string, idpStruct idpConfig, idpMap ma
 		}
 		if definedBy == "USER" {
 			if !excludeSecrets {
-				log.Println("Warn: Secrets exclusion cannot be disabled for custom authenticators(service-based). All secrets will be masked.")
+				utils.PrintLog(utils.LogLevelWarn, utils.IDENTITY_PROVIDERS, "", "Secrets exclusion cannot be disabled for custom authenticators(service-based). All secrets will be masked.")
 			}
 			if err := processEndpointAuthProperties(fullAuthMap); err != nil {
 				return fmt.Errorf("error processing endpoint auth properties for authenticator %s: %v", authId, err)

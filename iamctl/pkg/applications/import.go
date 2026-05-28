@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -33,7 +32,7 @@ import (
 
 func ImportAll(inputDirPath string) {
 
-	log.Println("Importing applications...")
+	utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, "", "Importing applications...")
 	importFilePath := filepath.Join(inputDirPath, utils.APPLICATIONS.String())
 	exportAPIExists := utils.ExportAPIExists(utils.APPLICATIONS)
 	applicationAuthorizedApis.InitIsSupported()
@@ -42,26 +41,26 @@ func ImportAll(inputDirPath string) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Println("No applications to import.")
+		utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, "", "No applications to import.")
 		return
 	}
 
 	if applicationAuthorizedApis.IsSupported {
 		err := applicationAuthorizedApis.GetAPIResources()
 		if err != nil {
-			log.Println("Error retrieving API resource list: ", err)
+			utils.PrintLog(utils.LogLevelError, utils.APPLICATIONS, "", fmt.Sprintf("Error retrieving API resource list: %s", err))
 			return
 		}
 	}
 
 	deployedApps, err := getAppList()
 	if err != nil {
-		log.Println("Error retrieving applications list:", err)
+		utils.PrintLog(utils.LogLevelError, utils.APPLICATIONS, "", fmt.Sprintf("Error retrieving applications list: %s", err))
 		return
 	}
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Println("Error importing applications: ", err)
+		utils.PrintLog(utils.LogLevelError, utils.APPLICATIONS, "", fmt.Sprintf("Error importing applications: %s", err))
 		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {
@@ -80,21 +79,21 @@ func ImportAll(inputDirPath string) {
 			appId := getAppId(appName, deployedApps)
 			err := importApp(appId, appName, appFilePath, exportAPIExists)
 			if err != nil {
-				log.Println("Error importing application: ", err)
+				utils.PrintLog(utils.LogLevelError, utils.APPLICATIONS, appName, fmt.Sprintf("Error importing application: %s", err))
 				utils.UpdateFailureSummary(utils.APPLICATIONS, appName)
 			}
 		}
 	}
 
 	if utils.IsResourceTypeExcluded(utils.ROLES) && exportAPIExists {
-		log.Println("Warn: Roles are excluded from import. Import Roles to persist Role audiences of applications.")
+		utils.PrintLog(utils.LogLevelWarn, utils.APPLICATIONS, "", "Roles are excluded from import. Import Roles to persist Role audiences of applications.")
 	}
 }
 
 func importApp(appId, appName, importFilePath string, exportAPIExists bool) error {
 
 	if appName == utils.CONSOLE || appName == utils.MY_ACCOUNT || appName == utils.CARBON_SP {
-		log.Printf("Application: %s is a system application. Skipping import.\n", appName)
+		utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, appName, "System application. Skipping import.")
 		return nil
 	}
 
@@ -150,7 +149,7 @@ func importApp(appId, appName, importFilePath string, exportAPIExists bool) erro
 
 func importApplication(appName, importFilePath, modifiedFileData string, format utils.Format) (appId string, err error) {
 
-	log.Println("Creating new application: " + appName)
+	utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, appName, "Creating new application")
 	resp, err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.APPLICATIONS)
 	if err != nil {
 		return "", fmt.Errorf("error when importing application: %s", err)
@@ -174,13 +173,13 @@ func importApplication(appName, importFilePath, modifiedFileData string, format 
 	utils.AddToIdentifierMap(utils.APPLICATIONS, appId, appName, utils.IMPORT)
 
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.IMPORT)
-	log.Println("Application imported successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, appName, "Imported successfully")
 	return appId, nil
 }
 
 func updateApplication(appId, appName, importFilePath, modifiedFileData string, format utils.Format) error {
 
-	log.Println("Updating application: " + appName)
+	utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, appName, "Updating application")
 	fileData, err := injectDeployedOAuthCredentials(appId, modifiedFileData, format)
 	if err != nil {
 		return fmt.Errorf("error injecting deployed OAuth credentials: %w", err)
@@ -194,13 +193,13 @@ func updateApplication(appId, appName, importFilePath, modifiedFileData string, 
 	utils.AddToIdentifierMap(utils.APPLICATIONS, appId, appName, utils.IMPORT)
 
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.UPDATE)
-	log.Println("Application updated successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, appName, "Updated successfully")
 	return nil
 }
 
 func importAppWithCRUD(appName string, appMap map[string]interface{}) error {
 
-	log.Println("Creating new application: " + appName)
+	utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, appName, "Creating new application")
 
 	newSecretCreated, err := processInboundProtocolsForPost(appMap)
 	if err != nil {
@@ -230,13 +229,13 @@ func importAppWithCRUD(appName string, appMap map[string]interface{}) error {
 	utils.AddToIdentifierMap(utils.APPLICATIONS, appId, appName, utils.IMPORT)
 
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.IMPORT)
-	log.Println("Application imported successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, appName, "Imported successfully")
 	return nil
 }
 
 func updateAppWithCRUD(appId, appName string, appMap map[string]interface{}) error {
 
-	log.Println("Updating application: " + appName)
+	utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, appName, "Updating application")
 
 	localProtocolConfig, ok := appMap["inboundProtocolConfiguration"].(map[string]interface{})
 	if !ok {
@@ -267,13 +266,13 @@ func updateAppWithCRUD(appId, appName string, appMap map[string]interface{}) err
 	utils.AddToIdentifierMap(utils.APPLICATIONS, appId, appName, utils.IMPORT)
 
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.UPDATE)
-	log.Println("Application updated successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, appName, "Updated successfully")
 	return nil
 }
 
 func updateResidentApp(appMap map[string]interface{}) error {
 
-	log.Println("Updating Resident application")
+	utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, utils.RESIDENT_APP, "Updating Resident application")
 
 	provConfig, ok := appMap["provisioningConfigurations"].(map[string]interface{})
 	if !ok {
@@ -296,7 +295,7 @@ func updateResidentApp(appMap map[string]interface{}) error {
 	resp.Body.Close()
 
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.UPDATE)
-	log.Println("Resident application updated successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, utils.RESIDENT_APP, "Updated successfully")
 	return nil
 }
 
@@ -352,23 +351,23 @@ func removeDeletedDeployedApps(localFiles []os.FileInfo, deployedApps []Applicat
 
 		if utils.IsResourceExcluded(app.Name, utils.TOOL_CONFIGS.ApplicationConfigs) ||
 			app.Name == utils.CONSOLE || app.Name == utils.MY_ACCOUNT || app.Name == utils.CARBON_SP {
-			log.Printf("Application: %s is excluded from deletion.\n", app.Name)
+			utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, app.Name, "Excluded from deletion.")
 			continue
 		}
 		if isToolMgt, err := isToolMgtApp(app.Id); err != nil {
-			log.Printf("Error checking if application is the tool management app: %s\n", err.Error())
-			log.Printf("Application: %s is excluded from deletion.\n", app.Name)
+			utils.PrintLog(utils.LogLevelError, utils.APPLICATIONS, app.Name, fmt.Sprintf("Error checking if application is the tool management app: %s", err.Error()))
+			utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, app.Name, "Excluded from deletion.")
 			continue
 		} else if isToolMgt {
-			log.Printf("Info: Tool Management App: %s is excluded from deletion.\n", app.Name)
+			utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, app.Name, "Tool Management App. Excluded from deletion.")
 			continue
 		}
 
-		log.Println("Application not found locally. Deleting app: ", app.Name)
+		utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, app.Name, "Not found locally. Deleting app.")
 		err := utils.SendDeleteRequest(app.Id, utils.APPLICATIONS)
 		if err != nil {
 			utils.UpdateFailureSummary(utils.APPLICATIONS, app.Name)
-			log.Println("Error deleting application: ", app.Name, err)
+			utils.PrintLog(utils.LogLevelError, utils.APPLICATIONS, app.Name, fmt.Sprintf("Error deleting application: %s", err))
 		}
 		utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.DELETE)
 	}

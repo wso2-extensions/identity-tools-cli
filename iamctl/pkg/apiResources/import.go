@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -31,25 +30,25 @@ import (
 
 func ImportAll(inputDirPath string) {
 
-	log.Println("Importing API resources...")
+	utils.PrintLog(utils.LogLevelInfo, utils.API_RESOURCES, "", "Importing API resources...")
 	importFilePath := filepath.Join(inputDirPath, utils.API_RESOURCES.String())
 
 	if !utils.IsEntitySupportedInVersion(utils.API_RESOURCES) || !utils.IsEntitySupportedInOrg(utils.API_RESOURCES) || utils.IsResourceTypeExcluded(utils.API_RESOURCES) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Println("No API resources to import.")
+		utils.PrintLog(utils.LogLevelInfo, utils.API_RESOURCES, "", "No API resources to import.")
 		return
 	}
 
 	deployedResources, err := GetApiResourceList(true)
 	if err != nil {
-		log.Println("Error retrieving the deployed API resource list:", err)
+		utils.PrintLog(utils.LogLevelError, utils.API_RESOURCES, "", fmt.Sprintf("Error retrieving the deployed API resource list: %s", err))
 		return
 	}
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Println("Error importing API resources:", err)
+		utils.PrintLog(utils.LogLevelError, utils.API_RESOURCES, "", fmt.Sprintf("Error importing API resources: %s", err))
 		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {
@@ -58,7 +57,7 @@ func ImportAll(inputDirPath string) {
 
 	localScopeMap, err := readLocalScopesMap(importFilePath)
 	if err != nil {
-		log.Println("Error reading local scope name map:", err)
+		utils.PrintLog(utils.LogLevelError, utils.API_RESOURCES, "", fmt.Sprintf("Error reading local scope name map: %s", err))
 		utils.UpdateFailureSummary(utils.API_RESOURCES, utils.API_RESOURCE_SCOPES.String())
 		return
 	}
@@ -73,14 +72,14 @@ func ImportAll(inputDirPath string) {
 			continue
 		}
 		if _, failed := failedResources[resourceName]; failed {
-			log.Printf("Skipping API resource %s: deleting stale scopes failed", resourceName)
+			utils.PrintLog(utils.LogLevelInfo, utils.API_RESOURCES, resourceName, "Skipping: deleting stale scopes failed")
 			utils.UpdateFailureSummary(utils.API_RESOURCES, resourceName)
 			continue
 		}
 		if !utils.IsResourceExcluded(resourceName, utils.TOOL_CONFIGS.ApiResourceConfigs) {
 			resourceId := getApiResourceId(resourceName, deployedResources)
 			if err := importApiResource(resourceId, resourceName, apiResFilePath); err != nil {
-				log.Println("Error importing API resource:", err)
+				utils.PrintLog(utils.LogLevelError, utils.API_RESOURCES, resourceName, fmt.Sprintf("Error importing API resource: %s", err))
 				utils.UpdateFailureSummary(utils.API_RESOURCES, resourceName)
 			}
 		}
@@ -110,7 +109,7 @@ func importApiResource(resourceId, resourceIdentifier, importFilePath string) er
 
 func createApiResource(resourceIdentifier string, requestBody []byte, format utils.Format) error {
 
-	log.Println("Creating new API resource:", resourceIdentifier)
+	utils.PrintLog(utils.LogLevelInfo, utils.API_RESOURCES, resourceIdentifier, "Creating new API resource")
 
 	jsonBody, err := utils.PrepareJSONRequestBody(requestBody, format, utils.API_RESOURCES,
 		"id", "type", "properties", "authorizationDetailsTypes")
@@ -135,13 +134,13 @@ func createApiResource(resourceIdentifier string, requestBody []byte, format uti
 	utils.AddToIdentifierMap(utils.API_RESOURCES, created.ID, resourceIdentifier, utils.IMPORT)
 
 	utils.UpdateSuccessSummary(utils.API_RESOURCES, utils.IMPORT)
-	log.Println("API resource created successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.API_RESOURCES, resourceIdentifier, "Created successfully")
 	return nil
 }
 
 func updateApiResource(resourceId, resourceIdentifier string, requestBody []byte, format utils.Format) error {
 
-	log.Println("Updating API resource:", resourceIdentifier)
+	utils.PrintLog(utils.LogLevelInfo, utils.API_RESOURCES, resourceIdentifier, "Updating API resource")
 
 	dataMap, err := utils.DeserializeToMap(requestBody, format, utils.API_RESOURCES)
 	if err != nil {
@@ -165,7 +164,7 @@ func updateApiResource(resourceId, resourceIdentifier string, requestBody []byte
 
 	utils.AddToIdentifierMap(utils.API_RESOURCES, resourceId, resourceIdentifier, utils.IMPORT)
 	utils.UpdateSuccessSummary(utils.API_RESOURCES, utils.UPDATE)
-	log.Println("API resource updated successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.API_RESOURCES, resourceIdentifier, "Updated successfully")
 	return nil
 }
 
@@ -187,15 +186,15 @@ func removeDeletedDeployedApiResources(localFiles []os.FileInfo, deployedResourc
 			continue
 		}
 		if utils.IsResourceExcluded(resource.Identifier, utils.TOOL_CONFIGS.ApiResourceConfigs) {
-			log.Println("API resource is excluded from deletion:", resource.Identifier)
+			utils.PrintLog(utils.LogLevelInfo, utils.API_RESOURCES, resource.Identifier, "Excluded from deletion")
 			remainingResources = append(remainingResources, resource)
 			continue
 		}
 
-		log.Printf("API resource: %s not found locally. Deleting.\n", resource.Identifier)
+		utils.PrintLog(utils.LogLevelInfo, utils.API_RESOURCES, resource.Identifier, "Not found locally. Deleting.")
 		if err := utils.SendDeleteRequest(resource.ID, utils.API_RESOURCES); err != nil {
 			utils.UpdateFailureSummary(utils.API_RESOURCES, resource.Identifier)
-			log.Println("Error deleting API resource:", resource.Identifier, err)
+			utils.PrintLog(utils.LogLevelError, utils.API_RESOURCES, resource.Identifier, fmt.Sprintf("Error deleting API resource: %s", err))
 			remainingResources = append(remainingResources, resource)
 		} else {
 			utils.UpdateSuccessSummary(utils.API_RESOURCES, utils.DELETE)
@@ -214,7 +213,7 @@ func removeDeletedDeployedScopes(localScopeMap map[string]string, deployedResour
 		}
 		scopes, err := getApiResourceScopes(resource.ID)
 		if err != nil {
-			log.Printf("Error retrieving scopes for API resource %s: %v", resource.Identifier, err)
+			utils.PrintLog(utils.LogLevelError, utils.API_RESOURCES, resource.Identifier, fmt.Sprintf("Error retrieving scopes: %s", err))
 			failedResources[resource.Identifier] = struct{}{}
 			continue
 		}
@@ -233,7 +232,7 @@ func removeDeletedDeployedScopes(localScopeMap map[string]string, deployedResour
 			}
 
 			if err := utils.SendDeleteRequest(resource.ID+"/scopes/id/"+scope.ID, utils.API_RESOURCES); err != nil {
-				log.Printf("Error deleting scope %s from API resource %s: %v", scope.Name, resource.Identifier, err)
+				utils.PrintLog(utils.LogLevelError, utils.API_RESOURCES, resource.Identifier, fmt.Sprintf("Error deleting scope %s: %s", scope.Name, err))
 				failedResources[resource.Identifier] = struct{}{}
 			}
 		}

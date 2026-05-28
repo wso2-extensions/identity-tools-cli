@@ -21,7 +21,6 @@ package certificates
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,9 +29,9 @@ import (
 
 func ImportAll(inputDirPath string) {
 
-	log.Println("Importing certificates...")
+	utils.PrintLog(utils.LogLevelInfo, utils.CERTIFICATES, "", "Importing certificates...")
 	if utils.SERVER_CONFIGS.TenantDomain == utils.DEFAULT_TENANT_DOMAIN {
-		log.Println("Importing certificates for super tenant not supported.")
+		utils.PrintLog(utils.LogLevelInfo, utils.CERTIFICATES, "", "Importing certificates for super tenant not supported.")
 		return
 	}
 	importFilePath := filepath.Join(inputDirPath, utils.CERTIFICATES.String())
@@ -42,19 +41,19 @@ func ImportAll(inputDirPath string) {
 	}
 	var files []os.FileInfo
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Println("No certificates to import.")
+		utils.PrintLog(utils.LogLevelInfo, utils.CERTIFICATES, "", "No certificates to import.")
 		return
 	}
 
 	existingCertList, err := getCertificateList()
 	if err != nil {
-		log.Println("Error retrieving the deployed certificate list: ", err)
+		utils.PrintLog(utils.LogLevelError, utils.CERTIFICATES, "", fmt.Sprintf("Error retrieving the deployed certificate list: %s", err))
 		return
 	}
 
 	files, err = ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Println("Error importing certificates: ", err)
+		utils.PrintLog(utils.LogLevelError, utils.CERTIFICATES, "", fmt.Sprintf("Error importing certificates: %s", err))
 		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {
@@ -70,7 +69,7 @@ func ImportAll(inputDirPath string) {
 			certExists := isCertificateExists(alias, existingCertList)
 			err := importCertificate(alias, certExists, certFilePath)
 			if err != nil {
-				log.Println("Error importing certificate: ", err)
+				utils.PrintLog(utils.LogLevelError, utils.CERTIFICATES, alias, fmt.Sprintf("Error importing certificate: %s", err))
 				utils.UpdateFailureSummary(utils.CERTIFICATES, alias)
 			}
 		}
@@ -96,13 +95,13 @@ func importCertificate(alias string, certExists bool, importFilePath string) err
 		return createCertificate([]byte(modifiedFileData), format, alias)
 	}
 
-	log.Printf("Certificate '%s' already exists. Skipping.\n", alias)
+	utils.PrintLog(utils.LogLevelInfo, utils.CERTIFICATES, alias, "Already exists. Skipping.")
 	return nil
 }
 
 func createCertificate(requestBody []byte, format utils.Format, alias string) error {
 
-	log.Println("Creating new certificate: " + alias)
+	utils.PrintLog(utils.LogLevelInfo, utils.CERTIFICATES, alias, "Creating new certificate")
 
 	jsonBody, err := utils.PrepareJSONRequestBody(requestBody, format, utils.CERTIFICATES)
 	if err != nil {
@@ -116,7 +115,7 @@ func createCertificate(requestBody []byte, format utils.Format, alias string) er
 	defer resp.Body.Close()
 
 	utils.UpdateSuccessSummary(utils.CERTIFICATES, utils.IMPORT)
-	log.Println("Certificate imported successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.CERTIFICATES, alias, "Imported successfully")
 	return nil
 }
 
@@ -137,14 +136,14 @@ func removeDeletedDeployedCertificates(localFiles []os.FileInfo, deployedCerts [
 			continue
 		}
 		if utils.IsResourceExcluded(cert.Alias, utils.TOOL_CONFIGS.CertificateConfigs) || cert.Alias == utils.SERVER_CONFIGS.TenantDomain {
-			log.Println("Certificate is excluded from deletion:", cert.Alias)
+			utils.PrintLog(utils.LogLevelInfo, utils.CERTIFICATES, cert.Alias, "Excluded from deletion.")
 			continue
 		}
 
-		log.Printf("Certificate: %s not found locally. Deleting certificate.\n", cert.Alias)
+		utils.PrintLog(utils.LogLevelInfo, utils.CERTIFICATES, cert.Alias, "Not found locally. Deleting.")
 		if err := utils.SendDeleteRequest(cert.Alias, utils.CERTIFICATES); err != nil {
 			utils.UpdateFailureSummary(utils.CERTIFICATES, cert.Alias)
-			log.Println("Error deleting certificate:", cert.Alias, err)
+			utils.PrintLog(utils.LogLevelError, utils.CERTIFICATES, cert.Alias, fmt.Sprintf("Error deleting certificate: %s", err))
 		} else {
 			utils.UpdateSuccessSummary(utils.CERTIFICATES, utils.DELETE)
 		}

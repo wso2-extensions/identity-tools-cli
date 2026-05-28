@@ -21,7 +21,6 @@ package brandingPreferences
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,25 +29,25 @@ import (
 
 func ImportAll(parentDir string) {
 
-	log.Println("Importing branding preferences...")
+	utils.PrintLog(utils.LogLevelInfo, utils.BRANDING_PREFERENCES, "", "Importing branding preferences...")
 	importFilePath := filepath.Join(parentDir, utils.BRANDING_PREFERENCES.String())
 
 	if !utils.IsEntitySupportedInVersion(utils.BRANDING_PREFERENCES) || !utils.IsEntitySupportedInOrg(utils.BRANDING_PREFERENCES) || utils.IsResourceTypeExcluded(utils.BRANDING_PREFERENCES) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Println("No branding preferences to import.")
+		utils.PrintLog(utils.LogLevelInfo, utils.BRANDING_PREFERENCES, "", "No branding preferences to import.")
 		return
 	}
 
 	isDeployed, err := isBrandingPreferencesExist()
 	if err != nil {
-		log.Println("Error retrieving deployed branding preferences:", err)
+		utils.PrintLog(utils.LogLevelError, utils.BRANDING_PREFERENCES, "", fmt.Sprintf("Error retrieving deployed branding preferences: %s", err))
 		return
 	}
 	filePath, fileExists, err := getBrandingPreferencesFilePath(importFilePath)
 	if err != nil {
-		log.Println("Error reading branding preferences file path:", err)
+		utils.PrintLog(utils.LogLevelError, utils.BRANDING_PREFERENCES, "", fmt.Sprintf("Error reading branding preferences file path: %s", err))
 		return
 	}
 
@@ -62,7 +61,7 @@ func ImportAll(parentDir string) {
 	err = importBrandingPreferences(filePath, isDeployed)
 	if err != nil {
 		utils.UpdateFailureSummary(utils.BRANDING_PREFERENCES, resourceFileName)
-		log.Println("Error while importing branding preferences:", err)
+		utils.PrintLog(utils.LogLevelError, utils.BRANDING_PREFERENCES, "", fmt.Sprintf("Error while importing branding preferences: %s", err))
 	}
 }
 
@@ -93,7 +92,7 @@ func importBrandingPreferences(filePath string, exists bool) error {
 
 func createBrandingPreferences(jsonBody []byte) error {
 
-	log.Println("Creating branding preferences.")
+	utils.PrintLog(utils.LogLevelInfo, utils.BRANDING_PREFERENCES, "", "Creating branding preferences")
 
 	resp, err := utils.SendPostRequest(utils.BRANDING_PREFERENCES, jsonBody)
 	if err != nil {
@@ -102,13 +101,13 @@ func createBrandingPreferences(jsonBody []byte) error {
 	defer resp.Body.Close()
 
 	utils.UpdateSuccessSummary(utils.BRANDING_PREFERENCES, utils.IMPORT)
-	log.Println("Branding preferences created successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.BRANDING_PREFERENCES, "", "Created successfully")
 	return nil
 }
 
 func updateBrandingPreferences(jsonBody []byte) error {
 
-	log.Println("Updating branding preferences.")
+	utils.PrintLog(utils.LogLevelInfo, utils.BRANDING_PREFERENCES, "", "Updating branding preferences")
 
 	resp, err := utils.SendPutRequest(utils.BRANDING_PREFERENCES, "", jsonBody)
 	if err != nil {
@@ -117,19 +116,19 @@ func updateBrandingPreferences(jsonBody []byte) error {
 	defer resp.Body.Close()
 
 	utils.UpdateSuccessSummary(utils.BRANDING_PREFERENCES, utils.UPDATE)
-	log.Println("Branding preferences updated successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.BRANDING_PREFERENCES, "", "Updated successfully")
 	return nil
 }
 
 func removeDeletedDeployedBrandingPreferences() {
 
-	log.Printf("Branding preferences not found locally. Deleting preferences.")
+	utils.PrintLog(utils.LogLevelInfo, utils.BRANDING_PREFERENCES, "", "Not found locally. Deleting preferences.")
 
 	if err := utils.SendDeleteRequest("", utils.BRANDING_PREFERENCES); err != nil {
 		utils.UpdateFailureSummary(utils.BRANDING_PREFERENCES, resourceFileName)
-		log.Println("Error while deleting branding preferences:", err)
+		utils.PrintLog(utils.LogLevelError, utils.BRANDING_PREFERENCES, "", fmt.Sprintf("Error while deleting branding preferences: %s", err))
 	} else {
 		utils.UpdateSuccessSummary(utils.BRANDING_PREFERENCES, utils.DELETE)
-		log.Println("Branding preferences deleted successfully.")
+		utils.PrintLog(utils.LogLevelInfo, utils.BRANDING_PREFERENCES, "", "Deleted successfully")
 	}
 }

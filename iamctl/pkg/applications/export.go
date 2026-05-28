@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"mime"
 	"os"
 	"path/filepath"
@@ -34,7 +33,7 @@ import (
 func ExportAll(exportFilePath string, format string) {
 
 	// Export all applications to the Applications folder.
-	log.Println("Exporting applications...")
+	utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, "", "Exporting applications...")
 	exportFilePath = filepath.Join(exportFilePath, utils.APPLICATIONS.String())
 	authAPIsOutputDir := applicationAuthorizedApis.GetOutputDirPath(exportFilePath)
 
@@ -46,14 +45,14 @@ func ExportAll(exportFilePath string, format string) {
 
 	apps, err := getAppList()
 	if err != nil {
-		log.Println("Error retrieving applications list:", err)
+		utils.PrintLog(utils.LogLevelError, utils.APPLICATIONS, "", fmt.Sprintf("Error retrieving applications list: %s", err))
 		return
 	}
 	deployedAppNames := getDeployedAppNames(apps)
 
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Println("Error creating applications directory:", err)
+			utils.PrintLog(utils.LogLevelError, utils.APPLICATIONS, "", fmt.Sprintf("Error creating applications directory: %s", err))
 			return
 		}
 	} else {
@@ -65,7 +64,7 @@ func ExportAll(exportFilePath string, format string) {
 	if applicationAuthorizedApis.IsSupported {
 		if _, err := os.Stat(authAPIsOutputDir); os.IsNotExist(err) {
 			if err := os.MkdirAll(authAPIsOutputDir, 0700); err != nil {
-				log.Println("Error creating authorized APIs directory:", err)
+				utils.PrintLog(utils.LogLevelError, utils.APPLICATIONS, "", fmt.Sprintf("Error creating authorized APIs directory: %s", err))
 				return
 			}
 		} else {
@@ -77,7 +76,7 @@ func ExportAll(exportFilePath string, format string) {
 	excludeSecrets := utils.AreSecretsExcluded(utils.TOOL_CONFIGS.ApplicationConfigs)
 	for _, app := range apps {
 		if !utils.IsResourceExcluded(app.Name, utils.TOOL_CONFIGS.ApplicationConfigs) {
-			log.Println("Exporting application: ", app.Name)
+			utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, app.Name, "Exporting")
 			var err error
 			if exportAPIExists {
 				err = exportApp(app.Id, exportFilePath, format, excludeSecrets)
@@ -86,11 +85,11 @@ func ExportAll(exportFilePath string, format string) {
 			}
 			if err != nil {
 				utils.UpdateFailureSummary(utils.APPLICATIONS, app.Name)
-				log.Printf("Error while exporting application: %s. %s", app.Name, err)
+				utils.PrintLog(utils.LogLevelError, utils.APPLICATIONS, app.Name, fmt.Sprintf("Error while exporting: %s", err))
 			} else {
 				utils.AddToIdentifierMap(utils.APPLICATIONS, app.Id, app.Name, utils.EXPORT)
 				utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.EXPORT)
-				log.Println("Application exported successfully: ", app.Name)
+				utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, app.Name, "Exported successfully")
 			}
 		}
 	}
@@ -98,15 +97,15 @@ func ExportAll(exportFilePath string, format string) {
 	if !utils.IsResourceExcluded(utils.RESIDENT_APP, utils.TOOL_CONFIGS.ApplicationConfigs) {
 		if err := exportResidentApp(exportFilePath, format); err != nil {
 			utils.UpdateFailureSummary(utils.APPLICATIONS, utils.RESIDENT_APP)
-			log.Printf("Error while exporting resident application: %s", err)
+			utils.PrintLog(utils.LogLevelError, utils.APPLICATIONS, utils.RESIDENT_APP, fmt.Sprintf("Error while exporting resident application: %s", err))
 		} else {
 			utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.EXPORT)
-			log.Println("Resident application exported successfully.")
+			utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, utils.RESIDENT_APP, "Exported successfully")
 		}
 	}
 
 	if utils.IsResourceTypeExcluded(utils.ROLES) && exportAPIExists {
-		log.Println("Warn: Roles are excluded from export. Export Roles to persist Role audiences of applications.")
+		utils.PrintLog(utils.LogLevelWarn, utils.APPLICATIONS, "", "Roles are excluded from export. Export Roles to persist Role audiences of applications.")
 	}
 }
 
@@ -192,7 +191,7 @@ func exportAppWithCRUD(appId, appName, outputDirPath, formatString string, exclu
 
 func exportResidentApp(outputDirPath, formatString string) error {
 
-	log.Println("Exporting Resident application...")
+	utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, utils.RESIDENT_APP, "Exporting Resident application...")
 
 	appData, err := utils.GetResourceData(utils.APPLICATIONS, "resident")
 	if err != nil {

@@ -21,7 +21,6 @@ package workflows
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,7 +29,7 @@ import (
 
 func ExportAll(exportFilePath string, format string) {
 
-	log.Println("Exporting workflows...")
+	utils.PrintLog(utils.LogLevelInfo, utils.WORKFLOWS, "", "Exporting workflows...")
 	exportFilePath = filepath.Join(exportFilePath, utils.WORKFLOWS.String())
 	setWorkflowVersionConfigs()
 
@@ -39,13 +38,13 @@ func ExportAll(exportFilePath string, format string) {
 	}
 	workflows, err := getWorkflowList()
 	if err != nil {
-		log.Println("Error: when retrieving workflow list.", err)
+		utils.PrintLog(utils.LogLevelError, utils.WORKFLOWS, "", fmt.Sprintf("Error when retrieving workflow list: %s", err))
 		return
 	}
 
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Println("Error creating workflows directory:", err)
+			utils.PrintLog(utils.LogLevelError, utils.WORKFLOWS, "", fmt.Sprintf("Error creating workflows directory: %s", err))
 			return
 		}
 	} else {
@@ -60,18 +59,18 @@ func ExportAll(exportFilePath string, format string) {
 
 	for _, wf := range workflows {
 		if !utils.IsResourceExcluded(wf.Name, utils.TOOL_CONFIGS.WorkflowConfigs) {
-			log.Println("Exporting workflow:", wf.Name)
+			utils.PrintLog(utils.LogLevelInfo, utils.WORKFLOWS, wf.Name, "Exporting")
 			err := exportWorkflow(wf.ID, wf.Name, exportFilePath, format)
 			if err != nil {
 				utils.UpdateFailureSummary(utils.WORKFLOWS, wf.Name)
-				log.Printf("Error while exporting workflow: %s. %s", wf.Name, err)
+				utils.PrintLog(utils.LogLevelError, utils.WORKFLOWS, wf.Name, fmt.Sprintf("Error while exporting: %s", err))
 			} else {
 				if assocSharingSupported {
 					utils.UpdateSuccessSummary(utils.WORKFLOWS, utils.EXPORT)
 				} else {
 					successCount++
 				}
-				log.Println("Workflow exported successfully:", wf.Name)
+				utils.PrintLog(utils.LogLevelInfo, utils.WORKFLOWS, wf.Name, "Exported successfully")
 			}
 		}
 	}
@@ -80,13 +79,13 @@ func ExportAll(exportFilePath string, format string) {
 		err = writeWorkflowAssociationsList(exportFilePath, format)
 		updateWorkflowExportSummary(err == nil, successCount)
 		if err != nil {
-			log.Println("Error writing workflow associations list:", err)
+			utils.PrintLog(utils.LogLevelError, utils.WORKFLOWS, "", fmt.Sprintf("Error writing workflow associations list: %s", err))
 		}
 	}
 
-	log.Println("Warn: Users associated with workflow steps are not exported")
+	utils.PrintLog(utils.LogLevelWarn, utils.WORKFLOWS, "", "Users associated with workflow steps are not exported")
 	if assocRulesSupported {
-		log.Println("Warn: Workflow association rules are not exported")
+		utils.PrintLog(utils.LogLevelWarn, utils.WORKFLOWS, "", "Workflow association rules are not exported")
 	}
 }
 

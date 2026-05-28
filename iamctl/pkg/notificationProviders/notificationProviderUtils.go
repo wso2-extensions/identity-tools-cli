@@ -21,7 +21,6 @@ package notificationProviders
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -141,7 +140,7 @@ func processAuthSecrets(resType utils.ResourceType, data interface{}) (interface
 		}
 
 		if !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.SmsProviderConfigs) {
-			log.Printf("Warn: Secrets exclusion cannot be disabled for Custom sms providers. All secrets will be masked.")
+			utils.PrintLog(utils.LogLevelWarn, resType, "", "Secrets exclusion cannot be disabled for Custom sms providers. All secrets will be masked.")
 		}
 		delete(providerMap, "secret")
 

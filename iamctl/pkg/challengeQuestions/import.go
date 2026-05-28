@@ -21,7 +21,6 @@ package challengeQuestions
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,26 +29,26 @@ import (
 
 func ImportAll(inputDirPath string) {
 
-	log.Println("Importing challenge question sets...")
+	utils.PrintLog(utils.LogLevelInfo, utils.CHALLENGE_QUESTIONS, "", "Importing challenge question sets...")
 	importFilePath := filepath.Join(inputDirPath, utils.CHALLENGE_QUESTIONS.String())
 
 	if !utils.IsEntitySupportedInVersion(utils.CHALLENGE_QUESTIONS) || !utils.IsEntitySupportedInOrg(utils.CHALLENGE_QUESTIONS) || utils.IsResourceTypeExcluded(utils.CHALLENGE_QUESTIONS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Println("No challenge question sets to import.")
+		utils.PrintLog(utils.LogLevelInfo, utils.CHALLENGE_QUESTIONS, "", "No challenge question sets to import.")
 		return
 	}
 
 	existingSets, err := getChallengeSetList()
 	if err != nil {
-		log.Println("Error retrieving the deployed challenge question set list:", err)
+		utils.PrintLog(utils.LogLevelError, utils.CHALLENGE_QUESTIONS, "", fmt.Sprintf("Error retrieving the deployed challenge question set list: %s", err))
 		return
 	}
 
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Println("Error importing challenge question sets:", err)
+		utils.PrintLog(utils.LogLevelError, utils.CHALLENGE_QUESTIONS, "", fmt.Sprintf("Error importing challenge question sets: %s", err))
 		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {
@@ -65,7 +64,7 @@ func ImportAll(inputDirPath string) {
 			setExists := isChallengeSetExists(setId, existingSets)
 			err := importChallengeSet(setId, setExists, setFilePath)
 			if err != nil {
-				log.Println("Error importing challenge question set:", err)
+				utils.PrintLog(utils.LogLevelError, utils.CHALLENGE_QUESTIONS, setId, fmt.Sprintf("Error importing challenge question set: %s", err))
 				utils.UpdateFailureSummary(utils.CHALLENGE_QUESTIONS, setId)
 			}
 		}
@@ -95,7 +94,7 @@ func importChallengeSet(setId string, setExists bool, importFilePath string) err
 
 func createChallengeSet(requestBody []byte, format utils.Format, setId string) error {
 
-	log.Println("Creating new challenge question set:", setId)
+	utils.PrintLog(utils.LogLevelInfo, utils.CHALLENGE_QUESTIONS, setId, "Creating new challenge question set")
 
 	parsed, err := utils.Deserialize(requestBody, format, utils.CHALLENGE_QUESTIONS)
 	if err != nil {
@@ -113,13 +112,13 @@ func createChallengeSet(requestBody []byte, format utils.Format, setId string) e
 	defer resp.Body.Close()
 
 	utils.UpdateSuccessSummary(utils.CHALLENGE_QUESTIONS, utils.IMPORT)
-	log.Println("Challenge question set created successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.CHALLENGE_QUESTIONS, setId, "Created successfully")
 	return nil
 }
 
 func updateChallengeSet(setId string, requestBody []byte, format utils.Format) error {
 
-	log.Println("Updating challenge question set:", setId)
+	utils.PrintLog(utils.LogLevelInfo, utils.CHALLENGE_QUESTIONS, setId, "Updating challenge question set")
 
 	questionsBytes, err := buildUpdateRequestBody(requestBody, format)
 	if err != nil {
@@ -133,7 +132,7 @@ func updateChallengeSet(setId string, requestBody []byte, format utils.Format) e
 	defer resp.Body.Close()
 
 	utils.UpdateSuccessSummary(utils.CHALLENGE_QUESTIONS, utils.UPDATE)
-	log.Println("Challenge question set updated successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.CHALLENGE_QUESTIONS, setId, "Updated successfully")
 	return nil
 }
 
@@ -154,14 +153,14 @@ func removeDeletedDeployedChallengeSets(localFiles []os.FileInfo, deployedSets [
 			continue
 		}
 		if utils.IsResourceExcluded(set.QuestionSetId, utils.TOOL_CONFIGS.ChallengeQuestionConfigs) {
-			log.Println("Challenge question set is excluded from deletion:", set.QuestionSetId)
+			utils.PrintLog(utils.LogLevelInfo, utils.CHALLENGE_QUESTIONS, set.QuestionSetId, "Excluded from deletion")
 			continue
 		}
 
-		log.Printf("Challenge question set: %s not found locally. Deleting.\n", set.QuestionSetId)
+		utils.PrintLog(utils.LogLevelInfo, utils.CHALLENGE_QUESTIONS, set.QuestionSetId, "Not found locally. Deleting.")
 		if err := utils.SendDeleteRequest(set.QuestionSetId, utils.CHALLENGE_QUESTIONS); err != nil {
 			utils.UpdateFailureSummary(utils.CHALLENGE_QUESTIONS, set.QuestionSetId)
-			log.Println("Error deleting challenge question set:", set.QuestionSetId, err)
+			utils.PrintLog(utils.LogLevelError, utils.CHALLENGE_QUESTIONS, set.QuestionSetId, fmt.Sprintf("Error deleting challenge question set: %s", err))
 		} else {
 			utils.UpdateSuccessSummary(utils.CHALLENGE_QUESTIONS, utils.DELETE)
 		}

@@ -21,7 +21,6 @@ package applicationNotificationTemplates
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -206,7 +205,7 @@ func removeDeletedDeployedAppTemplates(rt utils.ResourceType, typeId, appId, app
 		if _, existsLocally := localLocales[template.Locale]; existsLocally {
 			continue
 		}
-		log.Printf("Application template for application %s not found locally. Deleting: %s", appName, template.Locale)
+		utils.PrintLog(utils.LogLevelInfo, rt, appName, fmt.Sprintf("Application template not found locally. Deleting: %s", template.Locale))
 		if err := utils.SendDeleteRequest(typeId+"/app-templates/"+appId+"/"+template.Locale, rt); err != nil {
 			return fmt.Errorf("error deleting template: %s. %w", template.Locale, err)
 		}

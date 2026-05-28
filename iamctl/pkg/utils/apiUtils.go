@@ -25,7 +25,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"mime"
 	"mime/multipart"
 	"net/http"
@@ -797,7 +796,7 @@ func addQueryParams(reqURL string, resourceType ResourceType, operation string) 
 
 	url, err := url.Parse(reqURL)
 	if err != nil {
-		log.Printf("Failed to parse URL: %s. Unable to add query parameters.", err)
+		PrintLog(LogLevelError, NoResource, "", fmt.Sprintf("Failed to parse URL: %s. Unable to add query parameters.", err))
 		return reqURL
 	}
 

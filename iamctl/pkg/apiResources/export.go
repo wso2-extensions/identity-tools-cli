@@ -21,7 +21,6 @@ package apiResources
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,7 +29,7 @@ import (
 
 func ExportAll(exportFilePath string, format string) {
 
-	log.Println("Exporting API resources...")
+	utils.PrintLog(utils.LogLevelInfo, utils.API_RESOURCES, "", "Exporting API resources...")
 	exportFilePath = filepath.Join(exportFilePath, utils.API_RESOURCES.String())
 
 	if !utils.IsEntitySupportedInVersion(utils.API_RESOURCES) || !utils.IsEntitySupportedInOrg(utils.API_RESOURCES) || utils.IsResourceTypeExcluded(utils.API_RESOURCES) {
@@ -38,13 +37,13 @@ func ExportAll(exportFilePath string, format string) {
 	}
 	resources, err := GetApiResourceList(true)
 	if err != nil {
-		log.Println("Error: when retrieving API resource list.", err)
+		utils.PrintLog(utils.LogLevelError, utils.API_RESOURCES, "", fmt.Sprintf("Error when retrieving API resource list: %s", err))
 		return
 	}
 
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Println("Error creating API resources directory:", err)
+			utils.PrintLog(utils.LogLevelError, utils.API_RESOURCES, "", fmt.Sprintf("Error creating API resources directory: %s", err))
 			return
 		}
 	} else {
@@ -59,15 +58,15 @@ func ExportAll(exportFilePath string, format string) {
 
 	for _, resource := range resources {
 		if !utils.IsResourceExcluded(resource.Identifier, utils.TOOL_CONFIGS.ApiResourceConfigs) {
-			log.Println("Exporting API resource:", resource.Identifier)
+			utils.PrintLog(utils.LogLevelInfo, utils.API_RESOURCES, resource.Identifier, "Exporting")
 			err := exportApiResource(resource.ID, resource.Identifier, exportFilePath, format)
 			if err != nil {
 				utils.UpdateFailureSummary(utils.API_RESOURCES, resource.Identifier)
-				log.Printf("Error while exporting API resource: %s. %s", resource.Identifier, err)
+				utils.PrintLog(utils.LogLevelError, utils.API_RESOURCES, resource.Identifier, fmt.Sprintf("Error while exporting: %s", err))
 			} else {
 				successCount++
 				utils.AddToIdentifierMap(utils.API_RESOURCES, resource.ID, resource.Identifier, utils.EXPORT)
-				log.Println("API resource exported successfully:", resource.Identifier)
+				utils.PrintLog(utils.LogLevelInfo, utils.API_RESOURCES, resource.Identifier, "Exported successfully")
 			}
 		}
 	}
@@ -75,7 +74,7 @@ func ExportAll(exportFilePath string, format string) {
 	err = writeScopesMap(exportFilePath, exportedScopesMap, format)
 	updateApiResourceExportSummary(err == nil, successCount)
 	if err != nil {
-		log.Println("Error writing scope name map:", err)
+		utils.PrintLog(utils.LogLevelError, utils.API_RESOURCES, "", fmt.Sprintf("Error writing scope name map: %s", err))
 	}
 }
 

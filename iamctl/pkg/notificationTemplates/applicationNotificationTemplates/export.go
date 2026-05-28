@@ -21,7 +21,6 @@ package applicationNotificationTemplates
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -56,9 +55,9 @@ func ExportTemplateType(rt utils.ResourceType, typeId, displayName, typeDir stri
 		utils.RemoveDeletedLocalDirectories(appsDir, appsWithTemplates)
 		if len(appsWithTemplates) == 0 {
 			if err := os.Remove(appsDir); err != nil {
-				log.Println("Error removing application templates directory:", err)
+				utils.PrintLog(utils.LogLevelError, rt, displayName, fmt.Sprintf("Error removing application templates directory: %s", err))
 			} else {
-				log.Println("Removed the directory:", ApplicationTemplatesDir)
+				utils.PrintLog(utils.LogLevelInfo, rt, displayName, fmt.Sprintf("Removed the directory: %s", ApplicationTemplatesDir))
 			}
 		}
 	}

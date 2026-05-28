@@ -21,7 +21,6 @@ package actions
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,7 +29,7 @@ import (
 
 func ExportAll(outputDirPath, format string) {
 
-	log.Println("Exporting actions...")
+	utils.PrintLog(utils.LogLevelInfo, utils.ACTIONS, "", "Exporting actions...")
 	actionsDir := filepath.Join(outputDirPath, utils.ACTIONS.String())
 
 	if !utils.IsEntitySupportedInVersion(utils.ACTIONS) || !utils.IsEntitySupportedInOrg(utils.ACTIONS) || utils.IsResourceTypeExcluded(utils.ACTIONS) {
@@ -38,17 +37,17 @@ func ExportAll(outputDirPath, format string) {
 	}
 	types, err := getActionTypesList()
 	if err != nil {
-		log.Println("Error retrieving action types list:", err)
+		utils.PrintLog(utils.LogLevelError, utils.ACTIONS, "", fmt.Sprintf("Error retrieving action types list: %s", err))
 		return
 	}
 
 	if !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.ActionConfigs) {
-		log.Println("Warn: Secrets exclusion cannot be disabled for actions. All secrets will be masked.")
+		utils.PrintLog(utils.LogLevelWarn, utils.ACTIONS, "", "Secrets exclusion cannot be disabled for actions. All secrets will be masked.")
 	}
 
 	if _, err := os.Stat(actionsDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(actionsDir, 0700); err != nil {
-			log.Println("Error creating actions directory:", err)
+			utils.PrintLog(utils.LogLevelError, utils.ACTIONS, "", fmt.Sprintf("Error creating actions directory: %s", err))
 			return
 		}
 	}
@@ -62,12 +61,12 @@ func ExportAll(outputDirPath, format string) {
 		hadActions, err := exportActionType(at, actionsDir, format)
 		if err != nil {
 			utils.UpdateFailureSummary(utils.ACTIONS, at.ID)
-			log.Printf("Error exporting action type %s: %s", at.ID, err)
+			utils.PrintLog(utils.LogLevelError, utils.ACTIONS, at.ID, fmt.Sprintf("Error exporting action type: %s", err))
 		} else {
 			if hadActions {
 				typesWithActions = append(typesWithActions, at.ID)
 				utils.UpdateSuccessSummary(utils.ACTIONS, utils.EXPORT)
-				log.Println("Action type exported successfully:", at.ID)
+				utils.PrintLog(utils.LogLevelInfo, utils.ACTIONS, at.ID, "Exported successfully")
 			}
 		}
 	}
@@ -87,7 +86,7 @@ func exportActionType(actionType actionType, parentDir, format string) (bool, er
 		return false, nil
 	}
 
-	log.Println("Exporting action type:", actionType.ID)
+	utils.PrintLog(utils.LogLevelInfo, utils.ACTIONS, actionType.ID, "Exporting action type")
 	typeDir := filepath.Join(parentDir, actionType.ID)
 	if _, err := os.Stat(typeDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(typeDir, 0700); err != nil {

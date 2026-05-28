@@ -21,7 +21,6 @@ package governanceConnectors
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,7 +29,7 @@ import (
 
 func ExportAll(exportFilePath string, format string) {
 
-	log.Println("Exporting governance connectors...")
+	utils.PrintLog(utils.LogLevelInfo, utils.GOVERNANCE_CONNECTORS, "", "Exporting governance connectors...")
 	exportFilePath = filepath.Join(exportFilePath, utils.GOVERNANCE_CONNECTORS.String())
 
 	if !utils.IsEntitySupportedInOrg(utils.GOVERNANCE_CONNECTORS) || utils.IsResourceTypeExcluded(utils.GOVERNANCE_CONNECTORS) {
@@ -38,7 +37,7 @@ func ExportAll(exportFilePath string, format string) {
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Println("Error creating governance connectors directory:", err)
+			utils.PrintLog(utils.LogLevelError, utils.GOVERNANCE_CONNECTORS, "", fmt.Sprintf("Error creating governance connectors directory: %s", err))
 			return
 		}
 	} else {
@@ -50,20 +49,20 @@ func ExportAll(exportFilePath string, format string) {
 
 	categories, err := getCategoryList()
 	if err != nil {
-		log.Println("Error retrieving governance connector categories:", err)
+		utils.PrintLog(utils.LogLevelError, utils.GOVERNANCE_CONNECTORS, "", fmt.Sprintf("Error retrieving governance connector categories: %s", err))
 		return
 	}
 	for _, catInfo := range categories {
 		if !utils.IsResourceExcluded(catInfo.Name, utils.TOOL_CONFIGS.GovernanceConnectorConfigs) {
-			log.Println("Exporting governance connector category:", catInfo.Name)
+			utils.PrintLog(utils.LogLevelInfo, utils.GOVERNANCE_CONNECTORS, catInfo.Name, "Exporting")
 
 			err := exportCategory(catInfo.Id, catInfo.Name, exportFilePath, format)
 			if err != nil {
 				utils.UpdateFailureSummary(utils.GOVERNANCE_CONNECTORS, catInfo.Name)
-				log.Printf("Error while exporting governance connector category: %s. %s", catInfo.Name, err)
+				utils.PrintLog(utils.LogLevelError, utils.GOVERNANCE_CONNECTORS, catInfo.Name, fmt.Sprintf("Error while exporting: %s", err))
 			} else {
 				utils.UpdateSuccessSummary(utils.GOVERNANCE_CONNECTORS, utils.EXPORT)
-				log.Println("Governance connector category exported successfully:", catInfo.Name)
+				utils.PrintLog(utils.LogLevelInfo, utils.GOVERNANCE_CONNECTORS, catInfo.Name, "Exported successfully")
 
 				if catInfo.Name == utils.USER_ONBOARDING_GOVERNANCE_CATEGORY_NAME {
 					utils.AddToIdentifierMap(utils.GOVERNANCE_CONNECTORS, catInfo.Id, catInfo.Name, utils.EXPORT)
@@ -119,7 +118,7 @@ func exportConnector(connectorId, connectorName, categoryId, categoryDir string,
 		if err := processPasswordExpiryConnector(connectorData, nil); err != nil {
 			return fmt.Errorf("error processing password expiry connector: %w", err)
 		}
-		log.Println("Warn: Group-based password expiry rules are not exported")
+		utils.PrintLog(utils.LogLevelWarn, utils.GOVERNANCE_CONNECTORS, connectorName, "Group-based password expiry rules are not exported")
 	}
 
 	modifiedData, err := utils.ProcessExportedData(connectorData, exportedFileName, format, keywordMapping, utils.GOVERNANCE_CONNECTORS)

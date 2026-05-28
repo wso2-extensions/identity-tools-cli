@@ -22,6 +22,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -119,11 +120,11 @@ func LoadConfigs(envConfigPath string) (baseDir string) {
 func loadServerConfigs(envConfigPath string) (baseDir string, toolConfigPath string, keywordConfigPath string) {
 
 	if envConfigPath == "" {
-		log.Println("Loading configs from environment variables.")
+		PrintLog(LogLevelInfo, NoResource, "", "Loading configs from environment variables.")
 		toolConfigPath, keywordConfigPath = loadConfigsFromEnvVar()
 		baseDir = filepath.Dir(filepath.Dir(filepath.Dir(toolConfigPath)))
 	} else {
-		log.Println("Loading configs from config files.")
+		PrintLog(LogLevelInfo, NoResource, "", "Loading configs from config files.")
 		baseDir = filepath.Dir(filepath.Dir(envConfigPath))
 		serverConfigFile := filepath.Join(envConfigPath, SERVER_CONFIG_FILE)
 		toolConfigPath = filepath.Join(envConfigPath, TOOL_CONFIG_FILE)
@@ -137,14 +138,14 @@ func loadServerConfigs(envConfigPath string) (baseDir string, toolConfigPath str
 	if SERVER_CONFIGS.ServerVersion != "" {
 		_, err := ParseVersion(SERVER_CONFIGS.ServerVersion)
 		if err != nil {
-			log.Println("Warn: Server version is not properly configured. Configure the server version properly to avoid failures.")
-			log.Printf("Error parsing server version: %s. Error: %s", SERVER_CONFIGS.ServerVersion, err)
+			PrintLog(LogLevelWarn, NoResource, "", "Server version is not properly configured. Configure the server version properly to avoid failures.")
+			PrintLog(LogLevelError, NoResource, "", fmt.Sprintf("Error parsing server version: %s. Error: %s", SERVER_CONFIGS.ServerVersion, err))
 		}
 	}
 
 	// Get access token.
 	SERVER_CONFIGS.Token = getAccessToken(SERVER_CONFIGS)
-	log.Println("Access Token received successfully.")
+	PrintLog(LogLevelInfo, NoResource, "", "Access Token received successfully.")
 
 	return baseDir, toolConfigPath, keywordConfigPath
 }
@@ -181,7 +182,7 @@ func loadServerConfigsFromFile(configFilePath string) (serverConfigs ServerConfi
 	if err != nil {
 		log.Fatalln(err)
 	}
-	log.Println("Server configs loaded succesfully from the config file.")
+	PrintLog(LogLevelInfo, NoResource, "", "Server configs loaded succesfully from the config file.")
 	return serverConfigs
 }
 
@@ -202,7 +203,7 @@ func loadToolConfigsFromFile(configFilePath string) (toolConfigs ToolConfigs) {
 		log.Fatalln("Tool configs are not in the correct format. Please check the config file.", err)
 	}
 
-	log.Println("Tool configs loaded successfully from the config file.")
+	PrintLog(LogLevelInfo, NoResource, "", "Tool configs loaded successfully from the config file.")
 	return toolConfigs
 }
 
@@ -225,7 +226,7 @@ func loadKeywordConfigsFromFile(configFilePath string) (keywordConfigs KeywordCo
 		log.Fatalln("Keyword configs are not in the correct format. Please check the config file.", err)
 	}
 
-	log.Println("Keyword configs loaded successfully from the config file.")
+	PrintLog(LogLevelInfo, NoResource, "", "Keyword configs loaded successfully from the config file.")
 	return keywordConfigs
 }
 
@@ -278,7 +279,7 @@ func getAccessToken(config ServerConfigs) string {
 		log.Fatalln(err2)
 	}
 	if IsSubOrganization() {
-		log.Println("Getting access token for Organization: " + SERVER_CONFIGS.Organization)
+		PrintLog(LogLevelInfo, NoResource, "", "Getting access token for Organization: "+SERVER_CONFIGS.Organization)
 		return switchAccessToken(config, response.AccessToken)
 	}
 	return response.AccessToken
@@ -340,7 +341,7 @@ func sanitizeServerConfigs() {
 
 	// Set tenant domain if not defined in the config file.
 	if SERVER_CONFIGS.TenantDomain == "" {
-		log.Println("Tenant domain not defined. Defaulting to: carbon.super")
+		PrintLog(LogLevelInfo, NoResource, "", "Tenant domain not defined. Defaulting to: carbon.super")
 		SERVER_CONFIGS.TenantDomain = DEFAULT_TENANT_DOMAIN
 	}
 }

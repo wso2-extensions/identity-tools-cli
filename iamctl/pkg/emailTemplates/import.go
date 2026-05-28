@@ -21,7 +21,6 @@ package emailTemplates
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -41,26 +40,26 @@ func ImportAll(inputDirPath string) {
 
 func ImportAllLegacyApi(inputDirPath string) {
 
-	log.Println("Importing email templates...")
+	utils.PrintLog(utils.LogLevelInfo, utils.EMAIL_TEMPLATES, "", "Importing email templates...")
 	importFilePath := filepath.Join(inputDirPath, utils.EMAIL_TEMPLATES.String())
 
 	if !utils.IsEntitySupportedInOrg(utils.EMAIL_TEMPLATES) || utils.IsResourceTypeExcluded(utils.EMAIL_TEMPLATES) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Println("No email templates to import.")
+		utils.PrintLog(utils.LogLevelInfo, utils.EMAIL_TEMPLATES, "", "No email templates to import.")
 		return
 	}
 
 	deployedTypes, err := getEmailTemplateTypeList()
 	if err != nil {
-		log.Println("Error retrieving deployed email template types:", err)
+		utils.PrintLog(utils.LogLevelError, utils.EMAIL_TEMPLATES, "", fmt.Sprintf("Error retrieving deployed email template types: %s", err))
 		return
 	}
 
 	localTypeDirs, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Println("Error reading email templates directory:", err)
+		utils.PrintLog(utils.LogLevelError, utils.EMAIL_TEMPLATES, "", fmt.Sprintf("Error reading email templates directory: %s", err))
 		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {
@@ -78,7 +77,7 @@ func ImportAllLegacyApi(inputDirPath string) {
 			err := importEmailTemplateType(localTypePath, displayName, deployedTypes)
 			if err != nil {
 				utils.UpdateFailureSummary(utils.EMAIL_TEMPLATES, displayName)
-				log.Printf("Error importing email template type %s: %s", displayName, err)
+				utils.PrintLog(utils.LogLevelError, utils.EMAIL_TEMPLATES, displayName, fmt.Sprintf("Error importing: %s", err))
 			}
 		}
 	}
@@ -89,14 +88,14 @@ func importEmailTemplateType(localTypePath, displayName string, deployedTypes []
 	var typeId string
 	existingType := isEmailTemplateTypeExists(displayName, deployedTypes)
 	if existingType == nil {
-		log.Println("Creating new email template type:", displayName)
+		utils.PrintLog(utils.LogLevelInfo, utils.EMAIL_TEMPLATES, displayName, "Creating new email template type")
 		created, err := createEmailTemplateType(displayName)
 		if err != nil {
 			return fmt.Errorf("error creating email template type: %w", err)
 		}
 		typeId = created.ID
 	} else {
-		log.Println("Updating email template type:", displayName)
+		utils.PrintLog(utils.LogLevelInfo, utils.EMAIL_TEMPLATES, displayName, "Updating email template type")
 		typeId = existingType.ID
 	}
 
@@ -133,10 +132,10 @@ func importEmailTemplateType(localTypePath, displayName string, deployedTypes []
 
 	if existingType != nil {
 		utils.UpdateSuccessSummary(utils.EMAIL_TEMPLATES, utils.UPDATE)
-		log.Println("Email template type updated successfully")
+		utils.PrintLog(utils.LogLevelInfo, utils.EMAIL_TEMPLATES, displayName, "Updated successfully")
 	} else {
 		utils.UpdateSuccessSummary(utils.EMAIL_TEMPLATES, utils.IMPORT)
-		log.Println("Email template type imported successfully")
+		utils.PrintLog(utils.LogLevelInfo, utils.EMAIL_TEMPLATES, displayName, "Imported successfully")
 	}
 
 	return nil
@@ -212,13 +211,13 @@ func removeDeletedDeployedTypes(localDirs []os.FileInfo, deployedTypes []emailTe
 			continue
 		}
 		if utils.IsResourceExcluded(deployedType.DisplayName, utils.TOOL_CONFIGS.EmailTemplateConfigs) {
-			log.Printf("Email template type: %s is excluded from deletion.", deployedType.DisplayName)
+			utils.PrintLog(utils.LogLevelInfo, utils.EMAIL_TEMPLATES, deployedType.DisplayName, "Excluded from deletion.")
 			continue
 		}
-		log.Println("Email template type not found locally. Deleting template type:", deployedType.DisplayName)
+		utils.PrintLog(utils.LogLevelInfo, utils.EMAIL_TEMPLATES, deployedType.DisplayName, "Not found locally. Deleting template type.")
 		if err := utils.SendDeleteRequest(deployedType.ID, utils.EMAIL_TEMPLATES); err != nil {
 			utils.UpdateFailureSummary(utils.EMAIL_TEMPLATES, deployedType.DisplayName)
-			log.Printf("Error deleting email template type: %s", err)
+			utils.PrintLog(utils.LogLevelError, utils.EMAIL_TEMPLATES, deployedType.DisplayName, fmt.Sprintf("Error deleting email template type: %s", err))
 		} else {
 			utils.UpdateSuccessSummary(utils.EMAIL_TEMPLATES, utils.DELETE)
 		}
@@ -239,7 +238,7 @@ func removeDeletedDeployedTemplates(typeId string, localFiles []os.FileInfo, dep
 
 	for _, template := range deployedTemplates {
 		if _, existsLocally := localIds[template.ID]; !existsLocally {
-			log.Println("Email template not found locally. Deleting template:", template.ID)
+			utils.PrintLog(utils.LogLevelInfo, utils.EMAIL_TEMPLATES, template.ID, "Not found locally. Deleting template.")
 			if err := utils.SendDeleteRequest(typeId+"/templates/"+template.ID, utils.EMAIL_TEMPLATES); err != nil {
 				return fmt.Errorf("error deleting email template: %w", err)
 			}
