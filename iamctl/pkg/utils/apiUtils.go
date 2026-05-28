@@ -589,13 +589,16 @@ func SendPaginatedGetListRequest(resourceType ResourceType, totField, curCountFi
 		return nil, fmt.Errorf("error parsing paginated list response: %w", err)
 	}
 
-	totalCount, err := extractIntField(firstResponse, totField)
-	if err != nil {
-		return nil, fmt.Errorf("error reading %s from response: %w", totField, err)
-	}
 	pageSize, err := extractIntField(firstResponse, curCountField)
 	if err != nil {
 		return nil, fmt.Errorf("error reading %s from response: %w", curCountField, err)
+	}
+	if pageSize == 0 {
+		return json.Marshal([]interface{}{})
+	}
+	totalCount, err := extractIntField(firstResponse, totField)
+	if err != nil {
+		return nil, fmt.Errorf("error reading %s from response: %w", totField, err)
 	}
 	allResults, exists, err := extractResultsArray(firstResponse, resultsField)
 	if err != nil {
