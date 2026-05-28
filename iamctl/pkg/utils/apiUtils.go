@@ -597,9 +597,12 @@ func SendPaginatedGetListRequest(resourceType ResourceType, totField, curCountFi
 	if err != nil {
 		return nil, fmt.Errorf("error reading %s from response: %w", curCountField, err)
 	}
-	allResults, err := extractResultsArray(firstResponse, resultsField)
+	allResults, exists, err := extractResultsArray(firstResponse, resultsField)
 	if err != nil {
 		return nil, fmt.Errorf("error reading results array from response: %w", err)
+	}
+	if !exists && totalCount > 0 {
+		return nil, fmt.Errorf("results field %q not found in response", resultsField)
 	}
 
 	if totalCount <= pageSize || pageSize == 0 {
@@ -627,7 +630,7 @@ func SendPaginatedGetListRequest(resourceType ResourceType, totField, curCountFi
 			return nil, fmt.Errorf("error parsing paginated list response: %w", err)
 		}
 
-		pageResults, err := extractResultsArray(pageResponse, resultsField)
+		pageResults, _, err := extractResultsArray(pageResponse, resultsField)
 		if err != nil {
 			return nil, fmt.Errorf("error reading results array from response: %w", err)
 		}
@@ -834,15 +837,15 @@ func extractIntField(m map[string]interface{}, field string) (int, error) {
 	return int(f), nil
 }
 
-func extractResultsArray(m map[string]interface{}, field string) ([]interface{}, error) {
+func extractResultsArray(m map[string]interface{}, field string) (results []interface{}, exists bool, err error) {
 
 	val, ok := m[field]
 	if !ok {
-		return []interface{}{}, nil
+		return []interface{}{}, false, nil
 	}
 	arr, ok := val.([]interface{})
 	if !ok {
-		return nil, fmt.Errorf("unexpected format for results field %q", field)
+		return nil, true, fmt.Errorf("unexpected format for results field %q", field)
 	}
-	return arr, nil
+	return arr, true, nil
 }

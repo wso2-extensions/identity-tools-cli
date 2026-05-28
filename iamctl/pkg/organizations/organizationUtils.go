@@ -89,9 +89,17 @@ func getOrganizationList() ([]organization, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error retrieving page of organization list: %w", err)
 		}
-		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			resp.Body.Close()
+			if errMsg, ok := utils.ErrorCodes[resp.StatusCode]; ok {
+				return nil, fmt.Errorf("error response for organization list page request: %s", errMsg)
+			}
+			return nil, fmt.Errorf("unexpected error when retrieving organization list page: %s", resp.Status)
+		}
 
 		nextBody, err := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
 		if err != nil {
 			return nil, fmt.Errorf("error reading page of organization list: %w", err)
 		}
