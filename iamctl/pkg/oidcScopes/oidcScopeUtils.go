@@ -21,7 +21,6 @@ package oidcScopes
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -33,29 +32,14 @@ type oidcScope struct {
 func getOidcScopeList() ([]oidcScope, error) {
 
 	var list []oidcScope
-	resp, err := utils.SendGetListRequest(utils.OIDC_SCOPES, -1)
+	body, err := utils.SendGetListRequest(utils.OIDC_SCOPES)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving OIDC scope list. %w", err)
 	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("error when reading the retrieved OIDC scope list. %w", err)
-		}
-
-		err = json.Unmarshal(body, &list)
-		if err != nil {
-			return nil, fmt.Errorf("error when unmarshalling the retrieved OIDC scope list. %w", err)
-		}
-
-		return list, nil
-	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		return nil, fmt.Errorf("error while retrieving OIDC scope list. Status code: %d, Error: %s", statusCode, error)
+	if err = json.Unmarshal(body, &list); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling the retrieved OIDC scope list. %w", err)
 	}
-	return nil, fmt.Errorf("error while retrieving OIDC scope list")
+	return list, nil
 }
 
 func getDeployedOidcScopeNames() []string {

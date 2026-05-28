@@ -54,7 +54,11 @@ func ImportAll(inputDirPath string) {
 		}
 	}
 
-	deployedApps := getAppList()
+	deployedApps, err := getAppList()
+	if err != nil {
+		log.Println("Error retrieving applications list:", err)
+		return
+	}
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
 		log.Println("Error importing applications: ", err)

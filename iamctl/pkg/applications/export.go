@@ -42,8 +42,14 @@ func ExportAll(exportFilePath string, format string) {
 		return
 	}
 	exportAPIExists := utils.ExportAPIExists(utils.APPLICATIONS)
-	deployedAppNames := getDeployedAppNames()
 	applicationAuthorizedApis.InitIsSupported()
+
+	apps, err := getAppList()
+	if err != nil {
+		log.Println("Error retrieving applications list:", err)
+		return
+	}
+	deployedAppNames := getDeployedAppNames(apps)
 
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
@@ -68,8 +74,6 @@ func ExportAll(exportFilePath string, format string) {
 			}
 		}
 	}
-
-	apps := getAppList()
 	excludeSecrets := utils.AreSecretsExcluded(utils.TOOL_CONFIGS.ApplicationConfigs)
 	for _, app := range apps {
 		if !utils.IsResourceExcluded(app.Name, utils.TOOL_CONFIGS.ApplicationConfigs) {

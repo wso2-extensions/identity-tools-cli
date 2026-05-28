@@ -21,7 +21,6 @@ package scriptLibraries
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -31,36 +30,25 @@ type scriptLibrary struct {
 	Description string `json:"description"`
 }
 
-type scriptLibraryListResponse struct {
-	ScriptLibraries []scriptLibrary `json:"scriptLibraries"`
-}
-
 func getScriptLibraryList() ([]scriptLibrary, error) {
 
-	resp, err := utils.SendGetListRequest(utils.SCRIPT_LIBRARIES, -1)
+	data, err := utils.SendPaginatedGetListRequest(
+		utils.SCRIPT_LIBRARIES,
+		"totalResults",
+		"count",
+		"offset",
+		"limit",
+		"scriptLibraries",
+		0,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving script library list. %w", err)
 	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("error when reading the retrieved script library list. %w", err)
-		}
-
-		var listResponse scriptLibraryListResponse
-		err = json.Unmarshal(body, &listResponse)
-		if err != nil {
-			return nil, fmt.Errorf("error when unmarshalling the retrieved script library list. %w", err)
-		}
-
-		return listResponse.ScriptLibraries, nil
-	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		return nil, fmt.Errorf("error while retrieving script library list. Status code: %d, Error: %s", statusCode, error)
+	var libraries []scriptLibrary
+	if err := json.Unmarshal(data, &libraries); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling script library list. %w", err)
 	}
-	return nil, fmt.Errorf("error while retrieving script library list")
+	return libraries, nil
 }
 
 func getDeployedScriptLibraryNames() []string {
@@ -115,4 +103,3 @@ func getScriptLibraryData(libraryName string) (map[string]interface{}, error) {
 	dataMap["content"] = string(contentBytes)
 	return dataMap, nil
 }
-

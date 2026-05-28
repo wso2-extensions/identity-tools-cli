@@ -21,7 +21,6 @@ package governanceConnectors
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"strings"
 
@@ -51,26 +50,14 @@ type connector struct {
 func getCategoryList() ([]connectorCategory, error) {
 
 	var categories []connectorCategory
-	resp, err := utils.SendGetListRequest(utils.GOVERNANCE_CONNECTORS, -1)
+	body, err := utils.SendGetListRequest(utils.GOVERNANCE_CONNECTORS)
 	if err != nil {
 		return nil, fmt.Errorf("error retrieving governance connector category list: %w", err)
 	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("error reading governance connector category list response: %w", err)
-		}
-		if err := json.Unmarshal(body, &categories); err != nil {
-			return nil, fmt.Errorf("error unmarshalling governance connector categories: %w", err)
-		}
-		return categories, nil
-	} else if errMsg, ok := utils.ErrorCodes[statusCode]; ok {
-		return nil, fmt.Errorf("error retrieving governance connector category list. Status code: %d, Error: %s", statusCode, errMsg)
+	if err := json.Unmarshal(body, &categories); err != nil {
+		return nil, fmt.Errorf("error unmarshalling governance connector categories: %w", err)
 	}
-	return nil, fmt.Errorf("error retrieving governance connector category list")
+	return categories, nil
 }
 
 func getConnectorListForCategory(categoryId string) ([]connector, error) {

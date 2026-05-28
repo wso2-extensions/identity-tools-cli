@@ -21,7 +21,6 @@ package roles
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/organizations"
@@ -31,10 +30,6 @@ import (
 type role struct {
 	Id          string `json:"id"`
 	DisplayName string `json:"displayName"`
-}
-
-type roleListResponse struct {
-	Resources []role `json:"Resources"`
 }
 
 type patchOperation struct {
@@ -49,31 +44,23 @@ type rolePatchRequest struct {
 
 func getRoleList() ([]role, error) {
 
-	resp, err := utils.SendGetListRequest(utils.ROLES, -1)
+	data, err := utils.SendPaginatedGetListRequest(
+		utils.ROLES,
+		"totalResults",
+		"itemsPerPage",
+		"startIndex",
+		"count",
+		"Resources",
+		1,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving role list: %w", err)
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		if errMsg, ok := utils.ErrorCodes[resp.StatusCode]; ok {
-			return nil, fmt.Errorf("error while retrieving roles list. Status: %d, Error: %s", resp.StatusCode, errMsg)
-		}
-		return nil, fmt.Errorf("error while retrieving roles list. Status: %d", resp.StatusCode)
+	var roles []role
+	if err := json.Unmarshal(data, &roles); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling roles list: %w", err)
 	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error when reading the retrieved roles list: %w", err)
-	}
-
-	var listResp roleListResponse
-	err = json.Unmarshal(body, &listResp)
-	if err != nil {
-		return nil, fmt.Errorf("error when unmarshalling the retrieved roles list: %w", err)
-	}
-
-	return listResp.Resources, nil
+	return roles, nil
 }
 
 func getDeployedRoleLocalFileNames(roles []role) []string {

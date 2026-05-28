@@ -21,7 +21,6 @@ package identityproviders
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"regexp"
 
@@ -33,10 +32,6 @@ type identityProvider struct {
 	Name string `json:"name"`
 }
 
-type idpList struct {
-	IdpCount          int                `json:"totalResults"`
-	IdentityProviders []identityProvider `json:"identityProviders"`
-}
 type idpConfig struct {
 	Id                      string `json:"id" yaml:"id"`
 	Name                    string `json:"name" yaml:"name"`
@@ -83,67 +78,23 @@ var idpPatchSkipKeys = map[string]bool{
 
 func getIdpList() ([]identityProvider, error) {
 
-	idpCount, err := getTotalIdpCount()
+	data, err := utils.SendPaginatedGetListRequest(
+		utils.IDENTITY_PROVIDERS,
+		"totalResults",
+		"count",
+		"offset",
+		"limit",
+		"identityProviders",
+		0,
+	)
 	if err != nil {
-		log.Println("Error: when retrieving IDP count. Retrieving only the default count.", err)
+		return nil, fmt.Errorf("error while retrieving IDP list. %w", err)
 	}
-	var list idpList
-	if idpCount == 0 {
-		return []identityProvider{}, nil
+	var idps []identityProvider
+	if err := json.Unmarshal(data, &idps); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling IDP list. %w", err)
 	}
-	resp, err := utils.SendGetListRequest(utils.IDENTITY_PROVIDERS, idpCount)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve available IDP list. %w", err)
-	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("error when reading the retrieved IDP list. %w", err)
-		}
-
-		err = json.Unmarshal(body, &list)
-		if err != nil {
-			return nil, fmt.Errorf("error when unmarshalling the retrieved IDP list. %w", err)
-		}
-		resp.Body.Close()
-
-		return list.IdentityProviders, nil
-	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		return nil, fmt.Errorf("error while retrieving IDP list. Status code: %d, Error: %s", statusCode, error)
-	}
-	return nil, fmt.Errorf("error while retrieving identity provider list")
-}
-
-func getTotalIdpCount() (count int, err error) {
-
-	var list idpList
-	resp, err := utils.SendGetListRequest(utils.IDENTITY_PROVIDERS, -1)
-	if err != nil {
-		return -1, fmt.Errorf("failed to retrieve available IDP list. %w", err)
-	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return -1, fmt.Errorf("error when reading the retrieved IDP list. %w", err)
-		}
-
-		err = json.Unmarshal(body, &list)
-		if err != nil {
-			return -1, fmt.Errorf("error when unmarshalling the retrieved IDP list. %w", err)
-		}
-		resp.Body.Close()
-
-		return list.IdpCount, nil
-	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		return -1, fmt.Errorf("error while retrieving IDP count. Status code: %d, Error: %s", statusCode, error)
-	}
-	return -1, fmt.Errorf("error while retrieving identity provider count")
+	return idps, nil
 }
 
 func getDeployedIdpNames() []string {

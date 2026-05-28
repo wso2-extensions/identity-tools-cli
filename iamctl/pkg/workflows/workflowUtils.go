@@ -33,10 +33,6 @@ type workflow struct {
 	Name string `json:"name"`
 }
 
-type workflowListResponse struct {
-	Workflows []workflow `json:"workflows"`
-}
-
 type workflowAssociation struct {
 	ID           string `json:"id"`
 	Name         string `json:"associationName"`
@@ -57,61 +53,44 @@ var exportedAssociationNames []string
 
 func getWorkflowList() ([]workflow, error) {
 
-	resp, err := utils.SendGetListRequest(utils.WORKFLOWS, -1)
+	data, err := utils.SendPaginatedGetListRequest(
+		utils.WORKFLOWS,
+		"totalResults",
+		"count",
+		"offset",
+		"limit",
+		"workflows",
+		0,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving workflow list: %w", err)
 	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	if statusCode != 200 {
-		if errMsg, ok := utils.ErrorCodes[statusCode]; ok {
-			return nil, fmt.Errorf("error while retrieving workflow list. Status code: %d, Error: %s", statusCode, errMsg)
-		}
-		return nil, fmt.Errorf("error while retrieving workflow list. Status code: %d", statusCode)
+	var workflows []workflow
+	if err := json.Unmarshal(data, &workflows); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling workflow list: %w", err)
 	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error when reading the retrieved workflow list: %w", err)
-	}
-
-	var listResponse workflowListResponse
-	err = json.Unmarshal(body, &listResponse)
-	if err != nil {
-		return nil, fmt.Errorf("error when unmarshalling the retrieved workflow list: %w", err)
-	}
-
-	return listResponse.Workflows, nil
+	return workflows, nil
 }
 
 func getWorkflowAssociationsList() ([]workflowAssociation, error) {
 
-	resp, err := utils.SendGetListRequest(utils.WORKFLOW_ASSOCIATIONS, -1)
+	data, err := utils.SendPaginatedGetListRequest(
+		utils.WORKFLOW_ASSOCIATIONS,
+		"totalResults",
+		"count",
+		"offset",
+		"limit",
+		"workflowAssociations",
+		0,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving workflow association list: %w", err)
 	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	if statusCode != 200 {
-		if errMsg, ok := utils.ErrorCodes[statusCode]; ok {
-			return nil, fmt.Errorf("error while retrieving workflow association list. Status code: %d, Error: %s", statusCode, errMsg)
-		}
-		return nil, fmt.Errorf("error while retrieving workflow association list. Status code: %d", statusCode)
+	var associations []workflowAssociation
+	if err := json.Unmarshal(data, &associations); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling workflow association list: %w", err)
 	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error when reading the retrieved workflow association list: %w", err)
-	}
-
-	var listResponse workflowAssociationListResponse
-	if err := json.Unmarshal(body, &listResponse); err != nil {
-		return nil, fmt.Errorf("error when unmarshalling the retrieved workflow association list: %w", err)
-	}
-
-	return listResponse.WorkflowAssociations, nil
+	return associations, nil
 }
 
 func getDeployedWorkflowNames(workflows []workflow) []string {
@@ -164,26 +143,11 @@ func getWfAssocId(name string, list []workflowAssociation) string {
 
 func getAssociationsOfWorkflow(workflowId string) ([]interface{}, []workflowAssociation, error) {
 
-	resp, err := utils.SendGetListRequest(utils.WORKFLOW_ASSOCIATIONS, -1,
+	body, err := utils.SendGetListRequest(utils.WORKFLOW_ASSOCIATIONS,
 		utils.WithQueryParams(map[string]string{"filter": "workflowId eq " + workflowId}))
 	if err != nil {
 		return nil, nil, fmt.Errorf("error while retrieving associations: %w", err)
 	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	if statusCode != 200 {
-		if errMsg, ok := utils.ErrorCodes[statusCode]; ok {
-			return nil, nil, fmt.Errorf("error while retrieving associations. Status code: %d, Error: %s", statusCode, errMsg)
-		}
-		return nil, nil, fmt.Errorf("error while retrieving associations for workflow. Status code: %d", statusCode)
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error when reading associations: %w", err)
-	}
-
 	var rawResp associationsOfWorkflowResponse
 	if err := json.Unmarshal(body, &rawResp); err != nil {
 		return nil, nil, fmt.Errorf("error when unmarshalling associations data: %w", err)

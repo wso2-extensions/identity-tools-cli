@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
@@ -33,8 +34,14 @@ type organization struct {
 	Status    string `json:"status"`
 }
 
+type orgLink struct {
+	Href string `json:"href"`
+	Rel  string `json:"rel"`
+}
+
 type organizationsResponse struct {
 	Organizations []organization `json:"organizations"`
+	Links         []orgLink      `json:"links"`
 }
 
 var curOrgId string
@@ -55,31 +62,55 @@ func GetCurrentOrganizationId() (id string, err error) {
 
 func getOrganizationList() ([]organization, error) {
 
-	resp, err := utils.SendGetListRequest(utils.ORGANIZATIONS, -1,
+	body, err := utils.SendGetListRequest(utils.ORGANIZATIONS,
 		utils.WithQueryParams(map[string]string{"recursive": "false"}))
 	if err != nil {
-		return nil, fmt.Errorf("error while retrieving list. %w", err)
+		return nil, fmt.Errorf("error while retrieving organization list: %w", err)
 	}
-	defer resp.Body.Close()
+	var page organizationsResponse
+	if err = json.Unmarshal(body, &page); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling organization list: %w", err)
+	}
+	allResults := page.Organizations
 
-	statusCode := resp.StatusCode
-	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("error when reading the retrieved list. %w", err)
+	for {
+		nextHref := ""
+		for _, link := range page.Links {
+			if link.Rel == "next" {
+				nextHref = link.Href
+				break
+			}
+		}
+		if nextHref == "" {
+			break
 		}
 
-		var wrapper organizationsResponse
-		err = json.Unmarshal(body, &wrapper)
+		resp, err := utils.SendCustomRequest(http.MethodGet, utils.SERVER_CONFIGS.ServerUrl+nextHref, nil, "")
 		if err != nil {
-			return nil, fmt.Errorf("error when unmarshalling the retrieved list. %w", err)
+			return nil, fmt.Errorf("error retrieving page of organization list: %w", err)
 		}
-		return wrapper.Organizations, nil
 
-	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		return nil, fmt.Errorf("Status code: %d, Error: %s", statusCode, error)
+		if resp.StatusCode != http.StatusOK {
+			resp.Body.Close()
+			if errMsg, ok := utils.ErrorCodes[resp.StatusCode]; ok {
+				return nil, fmt.Errorf("error response for organization list page request: %s", errMsg)
+			}
+			return nil, fmt.Errorf("unexpected error when retrieving organization list page: %s", resp.Status)
+		}
+
+		nextBody, err := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			return nil, fmt.Errorf("error reading page of organization list: %w", err)
+		}
+		page = organizationsResponse{}
+		if err = json.Unmarshal(nextBody, &page); err != nil {
+			return nil, fmt.Errorf("error when unmarshalling organization list page: %w", err)
+		}
+		allResults = append(allResults, page.Organizations...)
 	}
-	return nil, fmt.Errorf("unknown error while retrieving list")
+
+	return allResults, nil
 }
 
 func getDeployedOrgResourceNames(orgs []organization) []string {

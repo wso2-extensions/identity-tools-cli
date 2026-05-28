@@ -21,7 +21,6 @@ package notificationProviders
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
@@ -67,27 +66,14 @@ func getProviderLogName(resType utils.ResourceType) string {
 func getProviderList(resType utils.ResourceType) ([]notificationProvider, error) {
 
 	var list []notificationProvider
-	resp, err := utils.SendGetListRequest(resType, -1)
+	body, err := utils.SendGetListRequest(resType)
 	if err != nil {
 		return nil, fmt.Errorf("error while getting the list: %w", err)
 	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("error when reading the list: %w", err)
-		}
-		err = json.Unmarshal(body, &list)
-		if err != nil {
-			return nil, fmt.Errorf("error when unmarshalling the list: %w", err)
-		}
-		return list, nil
-	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		return nil, fmt.Errorf("Status code: %d, Error: %s", statusCode, error)
+	if err = json.Unmarshal(body, &list); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling the list: %w", err)
 	}
-	return nil, fmt.Errorf("unknown error while getting the list")
+	return list, nil
 }
 
 func getDeployedProviderNames(providers []notificationProvider) []string {

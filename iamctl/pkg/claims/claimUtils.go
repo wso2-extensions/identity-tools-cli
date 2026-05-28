@@ -51,30 +51,14 @@ var localClaimDialectSummary LocalClaimDialectSummary
 func getClaimDialectsList() ([]claimDialect, error) {
 
 	var list []claimDialect
-	resp, err := utils.SendGetListRequest(utils.CLAIMS, -1)
+	body, err := utils.SendGetListRequest(utils.CLAIMS)
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving claim dialect list. %w", err)
 	}
-	defer resp.Body.Close()
-
-	statusCode := resp.StatusCode
-	if statusCode == 200 {
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("error when reading the retrieved claim dialect list. %w", err)
-		}
-
-		err = json.Unmarshal(body, &list)
-		if err != nil {
-			return nil, fmt.Errorf("error when unmarshalling the retrieved claim dialect list. %w", err)
-		}
-		resp.Body.Close()
-
-		return list, nil
-	} else if error, ok := utils.ErrorCodes[statusCode]; ok {
-		return nil, fmt.Errorf("error while retrieving claim dialect list. Status code: %d, Error: %s", statusCode, error)
+	if err = json.Unmarshal(body, &list); err != nil {
+		return nil, fmt.Errorf("error when unmarshalling the retrieved claim dialect list. %w", err)
 	}
-	return nil, fmt.Errorf("unexpected error while retrieving claim dialect list")
+	return list, nil
 }
 
 func getClaimsList(dialectId string) ([]map[string]interface{}, error) {
