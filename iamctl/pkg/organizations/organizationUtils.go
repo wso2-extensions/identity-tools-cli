@@ -37,6 +37,11 @@ type organizationsResponse struct {
 	Organizations []organization `json:"organizations"`
 }
 
+const (
+	creatorIdKey       = "creator.id"
+	creatorUsernameKey = "creator.username"
+)
+
 var curOrgId string
 
 func GetCurrentOrganizationId() (id string, err error) {
@@ -171,12 +176,51 @@ func addCreatorAttributes(orgData map[string]interface{}) error {
 	}
 
 	attributes = append(attributes,
-		map[string]interface{}{"key": "creator.id", "value": idStr},
-		map[string]interface{}{"key": "creator.username", "value": usernameStr},
+		map[string]interface{}{"key": creatorIdKey, "value": idStr},
+		map[string]interface{}{"key": creatorUsernameKey, "value": usernameStr},
 	)
 
 	orgData["attributes"] = attributes
 	return nil
+}
+
+func removeCreatorAttributes(orgData interface{}) (interface{}, error) {
+
+	dataMap, ok := orgData.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected format for organization data")
+	}
+
+	existing, hasAttr := dataMap["attributes"]
+	if !hasAttr {
+		return orgData, nil
+	}
+	attrArr, ok := existing.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected format for attributes field")
+	}
+
+	var filtered []interface{}
+	for _, entry := range attrArr {
+		entryMap, ok := entry.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("unexpected format for attributes entry")
+		}
+		keyVal, ok := entryMap["key"].(string)
+		if !ok {
+			return nil, fmt.Errorf("unexpected format for key in attributes entry")
+		}
+		if keyVal != creatorIdKey && keyVal != creatorUsernameKey {
+			filtered = append(filtered, entry)
+		}
+	}
+
+	if len(filtered) == 0 {
+		delete(dataMap, "attributes")
+	} else {
+		dataMap["attributes"] = filtered
+	}
+	return dataMap, nil
 }
 
 func patchOrganizationStatus(orgId string, rawStatus interface{}) error {

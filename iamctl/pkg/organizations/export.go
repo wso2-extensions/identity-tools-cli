@@ -87,6 +87,11 @@ func exportOrganization(orgId, resourceName, outputDirPath, formatString string)
 		return fmt.Errorf("error while processing exported content: %w", err)
 	}
 
+	modifiedOrg, err = removeCreatorAttributes(modifiedOrg)
+	if err != nil {
+		return fmt.Errorf("error while removing creator attributes: %w", err)
+	}
+
 	modifiedFile, err := utils.Serialize(modifiedOrg, format, utils.ORGANIZATIONS)
 	if err != nil {
 		return fmt.Errorf("error while serializing organization: %w", err)
