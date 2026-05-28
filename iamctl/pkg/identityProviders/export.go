@@ -79,8 +79,10 @@ func ExportAll(exportFilePath string, format string) {
 		log.Println("Exporting Resident identity provider")
 		err := exportIdp(utils.RESIDENT_IDP_NAME, exportFilePath, format, excludeSecerts)
 		if err != nil {
+			utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, utils.RESIDENT_IDP_NAME)
 			log.Printf("Error while exporting resident identity provider: %s", err)
 		} else {
+			utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.EXPORT)
 			log.Println("Resident identity provider exported successfully")
 		}
 	}
