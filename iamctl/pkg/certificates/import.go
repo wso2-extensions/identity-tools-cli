@@ -30,15 +30,17 @@ import (
 func ImportAll(inputDirPath string) {
 
 	utils.PrintLog(utils.LogLevelInfo, utils.CERTIFICATES, "", "Importing certificates...")
-	if utils.SERVER_CONFIGS.TenantDomain == utils.DEFAULT_TENANT_DOMAIN {
-		utils.PrintLog(utils.LogLevelInfo, utils.CERTIFICATES, "", "Importing certificates for super tenant not supported.")
-		return
-	}
-	importFilePath := filepath.Join(inputDirPath, utils.CERTIFICATES.String())
-
 	if utils.ShouldSkip(utils.CERTIFICATES) {
 		return
 	}
+
+	if utils.SERVER_CONFIGS.TenantDomain == utils.DEFAULT_TENANT_DOMAIN {
+		utils.PrintLog(utils.LogLevelInfo, utils.CERTIFICATES, "", "Importing certificates for super tenant not supported.")
+		utils.UpdateSkipSummary(utils.CERTIFICATES, "Not supported in super tenant")
+		return
+	}
+
+	importFilePath := filepath.Join(inputDirPath, utils.CERTIFICATES.String())
 	var files []os.FileInfo
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
 		utils.PrintLog(utils.LogLevelInfo, utils.CERTIFICATES, "", "No certificates to import.")
