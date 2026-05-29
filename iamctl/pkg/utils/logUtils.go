@@ -78,18 +78,23 @@ func levelPrefix(level LogLevel) string {
 
 func PrintLog(level LogLevel, resourceType ResourceType, resourceName string, msg string) {
 
+	var body string
+	if resourceType == NoResource {
+		body = msg
+	} else if resourceName == "" {
+		body = fmt.Sprintf("%s - %s", resourceType, msg)
+	} else {
+		body = fmt.Sprintf("%s - %s - %s", resourceType, resourceName, msg)
+	}
+
+	if level == LogLevelWarn {
+		GlobalWarnings = append(GlobalWarnings, body)
+	}
+
 	if level < CURRENT_LOG_LEVEL {
 		return
 	}
-	prefix := levelPrefix(level)
-
-	if resourceType == NoResource {
-		log.Printf("%s %s", prefix, msg)
-	} else if resourceName == "" {
-		log.Printf("%s %s - %s", prefix, resourceType, msg)
-	} else {
-		log.Printf("%s %s - %s - %s", prefix, resourceType, resourceName, msg)
-	}
+	log.Printf("%s %s", levelPrefix(level), body)
 }
 
 func PrintSummary(Operation string) {
@@ -107,6 +112,15 @@ func PrintSummary(Operation string) {
 		PrintImportSummary()
 	} else if Operation == EXPORT {
 		PrintExportSummary()
+	}
+
+	if len(GlobalWarnings) > 0 {
+		fmt.Println("----------------------------------------")
+		fmt.Println("Warnings:")
+		for _, w := range GlobalWarnings {
+			fmt.Printf("- %s\n", w)
+		}
+		fmt.Println("========================================")
 	}
 }
 
