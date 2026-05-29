@@ -33,7 +33,7 @@ func ImportAll(inputDirPath string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.ACTIONS, "", "Importing actions...")
 	importFilePath := filepath.Join(inputDirPath, utils.ACTIONS.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.ACTIONS) || !utils.IsEntitySupportedInOrg(utils.ACTIONS) || utils.IsResourceTypeExcluded(utils.ACTIONS) {
+	if utils.ShouldSkip(utils.ACTIONS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
@@ -44,6 +44,7 @@ func ImportAll(inputDirPath string) {
 	deployedTypes, err := getActionTypesList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.ACTIONS, "", fmt.Sprintf("Error retrieving action types list: %s", err))
+		utils.MarkResTypeFailure(utils.ACTIONS)
 	}
 	typeFolders, err := ioutil.ReadDir(importFilePath)
 	if err != nil {

@@ -33,18 +33,20 @@ func ExportAll(exportFilePath string, format string) {
 	exportFilePath = filepath.Join(exportFilePath, utils.WORKFLOWS.String())
 	setWorkflowVersionConfigs()
 
-	if !utils.IsEntitySupportedInVersion(utils.WORKFLOWS) || !utils.IsEntitySupportedInOrg(utils.WORKFLOWS) || utils.IsResourceTypeExcluded(utils.WORKFLOWS) {
+	if utils.ShouldSkip(utils.WORKFLOWS) {
 		return
 	}
 	workflows, err := getWorkflowList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.WORKFLOWS, "", fmt.Sprintf("Error when retrieving workflow list: %s", err))
+		utils.MarkResTypeFailure(utils.WORKFLOWS)
 		return
 	}
 
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
 			utils.PrintLog(utils.LogLevelError, utils.WORKFLOWS, "", fmt.Sprintf("Error creating workflows directory: %s", err))
+			utils.MarkResTypeFailure(utils.WORKFLOWS)
 			return
 		}
 	} else {

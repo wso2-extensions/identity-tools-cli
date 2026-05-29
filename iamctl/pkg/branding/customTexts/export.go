@@ -32,12 +32,13 @@ func ExportAll(parentDir string, formatString string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.CUSTOM_TEXTS, "", "Exporting custom texts...")
 	exportFilePath := filepath.Join(parentDir, utils.CUSTOM_TEXTS.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.CUSTOM_TEXTS) || !utils.IsEntitySupportedInOrg(utils.CUSTOM_TEXTS) || utils.IsResourceTypeExcluded(utils.CUSTOM_TEXTS) {
+	if utils.ShouldSkip(utils.CUSTOM_TEXTS) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
 			utils.PrintLog(utils.LogLevelError, utils.CUSTOM_TEXTS, "", fmt.Sprintf("Error creating custom texts directory: %s", err))
+			utils.MarkResTypeFailure(utils.CUSTOM_TEXTS)
 			return
 		}
 	}

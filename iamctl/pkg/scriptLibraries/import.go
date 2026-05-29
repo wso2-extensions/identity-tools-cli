@@ -32,7 +32,7 @@ func ImportAll(inputDirPath string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.SCRIPT_LIBRARIES, "", "Importing script libraries...")
 	importFilePath := filepath.Join(inputDirPath, utils.SCRIPT_LIBRARIES.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.SCRIPT_LIBRARIES) || !utils.IsEntitySupportedInOrg(utils.SCRIPT_LIBRARIES) || utils.IsResourceTypeExcluded(utils.SCRIPT_LIBRARIES) {
+	if utils.ShouldSkip(utils.SCRIPT_LIBRARIES) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
@@ -43,12 +43,14 @@ func ImportAll(inputDirPath string) {
 	existingList, err := getScriptLibraryList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.SCRIPT_LIBRARIES, "", fmt.Sprintf("Error retrieving the deployed script library list: %s", err))
+		utils.MarkResTypeFailure(utils.SCRIPT_LIBRARIES)
 		return
 	}
 
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		utils.PrintLog(utils.LogLevelError, utils.SCRIPT_LIBRARIES, "", fmt.Sprintf("Error importing script libraries: %s", err))
+		utils.PrintLog(utils.LogLevelError, utils.SCRIPT_LIBRARIES, "", fmt.Sprintf("Error reading script libraries directory: %s", err))
+		utils.MarkResTypeFailure(utils.SCRIPT_LIBRARIES)
 		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {

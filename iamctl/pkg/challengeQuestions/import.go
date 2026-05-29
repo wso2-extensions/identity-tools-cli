@@ -32,7 +32,7 @@ func ImportAll(inputDirPath string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.CHALLENGE_QUESTIONS, "", "Importing challenge question sets...")
 	importFilePath := filepath.Join(inputDirPath, utils.CHALLENGE_QUESTIONS.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.CHALLENGE_QUESTIONS) || !utils.IsEntitySupportedInOrg(utils.CHALLENGE_QUESTIONS) || utils.IsResourceTypeExcluded(utils.CHALLENGE_QUESTIONS) {
+	if utils.ShouldSkip(utils.CHALLENGE_QUESTIONS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
@@ -43,12 +43,14 @@ func ImportAll(inputDirPath string) {
 	existingSets, err := getChallengeSetList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.CHALLENGE_QUESTIONS, "", fmt.Sprintf("Error retrieving the deployed challenge question set list: %s", err))
+		utils.MarkResTypeFailure(utils.CHALLENGE_QUESTIONS)
 		return
 	}
 
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		utils.PrintLog(utils.LogLevelError, utils.CHALLENGE_QUESTIONS, "", fmt.Sprintf("Error importing challenge question sets: %s", err))
+		utils.PrintLog(utils.LogLevelError, utils.CHALLENGE_QUESTIONS, "", fmt.Sprintf("Error reading challenge questions directory: %s", err))
+		utils.MarkResTypeFailure(utils.CHALLENGE_QUESTIONS)
 		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {

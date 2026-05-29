@@ -42,6 +42,7 @@ func ExportAll(exportFilePath string, format string) {
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
 			utils.PrintLog(utils.LogLevelError, utils.IDENTITY_PROVIDERS, "", fmt.Sprintf("Error creating identity providers directory: %s", err))
+			utils.MarkResTypeFailure(utils.IDENTITY_PROVIDERS)
 			return
 		}
 	} else {
@@ -57,7 +58,8 @@ func ExportAll(exportFilePath string, format string) {
 	excludeSecerts := utils.AreSecretsExcluded(utils.TOOL_CONFIGS.IdpConfigs)
 	idps, err := getIdpList()
 	if err != nil {
-		utils.PrintLog(utils.LogLevelError, utils.IDENTITY_PROVIDERS, "", fmt.Sprintf("Error when exporting identity providers: %s", err))
+		utils.PrintLog(utils.LogLevelError, utils.IDENTITY_PROVIDERS, "", fmt.Sprintf("Error retrieving the deployed identity providers list: %s", err))
+		utils.MarkResTypeFailure(utils.IDENTITY_PROVIDERS)
 	} else {
 		for _, idp := range idps {
 			if !utils.IsResourceExcluded(idp.Name, utils.TOOL_CONFIGS.IdpConfigs) {

@@ -47,7 +47,7 @@ func IsEntitySupportedInVersion(resourceType ResourceType) bool {
 		if err != nil {
 			return true
 		} else if comparison > 0 {
-			PrintLog(LogLevelWarn, resourceType, "", fmt.Sprintf("Skipping: Supported up to IS version %s", maxVersion))
+			PrintLog(LogLevelInfo, resourceType, "", fmt.Sprintf("Skipping: Supported up to IS version %s", maxVersion))
 			return false
 		}
 	}
@@ -60,7 +60,7 @@ func IsEntitySupportedInVersion(resourceType ResourceType) bool {
 		if err != nil {
 			return true
 		} else if comparison < 0 {
-			PrintLog(LogLevelWarn, resourceType, "", fmt.Sprintf("Skipping: Supported from IS version %s or higher", minVersion))
+			PrintLog(LogLevelInfo, resourceType, "", fmt.Sprintf("Skipping: Supported from IS version %s or higher", minVersion))
 			return false
 		}
 	}

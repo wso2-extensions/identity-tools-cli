@@ -46,12 +46,14 @@ func ImportAll(inputDirPath string) {
 	existingIdpList, err := getIdpList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.IDENTITY_PROVIDERS, "", fmt.Sprintf("Error when retrieving the deployed identity provider list. %s", err))
+		utils.MarkResTypeFailure(utils.IDENTITY_PROVIDERS)
 		return
 	}
 
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		utils.PrintLog(utils.LogLevelError, utils.IDENTITY_PROVIDERS, "", fmt.Sprintf("Error importing identity providers: %s", err))
+		utils.PrintLog(utils.LogLevelError, utils.IDENTITY_PROVIDERS, "", fmt.Sprintf("Error reading identity providers directory: %s", err))
+		utils.MarkResTypeFailure(utils.IDENTITY_PROVIDERS)
 		return
 	}
 
@@ -352,6 +354,7 @@ func RemoveDeletedDeployedIdps(inputDirPath string) {
 	deployedIdps, err := getIdpList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.IDENTITY_PROVIDERS, "", fmt.Sprintf("Error when retrieving deployed identity provider list: %s", err))
+		utils.MarkResTypeFailure(utils.IDENTITY_PROVIDERS)
 		return
 	}
 

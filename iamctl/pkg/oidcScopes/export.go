@@ -32,12 +32,13 @@ func ExportAll(exportFilePath string, format string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.OIDC_SCOPES, "", "Exporting OIDC scopes...")
 	exportFilePath = filepath.Join(exportFilePath, utils.OIDC_SCOPES.String())
 
-	if !utils.IsEntitySupportedInOrg(utils.OIDC_SCOPES) || utils.IsResourceTypeExcluded(utils.OIDC_SCOPES) {
+	if utils.ShouldSkip(utils.OIDC_SCOPES) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
 			utils.PrintLog(utils.LogLevelError, utils.OIDC_SCOPES, "", fmt.Sprintf("Error creating OIDC scopes directory: %s", err))
+			utils.MarkResTypeFailure(utils.OIDC_SCOPES)
 			return
 		}
 	} else {
@@ -49,7 +50,8 @@ func ExportAll(exportFilePath string, format string) {
 
 	scopes, err := getOidcScopeList()
 	if err != nil {
-		utils.PrintLog(utils.LogLevelError, utils.OIDC_SCOPES, "", fmt.Sprintf("Error when exporting OIDC scopes: %s", err))
+		utils.PrintLog(utils.LogLevelError, utils.OIDC_SCOPES, "", fmt.Sprintf("Error retrieving the deployed OIDC scopes list: %s", err))
+		utils.MarkResTypeFailure(utils.OIDC_SCOPES)
 	} else {
 		for _, scope := range scopes {
 			if !utils.IsResourceExcluded(scope.Name, utils.TOOL_CONFIGS.OidcScopeConfigs) {

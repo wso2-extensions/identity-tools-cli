@@ -33,7 +33,7 @@ func ImportAll(inputDirPath string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.FLOWS, "", "Importing flows...")
 	importFilePath := filepath.Join(inputDirPath, utils.FLOWS.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.FLOWS) || !utils.IsEntitySupportedInOrg(utils.FLOWS) || utils.IsResourceTypeExcluded(utils.FLOWS) {
+	if utils.ShouldSkip(utils.FLOWS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
@@ -44,6 +44,7 @@ func ImportAll(inputDirPath string) {
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.FLOWS, "", fmt.Sprintf("Error reading flows directory: %s", err))
+		utils.MarkResTypeFailure(utils.FLOWS)
 		return
 	}
 

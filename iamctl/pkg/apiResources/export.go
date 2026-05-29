@@ -32,18 +32,20 @@ func ExportAll(exportFilePath string, format string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.API_RESOURCES, "", "Exporting API resources...")
 	exportFilePath = filepath.Join(exportFilePath, utils.API_RESOURCES.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.API_RESOURCES) || !utils.IsEntitySupportedInOrg(utils.API_RESOURCES) || utils.IsResourceTypeExcluded(utils.API_RESOURCES) {
+	if utils.ShouldSkip(utils.API_RESOURCES) {
 		return
 	}
 	resources, err := GetApiResourceList(true)
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.API_RESOURCES, "", fmt.Sprintf("Error when retrieving API resource list: %s", err))
+		utils.MarkResTypeFailure(utils.API_RESOURCES)
 		return
 	}
 
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
 			utils.PrintLog(utils.LogLevelError, utils.API_RESOURCES, "", fmt.Sprintf("Error creating API resources directory: %s", err))
+			utils.MarkResTypeFailure(utils.API_RESOURCES)
 			return
 		}
 	} else {

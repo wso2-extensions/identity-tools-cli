@@ -22,14 +22,14 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
 	actions "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/actions"
-	branding "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/branding"
 	apiResources "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/apiResources"
-	flows "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/flows"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/applications"
+	branding "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/branding"
 	certificates "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/certificates"
 	challengeQuestions "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/challengeQuestions"
 	claims "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/claims"
 	emailTemplates "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/emailTemplates"
+	flows "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/flows"
 	governanceConnectors "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/governanceConnectors"
 	identityproviders "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/identityProviders"
 	notificationProviders "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/notificationProviders"
@@ -84,7 +84,13 @@ var exportAllCmd = &cobra.Command{
 
 		for _, resourceType := range utils.ResourceOrder {
 			if exportFunc, exists := exportFunctions[resourceType]; exists {
+				if resourceType != utils.BRANDING {
+					utils.MarkResTypeStart(resourceType)
+				}
 				exportFunc(outputDirPath, format)
+				if resourceType != utils.BRANDING {
+					utils.MarkResTypeEnd(resourceType)
+				}
 			}
 		}
 

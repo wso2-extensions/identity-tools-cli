@@ -43,7 +43,7 @@ func ImportAllLegacyApi(inputDirPath string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.EMAIL_TEMPLATES, "", "Importing email templates...")
 	importFilePath := filepath.Join(inputDirPath, utils.EMAIL_TEMPLATES.String())
 
-	if !utils.IsEntitySupportedInOrg(utils.EMAIL_TEMPLATES) || utils.IsResourceTypeExcluded(utils.EMAIL_TEMPLATES) {
+	if utils.ShouldSkip(utils.EMAIL_TEMPLATES) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
@@ -54,12 +54,14 @@ func ImportAllLegacyApi(inputDirPath string) {
 	deployedTypes, err := getEmailTemplateTypeList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.EMAIL_TEMPLATES, "", fmt.Sprintf("Error retrieving deployed email template types: %s", err))
+		utils.MarkResTypeFailure(utils.EMAIL_TEMPLATES)
 		return
 	}
 
 	localTypeDirs, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.EMAIL_TEMPLATES, "", fmt.Sprintf("Error reading email templates directory: %s", err))
+		utils.MarkResTypeFailure(utils.EMAIL_TEMPLATES)
 		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {

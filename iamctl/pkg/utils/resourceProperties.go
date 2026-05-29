@@ -88,7 +88,24 @@ func IsEntitySupportedInOrg(resourceType ResourceType) bool {
 	if entitySupportedInSubOrg[resourceType] {
 		return true
 	}
-	PrintLog(LogLevelWarn, resourceType, "", "Not supported for sub organizations")
+	PrintLog(LogLevelInfo, resourceType, "", "Not supported for sub organizations")
+	return false
+}
+
+func ShouldSkip(resourceType ResourceType) bool {
+
+	if !IsEntitySupportedInVersion(resourceType) {
+		UpdateSkipSummary(resourceType, "Not supported in server version")
+		return true
+	}
+	if !IsEntitySupportedInOrg(resourceType) {
+		UpdateSkipSummary(resourceType, "Not supported in sub-organizations")
+		return true
+	}
+	if IsResourceTypeExcluded(resourceType) {
+		UpdateSkipSummary(resourceType, "Excluded via tool configs")
+		return true
+	}
 	return false
 }
 

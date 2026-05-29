@@ -32,12 +32,13 @@ func ExportAll(exportFilePath string, format string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.CHALLENGE_QUESTIONS, "", "Exporting challenge question sets...")
 	exportFilePath = filepath.Join(exportFilePath, utils.CHALLENGE_QUESTIONS.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.CHALLENGE_QUESTIONS) || !utils.IsEntitySupportedInOrg(utils.CHALLENGE_QUESTIONS) || utils.IsResourceTypeExcluded(utils.CHALLENGE_QUESTIONS) {
+	if utils.ShouldSkip(utils.CHALLENGE_QUESTIONS) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
 			utils.PrintLog(utils.LogLevelError, utils.CHALLENGE_QUESTIONS, "", fmt.Sprintf("Error creating challenge questions directory: %s", err))
+			utils.MarkResTypeFailure(utils.CHALLENGE_QUESTIONS)
 			return
 		}
 	} else {
@@ -49,7 +50,8 @@ func ExportAll(exportFilePath string, format string) {
 
 	sets, err := getChallengeSetList()
 	if err != nil {
-		utils.PrintLog(utils.LogLevelError, utils.CHALLENGE_QUESTIONS, "", fmt.Sprintf("Error when exporting challenge question sets: %s", err))
+		utils.PrintLog(utils.LogLevelError, utils.CHALLENGE_QUESTIONS, "", fmt.Sprintf("Error retrieving the deployed challenge question sets list: %s", err))
+		utils.MarkResTypeFailure(utils.CHALLENGE_QUESTIONS)
 		return
 	}
 

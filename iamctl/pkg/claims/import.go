@@ -35,7 +35,7 @@ func ImportAll(inputDirPath string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.CLAIMS, "", "Importing claims...")
 	importFilePath := filepath.Join(inputDirPath, utils.CLAIMS.String())
 
-	if !utils.IsEntitySupportedInOrg(utils.CLAIMS) || utils.IsResourceTypeExcluded(utils.CLAIMS) {
+	if utils.ShouldSkip(utils.CLAIMS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
@@ -46,12 +46,14 @@ func ImportAll(inputDirPath string) {
 	existingClaimDialectList, err := getClaimDialectsList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.CLAIMS, "", fmt.Sprintf("Error when retrieving the deployed claim dialect list: %s", err))
+		utils.MarkResTypeFailure(utils.CLAIMS)
 		return
 	}
 
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		utils.PrintLog(utils.LogLevelError, utils.CLAIMS, "", fmt.Sprintf("Error importing claim dialects: %s", err))
+		utils.PrintLog(utils.LogLevelError, utils.CLAIMS, "", fmt.Sprintf("Error reading claim dialects directory: %s", err))
+		utils.MarkResTypeFailure(utils.CLAIMS)
 		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {

@@ -32,12 +32,13 @@ func ExportAll(exportFilePath string, format string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.VALIDATION_RULES, "", "Exporting validation rules...")
 	exportFilePath = filepath.Join(exportFilePath, utils.VALIDATION_RULES.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.VALIDATION_RULES) || !utils.IsEntitySupportedInOrg(utils.VALIDATION_RULES) || utils.IsResourceTypeExcluded(utils.VALIDATION_RULES) {
+	if utils.ShouldSkip(utils.VALIDATION_RULES) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
 			utils.PrintLog(utils.LogLevelError, utils.VALIDATION_RULES, "", fmt.Sprintf("Error creating validation rules directory: %s", err))
+			utils.MarkResTypeFailure(utils.VALIDATION_RULES)
 			return
 		}
 	}

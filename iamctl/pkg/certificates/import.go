@@ -36,7 +36,7 @@ func ImportAll(inputDirPath string) {
 	}
 	importFilePath := filepath.Join(inputDirPath, utils.CERTIFICATES.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.CERTIFICATES) || !utils.IsEntitySupportedInOrg(utils.CERTIFICATES) || utils.IsResourceTypeExcluded(utils.CERTIFICATES) {
+	if utils.ShouldSkip(utils.CERTIFICATES) {
 		return
 	}
 	var files []os.FileInfo
@@ -48,12 +48,14 @@ func ImportAll(inputDirPath string) {
 	existingCertList, err := getCertificateList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.CERTIFICATES, "", fmt.Sprintf("Error retrieving the deployed certificate list: %s", err))
+		utils.MarkResTypeFailure(utils.CERTIFICATES)
 		return
 	}
 
 	files, err = ioutil.ReadDir(importFilePath)
 	if err != nil {
-		utils.PrintLog(utils.LogLevelError, utils.CERTIFICATES, "", fmt.Sprintf("Error importing certificates: %s", err))
+		utils.PrintLog(utils.LogLevelError, utils.CERTIFICATES, "", fmt.Sprintf("Error reading certificates directory: %s", err))
+		utils.MarkResTypeFailure(utils.CERTIFICATES)
 		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {

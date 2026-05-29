@@ -33,18 +33,20 @@ func ExportAll(rt utils.ResourceType, exportFilePath string, format string) {
 	utils.PrintLog(utils.LogLevelInfo, rt, "", fmt.Sprintf("Exporting %s...", getTemplateLogName(rt)))
 	exportFilePath = filepath.Join(exportFilePath, rt.String())
 
-	if !utils.IsEntitySupportedInVersion(rt) || !utils.IsEntitySupportedInOrg(rt) || utils.IsResourceTypeExcluded(rt) {
+	if utils.ShouldSkip(rt) {
 		return
 	}
 
 	types, err := getTemplateTypeList(rt)
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, rt, "", fmt.Sprintf("Error while retrieving the list: %s", err))
+		utils.MarkResTypeFailure(rt)
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			utils.PrintLog(utils.LogLevelError, rt, "", fmt.Sprintf("Error creating directory: %s", err))
+			utils.PrintLog(utils.LogLevelError, rt, "", fmt.Sprintf("Error creating %s directory: %s", getTemplateLogName(rt), err))
+			utils.MarkResTypeFailure(rt)
 			return
 		}
 	}

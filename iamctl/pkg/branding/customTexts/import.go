@@ -32,7 +32,7 @@ func ImportAll(parentDir string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.CUSTOM_TEXTS, "", "Importing custom texts...")
 	importFilePath := filepath.Join(parentDir, utils.CUSTOM_TEXTS.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.CUSTOM_TEXTS) || !utils.IsEntitySupportedInOrg(utils.CUSTOM_TEXTS) || utils.IsResourceTypeExcluded(utils.CUSTOM_TEXTS) {
+	if utils.ShouldSkip(utils.CUSTOM_TEXTS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
@@ -43,11 +43,13 @@ func ImportAll(parentDir string) {
 	deployedTexts, err := getCustomTextList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.CUSTOM_TEXTS, "", fmt.Sprintf("Error while retrieving deployed custom text list: %s", err))
+		utils.MarkResTypeFailure(utils.CUSTOM_TEXTS)
 		return
 	}
 	localScreenDirs, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.CUSTOM_TEXTS, "", fmt.Sprintf("Error reading custom texts directory: %s", err))
+		utils.MarkResTypeFailure(utils.CUSTOM_TEXTS)
 		return
 	}
 

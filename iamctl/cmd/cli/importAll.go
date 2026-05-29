@@ -83,7 +83,13 @@ var importAllCmd = &cobra.Command{
 
 		for _, resourceType := range utils.ResourceOrder {
 			if importFunc, exists := importFunctions[resourceType]; exists {
+				if resourceType != utils.BRANDING {
+					utils.MarkResTypeStart(resourceType)
+				}
 				importFunc(inputDirPath)
+				if resourceType != utils.BRANDING {
+					utils.MarkResTypeEnd(resourceType)
+				}
 			}
 		}
 

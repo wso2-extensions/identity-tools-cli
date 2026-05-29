@@ -43,12 +43,13 @@ func ExportAllLegacyApi(exportFilePath string, format string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.EMAIL_TEMPLATES, "", "Exporting email templates...")
 	exportFilePath = filepath.Join(exportFilePath, utils.EMAIL_TEMPLATES.String())
 
-	if !utils.IsEntitySupportedInOrg(utils.EMAIL_TEMPLATES) || utils.IsResourceTypeExcluded(utils.EMAIL_TEMPLATES) {
+	if utils.ShouldSkip(utils.EMAIL_TEMPLATES) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
 			utils.PrintLog(utils.LogLevelError, utils.EMAIL_TEMPLATES, "", fmt.Sprintf("Error creating email templates directory: %s", err))
+			utils.MarkResTypeFailure(utils.EMAIL_TEMPLATES)
 			return
 		}
 	} else {
@@ -60,7 +61,8 @@ func ExportAllLegacyApi(exportFilePath string, format string) {
 
 	types, err := getEmailTemplateTypeList()
 	if err != nil {
-		utils.PrintLog(utils.LogLevelError, utils.EMAIL_TEMPLATES, "", fmt.Sprintf("Error when exporting email templates: %s", err))
+		utils.PrintLog(utils.LogLevelError, utils.EMAIL_TEMPLATES, "", fmt.Sprintf("Error retrieving the deployed email templates list: %s", err))
+		utils.MarkResTypeFailure(utils.EMAIL_TEMPLATES)
 	} else {
 		for _, emailType := range types {
 			if !utils.IsResourceExcluded(emailType.DisplayName, utils.TOOL_CONFIGS.EmailTemplateConfigs) {

@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 )
 
 type Summary struct {
@@ -30,20 +31,26 @@ type Summary struct {
 	TotalRequests        int
 }
 
-type ResourceSummary struct {
-	ResourceType                string
+type ResourceTypeSummary struct {
+	ResourceType                ResourceType
 	SuccessfulExport            int
 	SuccessfulImport            int
 	SuccessfulUpdate            int
-	Failed                      int
-	Deleted                     int
+	FailedCount                 int
+	DeletedCount                int
 	SecretGeneratedApplications []string
 	FailedResources             []string
+	Skipped                     bool
+	SkipReason                  string
+	Failed                      bool
+	Duration                    time.Duration
 }
 
 var (
-	SummaryData       Summary
-	ResourceSummaries map[string]ResourceSummary
+	AggregatedSummary Summary
+	ResTypeSummaryMap map[ResourceType]ResourceTypeSummary
+	Warnings          []string
+	ResTypeStartTimes = make(map[ResourceType]time.Time)
 )
 
 var CURRENT_LOG_LEVEL LogLevel = LogLevelInfo
@@ -76,6 +83,83 @@ func levelPrefix(level LogLevel) string {
 	}
 }
 
+func MarkResTypeStart(resourceType ResourceType) {
+
+	ResTypeStartTimes[resourceType] = time.Now()
+}
+
+func MarkResTypeEnd(resourceType ResourceType) {
+
+	startTime, ok := ResTypeStartTimes[resourceType]
+	if !ok {
+		return
+	}
+
+	InitializeResTypeSummaryMap()
+	summary := getOrInitSummary(resourceType)
+	summary.Duration = time.Since(startTime)
+	ResTypeSummaryMap[resourceType] = summary
+}
+
+func UpdateSkipSummary(resourceType ResourceType, reason string) {
+
+	InitializeResTypeSummaryMap()
+	summary := getOrInitSummary(resourceType)
+	summary.Skipped = true
+	summary.SkipReason = reason
+	ResTypeSummaryMap[resourceType] = summary
+}
+
+func MarkResTypeFailure(resourceType ResourceType) {
+
+	InitializeResTypeSummaryMap()
+	summary := getOrInitSummary(resourceType)
+	summary.Failed = true
+	ResTypeSummaryMap[resourceType] = summary
+}
+
+func AddNewSecretIndicatorToSummary(appName string) {
+
+	InitializeResTypeSummaryMap()
+	summary := getOrInitSummary(APPLICATIONS)
+	summary.SecretGeneratedApplications = append(summary.SecretGeneratedApplications, appName)
+	ResTypeSummaryMap[APPLICATIONS] = summary
+}
+
+func UpdateSuccessSummary(resourceType ResourceType, operation string) {
+
+	InitializeResTypeSummaryMap()
+
+	AggregatedSummary.TotalRequests++
+	AggregatedSummary.SuccessfulOperations++
+
+	summary := getOrInitSummary(resourceType)
+	switch operation {
+	case EXPORT:
+		summary.SuccessfulExport++
+	case IMPORT:
+		summary.SuccessfulImport++
+	case UPDATE:
+		summary.SuccessfulUpdate++
+	case DELETE:
+		summary.DeletedCount++
+	}
+	ResTypeSummaryMap[resourceType] = summary
+}
+
+func UpdateFailureSummary(resourceType ResourceType, resourceName string) {
+
+	InitializeResTypeSummaryMap()
+
+	AggregatedSummary.TotalRequests++
+	AggregatedSummary.FailedOperations++
+
+	summary := getOrInitSummary(resourceType)
+	summary.FailedCount++
+	summary.FailedResources = append(summary.FailedResources, resourceName)
+	ResTypeSummaryMap[resourceType] = summary
+}
+
 func PrintLog(level LogLevel, resourceType ResourceType, resourceName string, msg string) {
 
 	var body string
@@ -88,9 +172,8 @@ func PrintLog(level LogLevel, resourceType ResourceType, resourceName string, ms
 	}
 
 	if level == LogLevelWarn {
-		GlobalWarnings = append(GlobalWarnings, body)
+		Warnings = append(Warnings, body)
 	}
-
 	if level < CURRENT_LOG_LEVEL {
 		return
 	}
@@ -99,41 +182,91 @@ func PrintLog(level LogLevel, resourceType ResourceType, resourceName string, ms
 
 func PrintSummary(Operation string) {
 
-	InitializeResourceSummary()
+	InitializeResTypeSummaryMap()
+
+	type skippedEntry struct {
+		name   string
+		reason string
+	}
+	var successCount int
+	var skippedTypes []skippedEntry
+	var failedTypes []string
+
+	for rt, summary := range ResTypeSummaryMap {
+		if summary.Skipped {
+			skippedTypes = append(skippedTypes, skippedEntry{rt.String(), summary.SkipReason})
+		} else if summary.Failed || summary.FailedCount > 0 {
+			failedTypes = append(failedTypes, rt.String())
+		} else {
+			successCount++
+		}
+	}
 
 	fmt.Println("========================================")
 	fmt.Println("Total Summary:")
 	fmt.Println("========================================")
-	fmt.Printf("Total Requests: %d\n", SummaryData.TotalRequests)
-	fmt.Printf("Successful Operations: %d\n", SummaryData.SuccessfulOperations)
-	fmt.Printf("Failed Operations: %d\n", SummaryData.FailedOperations)
+	fmt.Printf("Total Operations: %d\n", AggregatedSummary.TotalRequests)
+	fmt.Printf("Successful Operations: %d\n", AggregatedSummary.SuccessfulOperations)
+	fmt.Printf("Failed Operations: %d\n", AggregatedSummary.FailedOperations)
+	fmt.Printf("Successful Resource Types: %d\n", successCount)
+	fmt.Printf("Skipped Resource Types: %d\n", len(skippedTypes))
+	fmt.Printf("Failed Resource Types: %d\n", len(failedTypes))
+	if len(skippedTypes) > 0 {
+		fmt.Println("========================================")
+		fmt.Println("Skipped Resource Types")
+		fmt.Println("========================================")
+		for _, s := range skippedTypes {
+			fmt.Printf("%s - %s\n", s.name, s.reason)
+		}
+	}
+	if len(failedTypes) > 0 {
+		fmt.Println("========================================")
+		fmt.Println("Failed Resource Types")
+		fmt.Println("========================================")
+		for _, f := range failedTypes {
+			fmt.Printf("%s\n", f)
+		}
+	}
 
+	fmt.Println("========================================")
+	fmt.Println("Per Resource Breakdown")
+	fmt.Println("========================================")
 	if Operation == IMPORT {
 		PrintImportSummary()
 	} else if Operation == EXPORT {
 		PrintExportSummary()
 	}
 
-	if len(GlobalWarnings) > 0 {
-		fmt.Println("----------------------------------------")
-		fmt.Println("Warnings:")
-		for _, w := range GlobalWarnings {
-			fmt.Printf("- %s\n", w)
-		}
+	if len(Warnings) > 0 {
 		fmt.Println("========================================")
+		fmt.Println("Warnings")
+		fmt.Println("========================================")
+		for _, w := range Warnings {
+			fmt.Printf("%s\n", w)
+		}
 	}
+	fmt.Println("========================================")
 }
 
 func PrintExportSummary() {
 
-	for _, summary := range ResourceSummaries {
-		fmt.Println("----------------------------------------")
+	first := true
+	for _, summary := range ResTypeSummaryMap {
+		if summary.SuccessfulExport+summary.FailedCount == 0 {
+			continue
+		}
+		if !first {
+			fmt.Println("----------------------------------------")
+		}
+		first = false
 		fmt.Printf("%s\n", summary.ResourceType)
 		fmt.Println("----------------------------------------")
 		fmt.Printf("Successful Exports: %d\n", summary.SuccessfulExport)
-
-		if summary.Failed > 0 {
+		if summary.FailedCount > 0 {
 			PrintFailedResources(summary)
+		}
+		if summary.Duration > 0 && summary.SuccessfulExport > 0 {
+			fmt.Printf("Time taken: %s\n", summary.Duration.Round(time.Millisecond))
 		}
 	}
 	fmt.Println("----------------------------------------")
@@ -141,27 +274,36 @@ func PrintExportSummary() {
 
 func PrintImportSummary() {
 
-	for _, summary := range ResourceSummaries {
-		fmt.Println("----------------------------------------")
+	first := true
+	for _, summary := range ResTypeSummaryMap {
+		if summary.SuccessfulImport+summary.SuccessfulUpdate+summary.DeletedCount+summary.FailedCount == 0 {
+			continue
+		}
+		if !first {
+			fmt.Println("----------------------------------------")
+		}
+		first = false
 		fmt.Printf("%s\n", summary.ResourceType)
 		fmt.Println("----------------------------------------")
 		fmt.Printf("Successful Imports: %d\n", summary.SuccessfulImport)
 		fmt.Printf("Successful Updates: %d\n", summary.SuccessfulUpdate)
-		fmt.Printf("Deleted: %d\n", summary.Deleted)
-		if summary.Failed > 0 {
+		fmt.Printf("Deleted: %d\n", summary.DeletedCount)
+		if summary.FailedCount > 0 {
 			PrintFailedResources(summary)
 		}
-		if summary.ResourceType == APPLICATIONS.String() {
+		if summary.ResourceType == APPLICATIONS {
 			printNewSecretApplications(summary)
 		}
+		if summary.Duration > 0 && summary.SuccessfulImport+summary.SuccessfulUpdate > 0 {
+			fmt.Printf("Time taken: %s\n", summary.Duration.Round(time.Millisecond))
+		}
 	}
-	fmt.Println("----------------------------------------")
 }
 
-func PrintFailedResources(summary ResourceSummary) {
+func PrintFailedResources(summary ResourceTypeSummary) {
 
 	fmt.Println("....................")
-	fmt.Printf("Failures:  %d\n", summary.Failed)
+	fmt.Printf("Failures:  %d\n", summary.FailedCount)
 	fmt.Println("....................")
 	for i, resourceName := range summary.FailedResources {
 		if i != len(summary.FailedResources)-1 {
@@ -170,11 +312,10 @@ func PrintFailedResources(summary ResourceSummary) {
 			fmt.Print(resourceName)
 		}
 	}
-
 	fmt.Println()
 }
 
-func printNewSecretApplications(summary ResourceSummary) {
+func printNewSecretApplications(summary ResourceTypeSummary) {
 
 	if len(summary.SecretGeneratedApplications) > 0 {
 		fmt.Println("....................")
@@ -190,67 +331,18 @@ func printNewSecretApplications(summary ResourceSummary) {
 	}
 }
 
-func AddNewSecretIndicatorToSummary(appName string) {
+func InitializeResTypeSummaryMap() {
 
-	InitializeResourceSummary()
-
-	summary, ok := ResourceSummaries[APPLICATIONS.String()]
-	if !ok {
-		summary = ResourceSummary{
-			ResourceType: APPLICATIONS.String(),
-		}
+	if ResTypeSummaryMap == nil {
+		ResTypeSummaryMap = make(map[ResourceType]ResourceTypeSummary)
 	}
-	summary.SecretGeneratedApplications = append(summary.SecretGeneratedApplications, appName)
-	ResourceSummaries[APPLICATIONS.String()] = summary
 }
 
-func UpdateSuccessSummary(resourceType ResourceType, operation string) {
+func getOrInitSummary(resourceType ResourceType) ResourceTypeSummary {
 
-	InitializeResourceSummary()
-
-	SummaryData.TotalRequests++
-	SummaryData.SuccessfulOperations++
-
-	summary, ok := ResourceSummaries[resourceType.String()]
-	if !ok {
-		summary = ResourceSummary{
-			ResourceType: resourceType.String(),
-		}
+	summary, exists := ResTypeSummaryMap[resourceType]
+	if !exists {
+		return ResourceTypeSummary{ResourceType: resourceType}
 	}
-	switch operation {
-	case EXPORT:
-		summary.SuccessfulExport++
-	case IMPORT:
-		summary.SuccessfulImport++
-	case UPDATE:
-		summary.SuccessfulUpdate++
-	case DELETE:
-		summary.Deleted++
-	}
-	ResourceSummaries[resourceType.String()] = summary
-}
-
-func UpdateFailureSummary(resourceType ResourceType, resourceName string) {
-
-	InitializeResourceSummary()
-
-	SummaryData.TotalRequests++
-	SummaryData.FailedOperations++
-
-	summary, ok := ResourceSummaries[resourceType.String()]
-	if !ok {
-		summary = ResourceSummary{
-			ResourceType: resourceType.String(),
-		}
-	}
-	summary.Failed++
-	summary.FailedResources = append(summary.FailedResources, resourceName)
-	ResourceSummaries[resourceType.String()] = summary
-}
-
-func InitializeResourceSummary() {
-
-	if ResourceSummaries == nil {
-		ResourceSummaries = make(map[string]ResourceSummary)
-	}
+	return summary
 }

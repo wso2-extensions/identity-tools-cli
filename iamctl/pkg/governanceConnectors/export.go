@@ -32,12 +32,13 @@ func ExportAll(exportFilePath string, format string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.GOVERNANCE_CONNECTORS, "", "Exporting governance connectors...")
 	exportFilePath = filepath.Join(exportFilePath, utils.GOVERNANCE_CONNECTORS.String())
 
-	if !utils.IsEntitySupportedInOrg(utils.GOVERNANCE_CONNECTORS) || utils.IsResourceTypeExcluded(utils.GOVERNANCE_CONNECTORS) {
+	if utils.ShouldSkip(utils.GOVERNANCE_CONNECTORS) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
 			utils.PrintLog(utils.LogLevelError, utils.GOVERNANCE_CONNECTORS, "", fmt.Sprintf("Error creating governance connectors directory: %s", err))
+			utils.MarkResTypeFailure(utils.GOVERNANCE_CONNECTORS)
 			return
 		}
 	} else {
@@ -50,6 +51,7 @@ func ExportAll(exportFilePath string, format string) {
 	categories, err := getCategoryList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.GOVERNANCE_CONNECTORS, "", fmt.Sprintf("Error retrieving governance connector categories: %s", err))
+		utils.MarkResTypeFailure(utils.GOVERNANCE_CONNECTORS)
 		return
 	}
 	for _, catInfo := range categories {

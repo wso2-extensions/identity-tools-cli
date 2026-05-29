@@ -34,7 +34,7 @@ func ImportAll(rt utils.ResourceType, inputDirPath string) {
 	utils.PrintLog(utils.LogLevelInfo, rt, "", fmt.Sprintf("Importing %s...", logName))
 	importFilePath := filepath.Join(inputDirPath, rt.String())
 
-	if !utils.IsEntitySupportedInVersion(rt) || !utils.IsEntitySupportedInOrg(rt) || utils.IsResourceTypeExcluded(rt) {
+	if utils.ShouldSkip(rt) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
@@ -45,11 +45,13 @@ func ImportAll(rt utils.ResourceType, inputDirPath string) {
 	deployedTypes, err := getTemplateTypeList(rt)
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, rt, "", fmt.Sprintf("Error while retrieving the list: %s", err))
+		utils.MarkResTypeFailure(rt)
 		return
 	}
 	localTypeDirs, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		utils.PrintLog(utils.LogLevelError, rt, "", fmt.Sprintf("Error reading directory: %s", err))
+		utils.PrintLog(utils.LogLevelError, rt, "", fmt.Sprintf("Error reading %s directory: %s", logName, err))
+		utils.MarkResTypeFailure(rt)
 		return
 	}
 	exportedTypeNames, err := readLocalTemplateTypeNames(importFilePath, rt)

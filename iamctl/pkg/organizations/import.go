@@ -33,7 +33,7 @@ func ImportAll(inputDirPath string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.ORGANIZATIONS, "", "Importing organizations...")
 	importFilePath := filepath.Join(inputDirPath, utils.ORGANIZATIONS.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.ORGANIZATIONS) || !utils.IsEntitySupportedInOrg(utils.ORGANIZATIONS) || utils.IsResourceTypeExcluded(utils.ORGANIZATIONS) {
+	if utils.ShouldSkip(utils.ORGANIZATIONS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
@@ -44,16 +44,19 @@ func ImportAll(inputDirPath string) {
 	existingList, err := getOrganizationList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.ORGANIZATIONS, "", fmt.Sprintf("Error retrieving the deployed organization list: %s", err))
+		utils.MarkResTypeFailure(utils.ORGANIZATIONS)
 		return
 	}
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.ORGANIZATIONS, "", fmt.Sprintf("Error reading local organization files: %s", err))
+		utils.MarkResTypeFailure(utils.ORGANIZATIONS)
 		return
 	}
 	curOrgId, err = GetCurrentOrganizationId()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.ORGANIZATIONS, "", "Error while retrieving current organization ID")
+		utils.MarkResTypeFailure(utils.ORGANIZATIONS)
 		return
 	}
 

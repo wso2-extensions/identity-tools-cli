@@ -33,18 +33,20 @@ func ExportAll(exportFilePath string, format string) {
 	exportFilePath = filepath.Join(exportFilePath, utils.ROLES.String())
 	setRolesV2ApiExists()
 
-	if !utils.IsEntitySupportedInOrg(utils.ROLES) || utils.IsResourceTypeExcluded(utils.ROLES) {
+	if utils.ShouldSkip(utils.ROLES) {
 		return
 	}
 	roles, err := getRoleList()
 	if err != nil {
-		utils.PrintLog(utils.LogLevelError, utils.ROLES, "", fmt.Sprintf("Error when exporting roles: %s", err))
+		utils.PrintLog(utils.LogLevelError, utils.ROLES, "", fmt.Sprintf("Error retrieving the deployed roles list: %s", err))
+		utils.MarkResTypeFailure(utils.ROLES)
 		return
 	}
 
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
 			utils.PrintLog(utils.LogLevelError, utils.ROLES, "", fmt.Sprintf("Error creating roles directory: %s", err))
+			utils.MarkResTypeFailure(utils.ROLES)
 			return
 		}
 	} else {

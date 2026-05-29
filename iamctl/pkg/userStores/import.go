@@ -41,7 +41,8 @@ func ImportAll(inputDirPath string) {
 	} else {
 		files, err = ioutil.ReadDir(importFilePath)
 		if err != nil {
-			utils.PrintLog(utils.LogLevelError, utils.USERSTORES, "", fmt.Sprintf("Error importing user stores: %s", err))
+			utils.PrintLog(utils.LogLevelError, utils.USERSTORES, "", fmt.Sprintf("Error reading user stores directory: %s", err))
+			utils.MarkResTypeFailure(utils.USERSTORES)
 			return
 		}
 		if utils.TOOL_CONFIGS.AllowDelete {

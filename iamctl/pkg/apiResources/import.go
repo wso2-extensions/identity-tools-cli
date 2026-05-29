@@ -33,7 +33,7 @@ func ImportAll(inputDirPath string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.API_RESOURCES, "", "Importing API resources...")
 	importFilePath := filepath.Join(inputDirPath, utils.API_RESOURCES.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.API_RESOURCES) || !utils.IsEntitySupportedInOrg(utils.API_RESOURCES) || utils.IsResourceTypeExcluded(utils.API_RESOURCES) {
+	if utils.ShouldSkip(utils.API_RESOURCES) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
@@ -44,11 +44,13 @@ func ImportAll(inputDirPath string) {
 	deployedResources, err := GetApiResourceList(true)
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.API_RESOURCES, "", fmt.Sprintf("Error retrieving the deployed API resource list: %s", err))
+		utils.MarkResTypeFailure(utils.API_RESOURCES)
 		return
 	}
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		utils.PrintLog(utils.LogLevelError, utils.API_RESOURCES, "", fmt.Sprintf("Error importing API resources: %s", err))
+		utils.PrintLog(utils.LogLevelError, utils.API_RESOURCES, "", fmt.Sprintf("Error reading API resources directory: %s", err))
+		utils.MarkResTypeFailure(utils.API_RESOURCES)
 		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {
@@ -58,6 +60,7 @@ func ImportAll(inputDirPath string) {
 	localScopeMap, err := readLocalScopesMap(importFilePath)
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.API_RESOURCES, "", fmt.Sprintf("Error reading local scope name map: %s", err))
+		utils.MarkResTypeFailure(utils.API_RESOURCES)
 		utils.UpdateFailureSummary(utils.API_RESOURCES, utils.API_RESOURCE_SCOPES.String())
 		return
 	}

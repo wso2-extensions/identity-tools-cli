@@ -32,12 +32,13 @@ func ExportAll(exportFilePath string, format string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.FLOWS, "", "Exporting flows...")
 	exportFilePath = filepath.Join(exportFilePath, utils.FLOWS.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.FLOWS) || !utils.IsEntitySupportedInOrg(utils.FLOWS) || utils.IsResourceTypeExcluded(utils.FLOWS) {
+	if utils.ShouldSkip(utils.FLOWS) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
 			utils.PrintLog(utils.LogLevelError, utils.FLOWS, "", fmt.Sprintf("Error creating flows directory: %s", err))
+			utils.MarkResTypeFailure(utils.FLOWS)
 			return
 		}
 	}

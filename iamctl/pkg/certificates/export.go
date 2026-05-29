@@ -32,12 +32,13 @@ func ExportAll(exportFilePath string, format string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.CERTIFICATES, "", "Exporting certificates...")
 	exportFilePath = filepath.Join(exportFilePath, utils.CERTIFICATES.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.CERTIFICATES) || !utils.IsEntitySupportedInOrg(utils.CERTIFICATES) || utils.IsResourceTypeExcluded(utils.CERTIFICATES) {
+	if utils.ShouldSkip(utils.CERTIFICATES) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
 			utils.PrintLog(utils.LogLevelError, utils.CERTIFICATES, "", fmt.Sprintf("Error creating certificates directory: %s", err))
+			utils.MarkResTypeFailure(utils.CERTIFICATES)
 			return
 		}
 	} else {
@@ -49,7 +50,8 @@ func ExportAll(exportFilePath string, format string) {
 
 	certs, err := getCertificateList()
 	if err != nil {
-		utils.PrintLog(utils.LogLevelError, utils.CERTIFICATES, "", fmt.Sprintf("Error when exporting certificates: %s", err))
+		utils.PrintLog(utils.LogLevelError, utils.CERTIFICATES, "", fmt.Sprintf("Error retrieving the deployed certificates list: %s", err))
+		utils.MarkResTypeFailure(utils.CERTIFICATES)
 	} else {
 		for _, cert := range certs {
 			if !utils.IsResourceExcluded(cert.Alias, utils.TOOL_CONFIGS.CertificateConfigs) {

@@ -32,12 +32,13 @@ func ExportAll(exportFilePath string, format string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.SCRIPT_LIBRARIES, "", "Exporting script libraries...")
 	exportFilePath = filepath.Join(exportFilePath, utils.SCRIPT_LIBRARIES.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.SCRIPT_LIBRARIES) || !utils.IsEntitySupportedInOrg(utils.SCRIPT_LIBRARIES) || utils.IsResourceTypeExcluded(utils.SCRIPT_LIBRARIES) {
+	if utils.ShouldSkip(utils.SCRIPT_LIBRARIES) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
 			utils.PrintLog(utils.LogLevelError, utils.SCRIPT_LIBRARIES, "", fmt.Sprintf("Error creating script libraries directory: %s", err))
+			utils.MarkResTypeFailure(utils.SCRIPT_LIBRARIES)
 			return
 		}
 	} else {
@@ -49,7 +50,8 @@ func ExportAll(exportFilePath string, format string) {
 
 	libraries, err := getScriptLibraryList()
 	if err != nil {
-		utils.PrintLog(utils.LogLevelError, utils.SCRIPT_LIBRARIES, "", fmt.Sprintf("Error when exporting script libraries: %s", err))
+		utils.PrintLog(utils.LogLevelError, utils.SCRIPT_LIBRARIES, "", fmt.Sprintf("Error retrieving the deployed script libraries list: %s", err))
+		utils.MarkResTypeFailure(utils.SCRIPT_LIBRARIES)
 	} else {
 		for _, library := range libraries {
 			if !utils.IsResourceExcluded(library.Name, utils.TOOL_CONFIGS.ScriptLibraryConfigs) {

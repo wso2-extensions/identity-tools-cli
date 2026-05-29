@@ -31,8 +31,13 @@ func ExportAll(exportFilePath string, format string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.BRANDING, "", "Exporting branding...")
 	exportFilePath = filepath.Join(exportFilePath, utils.BRANDING.String())
 
+	utils.MarkResTypeStart(utils.BRANDING_PREFERENCES)
 	brandingPreferences.ExportAll(exportFilePath, format)
+	utils.MarkResTypeEnd(utils.BRANDING_PREFERENCES)
+
+	utils.MarkResTypeStart(utils.CUSTOM_TEXTS)
 	customTexts.ExportAll(exportFilePath, format)
+	utils.MarkResTypeEnd(utils.CUSTOM_TEXTS)
 }
 
 func ImportAll(inputDirPath string) {
@@ -40,6 +45,11 @@ func ImportAll(inputDirPath string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.BRANDING, "", "Importing branding...")
 	inputDirPath = filepath.Join(inputDirPath, utils.BRANDING.String())
 
+	utils.MarkResTypeStart(utils.BRANDING_PREFERENCES)
 	brandingPreferences.ImportAll(inputDirPath)
+	utils.MarkResTypeEnd(utils.BRANDING_PREFERENCES)
+
+	utils.MarkResTypeStart(utils.CUSTOM_TEXTS)
 	customTexts.ImportAll(inputDirPath)
+	utils.MarkResTypeEnd(utils.CUSTOM_TEXTS)
 }

@@ -46,6 +46,7 @@ func ExportAll(exportFilePath string, format string) {
 	apps, err := getAppList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.APPLICATIONS, "", fmt.Sprintf("Error retrieving applications list: %s", err))
+		utils.MarkResTypeFailure(utils.APPLICATIONS)
 		return
 	}
 	deployedAppNames := getDeployedAppNames(apps)
@@ -53,6 +54,7 @@ func ExportAll(exportFilePath string, format string) {
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
 			utils.PrintLog(utils.LogLevelError, utils.APPLICATIONS, "", fmt.Sprintf("Error creating applications directory: %s", err))
+			utils.MarkResTypeFailure(utils.APPLICATIONS)
 			return
 		}
 	} else {
@@ -65,6 +67,7 @@ func ExportAll(exportFilePath string, format string) {
 		if _, err := os.Stat(authAPIsOutputDir); os.IsNotExist(err) {
 			if err := os.MkdirAll(authAPIsOutputDir, 0700); err != nil {
 				utils.PrintLog(utils.LogLevelError, utils.APPLICATIONS, "", fmt.Sprintf("Error creating authorized APIs directory: %s", err))
+				utils.MarkResTypeFailure(utils.APPLICATIONS)
 				return
 			}
 		} else {

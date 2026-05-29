@@ -56,11 +56,13 @@ func ImportAll(inputDirPath string) {
 	deployedApps, err := getAppList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.APPLICATIONS, "", fmt.Sprintf("Error retrieving applications list: %s", err))
+		utils.MarkResTypeFailure(utils.APPLICATIONS)
 		return
 	}
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		utils.PrintLog(utils.LogLevelError, utils.APPLICATIONS, "", fmt.Sprintf("Error importing applications: %s", err))
+		utils.PrintLog(utils.LogLevelError, utils.APPLICATIONS, "", fmt.Sprintf("Error reading applications directory: %s", err))
+		utils.MarkResTypeFailure(utils.APPLICATIONS)
 		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {

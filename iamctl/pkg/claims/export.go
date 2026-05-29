@@ -34,7 +34,7 @@ func ExportAll(exportFilePath string, format string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.CLAIMS, "", "Exporting claims...")
 	exportFilePath = filepath.Join(exportFilePath, utils.CLAIMS.String())
 
-	if !utils.IsEntitySupportedInOrg(utils.CLAIMS) || utils.IsResourceTypeExcluded(utils.CLAIMS) {
+	if utils.ShouldSkip(utils.CLAIMS) {
 		return
 	}
 
@@ -42,6 +42,7 @@ func ExportAll(exportFilePath string, format string) {
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
 			utils.PrintLog(utils.LogLevelError, utils.CLAIMS, "", fmt.Sprintf("Error creating claims directory: %s", err))
+			utils.MarkResTypeFailure(utils.CLAIMS)
 			return
 		}
 	} else {

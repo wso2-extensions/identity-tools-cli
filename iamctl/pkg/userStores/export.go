@@ -41,6 +41,7 @@ func ExportAll(exportFilePath string, format string) {
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
 			utils.PrintLog(utils.LogLevelError, utils.USERSTORES, "", fmt.Sprintf("Error creating user stores directory: %s", err))
+			utils.MarkResTypeFailure(utils.USERSTORES)
 			return
 		}
 	} else {
@@ -52,7 +53,8 @@ func ExportAll(exportFilePath string, format string) {
 	exportAPIExists := utils.ExportAPIExists(utils.USERSTORES)
 	userstores, err := getUserStoreList()
 	if err != nil {
-		utils.PrintLog(utils.LogLevelError, utils.USERSTORES, "", fmt.Sprintf("Error when exporting user stores: %s", err))
+		utils.PrintLog(utils.LogLevelError, utils.USERSTORES, "", fmt.Sprintf("Error retrieving the deployed user stores list: %s", err))
+		utils.MarkResTypeFailure(utils.USERSTORES)
 	} else {
 		if !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.UserStoreConfigs) {
 			utils.PrintLog(utils.LogLevelWarn, utils.USERSTORES, "", "Secrets exclusion cannot be disabled for user stores. All secrets will be masked.")

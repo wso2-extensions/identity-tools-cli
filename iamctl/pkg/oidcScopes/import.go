@@ -32,7 +32,7 @@ func ImportAll(inputDirPath string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.OIDC_SCOPES, "", "Importing OIDC scopes...")
 	importFilePath := filepath.Join(inputDirPath, utils.OIDC_SCOPES.String())
 
-	if !utils.IsEntitySupportedInOrg(utils.OIDC_SCOPES) || utils.IsResourceTypeExcluded(utils.OIDC_SCOPES) {
+	if utils.ShouldSkip(utils.OIDC_SCOPES) {
 		return
 	}
 	var files []os.FileInfo
@@ -44,12 +44,14 @@ func ImportAll(inputDirPath string) {
 	existingScopeList, err := getOidcScopeList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.OIDC_SCOPES, "", fmt.Sprintf("Error retrieving the deployed OIDC scope list: %s", err))
+		utils.MarkResTypeFailure(utils.OIDC_SCOPES)
 		return
 	}
 
 	files, err = ioutil.ReadDir(importFilePath)
 	if err != nil {
-		utils.PrintLog(utils.LogLevelError, utils.OIDC_SCOPES, "", fmt.Sprintf("Error importing OIDC scopes: %s", err))
+		utils.PrintLog(utils.LogLevelError, utils.OIDC_SCOPES, "", fmt.Sprintf("Error reading OIDC scopes directory: %s", err))
+		utils.MarkResTypeFailure(utils.OIDC_SCOPES)
 		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {

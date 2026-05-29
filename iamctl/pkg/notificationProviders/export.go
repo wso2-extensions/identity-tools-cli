@@ -37,13 +37,14 @@ func exportAll(resType utils.ResourceType, exportFilePath string, format string)
 		utils.PrintLog(utils.LogLevelInfo, resType, "", "Exporting email providers for super tenant not supported.")
 		return
 	}
-	if !utils.IsEntitySupportedInVersion(resType) || !utils.IsEntitySupportedInOrg(resType) || utils.IsResourceTypeExcluded(resType) {
+	if utils.ShouldSkip(resType) {
 		return
 	}
 
 	providers, err := getProviderList(resType)
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, resType, "", fmt.Sprintf("Error while retrieving the %s list: %s", logName, err))
+		utils.MarkResTypeFailure(resType)
 		return
 	}
 
@@ -54,6 +55,7 @@ func exportAll(resType utils.ResourceType, exportFilePath string, format string)
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
 			utils.PrintLog(utils.LogLevelError, resType, "", fmt.Sprintf("Error creating %s directory: %s", logName, err))
+			utils.MarkResTypeFailure(resType)
 			return
 		}
 	} else {

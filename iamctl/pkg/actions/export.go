@@ -32,12 +32,13 @@ func ExportAll(outputDirPath, format string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.ACTIONS, "", "Exporting actions...")
 	actionsDir := filepath.Join(outputDirPath, utils.ACTIONS.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.ACTIONS) || !utils.IsEntitySupportedInOrg(utils.ACTIONS) || utils.IsResourceTypeExcluded(utils.ACTIONS) {
+	if utils.ShouldSkip(utils.ACTIONS) {
 		return
 	}
 	types, err := getActionTypesList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.ACTIONS, "", fmt.Sprintf("Error retrieving action types list: %s", err))
+		utils.MarkResTypeFailure(utils.ACTIONS)
 		return
 	}
 
@@ -48,6 +49,7 @@ func ExportAll(outputDirPath, format string) {
 	if _, err := os.Stat(actionsDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(actionsDir, 0700); err != nil {
 			utils.PrintLog(utils.LogLevelError, utils.ACTIONS, "", fmt.Sprintf("Error creating actions directory: %s", err))
+			utils.MarkResTypeFailure(utils.ACTIONS)
 			return
 		}
 	}

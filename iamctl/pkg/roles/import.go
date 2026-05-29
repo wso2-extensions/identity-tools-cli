@@ -33,7 +33,7 @@ func ImportAll(inputDirPath string) {
 	importFilePath := filepath.Join(inputDirPath, utils.ROLES.String())
 	setRolesV2ApiExists()
 
-	if !utils.IsEntitySupportedInOrg(utils.ROLES) || utils.IsResourceTypeExcluded(utils.ROLES) {
+	if utils.ShouldSkip(utils.ROLES) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
@@ -44,12 +44,14 @@ func ImportAll(inputDirPath string) {
 	existingRoleList, err := getRoleList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.ROLES, "", fmt.Sprintf("Error retrieving the deployed role list: %s", err))
+		utils.MarkResTypeFailure(utils.ROLES)
 		return
 	}
 
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		utils.PrintLog(utils.LogLevelError, utils.ROLES, "", fmt.Sprintf("Error importing roles: %s", err))
+		utils.PrintLog(utils.LogLevelError, utils.ROLES, "", fmt.Sprintf("Error reading roles directory: %s", err))
+		utils.MarkResTypeFailure(utils.ROLES)
 		return
 	}
 

@@ -37,7 +37,7 @@ func importAll(resType utils.ResourceType, inputDirPath string) {
 		utils.PrintLog(utils.LogLevelInfo, resType, "", "Importing email providers for super tenant not supported.")
 		return
 	}
-	if !utils.IsEntitySupportedInVersion(resType) || !utils.IsEntitySupportedInOrg(resType) || utils.IsResourceTypeExcluded(resType) {
+	if utils.ShouldSkip(resType) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
@@ -48,11 +48,13 @@ func importAll(resType utils.ResourceType, inputDirPath string) {
 	existingProviderList, err := getProviderList(resType)
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, resType, "", fmt.Sprintf("Error retrieving the deployed %s list: %s", logName, err))
+		utils.MarkResTypeFailure(resType)
 		return
 	}
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		utils.PrintLog(utils.LogLevelError, resType, "", fmt.Sprintf("Error importing %s: %s", logName, err))
+		utils.PrintLog(utils.LogLevelError, resType, "", fmt.Sprintf("Error reading %s directory: %s", logName, err))
+		utils.MarkResTypeFailure(resType)
 		return
 	}
 

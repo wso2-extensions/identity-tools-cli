@@ -32,7 +32,7 @@ func ImportAll(inputDirPath string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.GOVERNANCE_CONNECTORS, "", "Importing governance connectors...")
 	importFilePath := filepath.Join(inputDirPath, utils.GOVERNANCE_CONNECTORS.String())
 
-	if !utils.IsEntitySupportedInOrg(utils.GOVERNANCE_CONNECTORS) || utils.IsResourceTypeExcluded(utils.GOVERNANCE_CONNECTORS) {
+	if utils.ShouldSkip(utils.GOVERNANCE_CONNECTORS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
@@ -43,12 +43,14 @@ func ImportAll(inputDirPath string) {
 	deployedCategories, err := getCategoryList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.GOVERNANCE_CONNECTORS, "", fmt.Sprintf("Error retrieving governance connector categories: %s", err))
+		utils.MarkResTypeFailure(utils.GOVERNANCE_CONNECTORS)
 		return
 	}
 
 	localCategoryDirs, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.GOVERNANCE_CONNECTORS, "", fmt.Sprintf("Error reading governance connectors directory: %s", err))
+		utils.MarkResTypeFailure(utils.GOVERNANCE_CONNECTORS)
 		return
 	}
 

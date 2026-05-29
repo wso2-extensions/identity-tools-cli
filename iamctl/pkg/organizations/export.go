@@ -32,18 +32,20 @@ func ExportAll(exportFilePath string, format string) {
 	utils.PrintLog(utils.LogLevelInfo, utils.ORGANIZATIONS, "", "Exporting organizations...")
 	exportFilePath = filepath.Join(exportFilePath, utils.ORGANIZATIONS.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.ORGANIZATIONS) || !utils.IsEntitySupportedInOrg(utils.ORGANIZATIONS) || utils.IsResourceTypeExcluded(utils.ORGANIZATIONS) {
+	if utils.ShouldSkip(utils.ORGANIZATIONS) {
 		return
 	}
 	orgs, err := getOrganizationList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.ORGANIZATIONS, "", fmt.Sprintf("Error retrieving organizations list: %s", err))
+		utils.MarkResTypeFailure(utils.ORGANIZATIONS)
 		return
 	}
 
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
 			utils.PrintLog(utils.LogLevelError, utils.ORGANIZATIONS, "", fmt.Sprintf("Error creating organizations directory: %s", err))
+			utils.MarkResTypeFailure(utils.ORGANIZATIONS)
 			return
 		}
 	} else {
