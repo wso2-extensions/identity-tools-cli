@@ -51,6 +51,7 @@ var (
 	ResTypeSummaryMap map[ResourceType]ResourceTypeSummary
 	Warnings          []string
 	ResTypeStartTimes = make(map[ResourceType]time.Time)
+	StartTime         time.Time
 )
 
 var CURRENT_LOG_LEVEL LogLevel = LogLevelInfo
@@ -94,10 +95,9 @@ func MarkResTypeEnd(resourceType ResourceType) {
 	if !ok {
 		return
 	}
-
 	InitializeResTypeSummaryMap()
 	summary := getOrInitSummary(resourceType)
-	summary.Duration = time.Since(startTime)
+	summary.Duration = time.Since(startTime).Round(time.Millisecond)
 	ResTypeSummaryMap[resourceType] = summary
 }
 
@@ -211,6 +211,9 @@ func PrintSummary(Operation string) {
 	fmt.Printf("Successful Resource Types: %d\n", successCount)
 	fmt.Printf("Skipped Resource Types: %d\n", len(skippedTypes))
 	fmt.Printf("Failed Resource Types: %d\n", len(failedTypes))
+	if !StartTime.IsZero() {
+		fmt.Printf("Total Execution Time: %s\n", time.Since(StartTime).Round(time.Millisecond))
+	}
 	if len(skippedTypes) > 0 {
 		fmt.Println("========================================")
 		fmt.Println("Skipped Resource Types")
@@ -266,7 +269,7 @@ func PrintExportSummary() {
 			PrintFailedResources(summary)
 		}
 		if summary.Duration > 0 && summary.SuccessfulExport > 0 {
-			fmt.Printf("Time taken: %s\n", summary.Duration.Round(time.Millisecond))
+			fmt.Printf("Execution time: %s\n", summary.Duration.Round(time.Millisecond))
 		}
 	}
 	fmt.Println("----------------------------------------")
@@ -295,7 +298,7 @@ func PrintImportSummary() {
 			printNewSecretApplications(summary)
 		}
 		if summary.Duration > 0 && summary.SuccessfulImport+summary.SuccessfulUpdate > 0 {
-			fmt.Printf("Time taken: %s\n", summary.Duration.Round(time.Millisecond))
+			fmt.Printf("Execution time: %s\n", summary.Duration.Round(time.Millisecond))
 		}
 	}
 }

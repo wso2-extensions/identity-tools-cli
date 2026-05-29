@@ -19,6 +19,8 @@
 package cli
 
 import (
+	"time"
+
 	"github.com/spf13/cobra"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/cmd"
 	actions "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/actions"
@@ -81,6 +83,7 @@ var importAllCmd = &cobra.Command{
 			utils.FLOWS:                 flows.ImportAll,
 		}
 
+		utils.StartTime = time.Now()
 		for _, resourceType := range utils.ResourceOrder {
 			if importFunc, exists := importFunctions[resourceType]; exists {
 				if resourceType != utils.BRANDING {
