@@ -49,6 +49,7 @@ func ImportAll(inputDirPath string) {
 		err := applicationAuthorizedApis.GetAPIResources()
 		if err != nil {
 			utils.PrintLog(utils.LogLevelError, utils.APPLICATIONS, "", fmt.Sprintf("Error retrieving API resource list: %s", err))
+			utils.MarkResTypeFailure(utils.APPLICATIONS)
 			return
 		}
 	}

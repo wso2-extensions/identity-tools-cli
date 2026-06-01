@@ -170,7 +170,7 @@ func processFederatedAuthenticators(idpId string, idpStruct idpConfig, idpMap ma
 			return fmt.Errorf("unexpected format for definedBy field of federated authenticator: %s", authId)
 		}
 		if definedBy == "USER" {
-			if excludeSecrets && !customAuthSecretsWarningLogged {
+			if !excludeSecrets && !customAuthSecretsWarningLogged {
 				utils.PrintLog(utils.LogLevelWarn, utils.IDENTITY_PROVIDERS, "", "Secrets exclusion cannot be disabled for custom authenticators(service-based). All secrets will be masked.")
 				customAuthSecretsWarningLogged = true
 			}

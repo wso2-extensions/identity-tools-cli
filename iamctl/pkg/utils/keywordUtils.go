@@ -81,7 +81,7 @@ func ProcessExportedContent(exportedFileName string, exportedFileContent []byte,
 	// Process exported content
 	modifiedData, err := ProcessExportedData(exportedData, exportedFileName, format, keywordMapping, resourceType)
 	if err != nil {
-		PrintLog(LogLevelError, NoResource, "", fmt.Sprintf("Error when processing with keywords. Using original exported content. %s", err))
+		PrintLog(LogLevelError, NoResource, "", fmt.Sprintf("Error when processing with keywords. Using exported content. %s", err))
 		modifiedData = exportedData
 	}
 
@@ -263,8 +263,6 @@ func ModifyFieldsWithKeywords(exportedFileData interface{}, localFileData interf
 				PrintLog(LogLevelInfo, NoResource, "", fmt.Sprintf("Keyword added at %s field", location))
 			} else {
 				PrintLog(LogLevelWarn, NoResource, "", fmt.Sprintf("Keywords at %s field in the local file will be replaced by exported content.", location))
-				PrintLog(LogLevelInfo, NoResource, "", fmt.Sprintf("Local Value with Keyword Replaced: %s", localReplacedValue))
-				PrintLog(LogLevelInfo, NoResource, "", fmt.Sprintf("Exported Value: %s", exportedValue))
 			}
 		} else {
 			ReplaceValue(exportedFileData, location, localValue)
