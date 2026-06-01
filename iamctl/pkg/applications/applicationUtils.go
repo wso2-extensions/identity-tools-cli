@@ -431,3 +431,13 @@ func injectDeployedReadOnlyFields(appId, protocolPath string, localConfig map[st
 	}
 	return nil
 }
+
+func removeAdditionalSpProperties(appMap map[string]interface{}) error {
+
+	advConf, ok := appMap["advancedConfigurations"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for advancedConfigurations")
+	}
+	delete(advConf, "additionalSpProperties")
+	return nil
+}

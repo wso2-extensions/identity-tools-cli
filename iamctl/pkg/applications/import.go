@@ -308,6 +308,12 @@ func updateResidentApp(appMap map[string]interface{}) error {
 func patchApplication(appId string, appMap map[string]interface{}) error {
 
 	delete(appMap, "inboundProtocolConfiguration")
+	delete(appMap, "clientId")
+	delete(appMap, "isManagementApp")
+	delete(appMap, "realm")
+	if err := removeAdditionalSpProperties(appMap); err != nil {
+		return fmt.Errorf("error removing additional sp properties: %w", err)
+	}
 
 	body, err := json.Marshal(appMap)
 	if err != nil {
