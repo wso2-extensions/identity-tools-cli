@@ -114,40 +114,43 @@ func importApp(appId, appName, importFilePath string, exportAPIExists bool) erro
 		return fmt.Errorf("unsupported file format for application: %w", err)
 	}
 
+	var finalAppId string
+
 	if exportAPIExists && appName != utils.RESIDENT_APP {
 		modifiedFileData = string(removeAssociatedRoles([]byte(modifiedFileData)))
-		var finalAppId string
 		if appId == "" {
 			finalAppId, err = importApplication(appName, importFilePath, modifiedFileData, format)
 		} else {
 			err = updateApplication(appId, appName, importFilePath, modifiedFileData, format)
 			finalAppId = appId
 		}
+	} else {
+		var appMap map[string]interface{}
+		appMap, err = utils.DeserializeToMap([]byte(modifiedFileData), format, utils.APPLICATIONS)
 		if err != nil {
-			return err
+			return fmt.Errorf("error deserializing application: %w", err)
 		}
 
-		err := applicationAuthorizedApis.ImportAPIs(finalAppId, appName, filepath.Dir(importFilePath))
-		if err != nil {
-			return fmt.Errorf("error importing authorized APIs: %w", err)
+		if appName == utils.RESIDENT_APP {
+			return updateResidentApp(appMap)
 		}
-		return nil
+
+		delete(appMap, "id")
+		if appId == "" {
+			finalAppId, err = importAppWithCRUD(appName, appMap)
+		} else {
+			err = updateAppWithCRUD(appId, appName, appMap)
+			finalAppId = appId
+		}
 	}
 
-	appMap, err := utils.DeserializeToMap([]byte(modifiedFileData), format, utils.APPLICATIONS)
 	if err != nil {
-		return fmt.Errorf("error deserializing application: %w", err)
+		return err
 	}
-
-	if appName == utils.RESIDENT_APP {
-		return updateResidentApp(appMap)
+	if err := applicationAuthorizedApis.ImportAPIs(finalAppId, appName, filepath.Dir(importFilePath)); err != nil {
+		return fmt.Errorf("error importing authorized APIs: %w", err)
 	}
-
-	delete(appMap, "id")
-	if appId == "" {
-		return importAppWithCRUD(appName, appMap)
-	}
-	return updateAppWithCRUD(appId, appName, appMap)
+	return nil
 }
 
 func importApplication(appName, importFilePath, modifiedFileData string, format utils.Format) (appId string, err error) {
@@ -200,23 +203,23 @@ func updateApplication(appId, appName, importFilePath, modifiedFileData string, 
 	return nil
 }
 
-func importAppWithCRUD(appName string, appMap map[string]interface{}) error {
+func importAppWithCRUD(appName string, appMap map[string]interface{}) (string, error) {
 
 	utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, appName, "Creating new application")
 
 	newSecretCreated, err := processInboundProtocolsForPost(appMap)
 	if err != nil {
-		return fmt.Errorf("error processing inbound protocols: %w", err)
+		return "", fmt.Errorf("error processing inbound protocols: %w", err)
 	}
 
 	body, err := json.Marshal(appMap)
 	if err != nil {
-		return fmt.Errorf("error marshalling application: %w", err)
+		return "", fmt.Errorf("error marshalling application: %w", err)
 	}
 
 	resp, err := utils.SendPostRequest(utils.APPLICATIONS, body)
 	if err != nil {
-		return fmt.Errorf("error creating application: %w", err)
+		return "", fmt.Errorf("error creating application: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -226,14 +229,14 @@ func importAppWithCRUD(appName string, appMap map[string]interface{}) error {
 
 	location := resp.Header.Get("Location")
 	if location == "" {
-		return fmt.Errorf("no Location header in response")
+		return "", fmt.Errorf("no Location header in response")
 	}
 	appId := path.Base(location)
 	utils.AddToIdentifierMap(utils.APPLICATIONS, appId, appName, utils.IMPORT)
 
 	utils.UpdateSuccessSummary(utils.APPLICATIONS, utils.IMPORT)
 	utils.PrintLog(utils.LogLevelInfo, utils.APPLICATIONS, appName, "Imported successfully")
-	return nil
+	return appId, nil
 }
 
 func updateAppWithCRUD(appId, appName string, appMap map[string]interface{}) error {

@@ -189,6 +189,9 @@ func exportAppWithCRUD(appId, appName, outputDirPath, formatString string, exclu
 		return fmt.Errorf("error when writing exported content to file: %w", err)
 	}
 
+	if err := applicationAuthorizedApis.ExportAPIs(appId, appName, outputDirPath, formatString); err != nil {
+		return fmt.Errorf("error exporting authorized APIs: %w", err)
+	}
 	return nil
 }
 
