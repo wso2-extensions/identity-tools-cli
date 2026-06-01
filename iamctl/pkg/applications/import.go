@@ -126,7 +126,7 @@ func importApp(appId, appName, importFilePath string, exportAPIExists bool) erro
 		}
 	} else {
 		var appMap map[string]interface{}
-		appMap, err = utils.DeserializeToMap([]byte(modifiedFileData), format, utils.APPLICATIONS)
+		appMap, err = utils.DeserializeToMap([]byte(modifiedFileData), format, utils.APPLICATIONS, "clientId", "realm", "issuer")
 		if err != nil {
 			return fmt.Errorf("error deserializing application: %w", err)
 		}
@@ -210,6 +210,14 @@ func importAppWithCRUD(appName string, appMap map[string]interface{}) (string, e
 	newSecretCreated, err := processInboundProtocolsForPost(appMap)
 	if err != nil {
 		return "", fmt.Errorf("error processing inbound protocols: %w", err)
+	}
+
+	delete(appMap, "applicationVersion")
+	if err := removeAdditionalSpProperties(appMap); err != nil {
+		return "", fmt.Errorf("error removing additional sp properties: %w", err)
+	}
+	if err := removeRoleClaimUri(appMap); err != nil {
+		return "", fmt.Errorf("error clearing role claim uri: %w", err)
 	}
 
 	body, err := json.Marshal(appMap)
@@ -308,9 +316,7 @@ func updateResidentApp(appMap map[string]interface{}) error {
 func patchApplication(appId string, appMap map[string]interface{}) error {
 
 	delete(appMap, "inboundProtocolConfiguration")
-	delete(appMap, "clientId")
 	delete(appMap, "isManagementApp")
-	delete(appMap, "realm")
 	if err := removeAdditionalSpProperties(appMap); err != nil {
 		return fmt.Errorf("error removing additional sp properties: %w", err)
 	}
