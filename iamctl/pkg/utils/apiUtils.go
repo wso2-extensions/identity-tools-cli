@@ -158,7 +158,12 @@ func SendExportRequest(resourceId, fileType string, resourceType ResourceType, e
 	statusCode := resp.StatusCode
 	if statusCode == 200 {
 		return resp, nil
-	} else if error, ok := ErrorCodes[statusCode]; ok {
+	}
+
+	PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("%s %s", req.Method, req.URL.String()))
+	debugBody, _ := ioutil.ReadAll(resp.Body)
+	PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("Response [%d]: %s", statusCode, string(debugBody)))
+	if error, ok := ErrorCodes[statusCode]; ok {
 		return resp, fmt.Errorf("error while exporting resource: %s", error)
 	}
 	return resp, fmt.Errorf("unexpected error while exporting the resource with status code: %s", strconv.FormatInt(int64(statusCode), 10))
@@ -199,7 +204,13 @@ func SendImportRequest(importFilePath, fileData string, resourceType ResourceTyp
 		return nil, fmt.Errorf("error when creating the import request: %s", err)
 	}
 
-	request, err := http.NewRequest("POST", reqUrl, body)
+	var capturedImportBody bytes.Buffer
+	var importBodyReader io.Reader = body
+	if TOOL_CONFIGS.Logs.LogRequestPayloads {
+		importBodyReader = io.TeeReader(body, &capturedImportBody)
+	}
+
+	request, err := http.NewRequest("POST", reqUrl, importBodyReader)
 	if err != nil {
 		return nil, fmt.Errorf("error when creating the import request: %s", err)
 	}
@@ -222,11 +233,17 @@ func SendImportRequest(importFilePath, fileData string, resourceType ResourceTyp
 	statusCode := resp.StatusCode
 	if statusCode == 201 {
 		return resp, nil
-	} else if error, ok := ErrorCodes[statusCode]; ok {
-		resp.Body.Close()
+	}
+	debugBody, _ := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("%s %s", request.Method, request.URL.String()))
+	if TOOL_CONFIGS.Logs.LogRequestPayloads {
+		PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("Request body: %s", capturedImportBody.String()))
+	}
+	PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("Response [%d]: %s", statusCode, string(debugBody)))
+	if error, ok := ErrorCodes[statusCode]; ok {
 		return nil, fmt.Errorf("error response for the import request: %s", error)
 	}
-	resp.Body.Close()
 	return nil, fmt.Errorf("unexpected error when importing resource: %s", resp.Status)
 }
 
@@ -266,7 +283,13 @@ func SendUpdateRequest(resourceId, importFilePath, fileData string, resourceType
 		return fmt.Errorf("error when creating the import request: %s", err)
 	}
 
-	request, err := http.NewRequest("PUT", formattedReqUrl, body)
+	var capturedUpdateBody bytes.Buffer
+	var updateBodyReader io.Reader = body
+	if TOOL_CONFIGS.Logs.LogRequestPayloads {
+		updateBodyReader = io.TeeReader(body, &capturedUpdateBody)
+	}
+
+	request, err := http.NewRequest("PUT", formattedReqUrl, updateBodyReader)
 	if err != nil {
 		return fmt.Errorf("error when creating the import request: %s", err)
 	}
@@ -292,7 +315,15 @@ func SendUpdateRequest(resourceId, importFilePath, fileData string, resourceType
 		return nil
 	} else if statusCode == 400 && resourceType == CLAIMS {
 		return handleClaimImportErrorResponse(resp)
-	} else if error, ok := ErrorCodes[statusCode]; ok {
+	}
+	debugBody, _ := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("%s %s", request.Method, request.URL.String()))
+	if TOOL_CONFIGS.Logs.LogRequestPayloads {
+		PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("Request body: %s", capturedUpdateBody.String()))
+	}
+	PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("Response [%d]: %s", statusCode, string(debugBody)))
+	if error, ok := ErrorCodes[statusCode]; ok {
 		return fmt.Errorf("error response for the import request: %s", error)
 	}
 	return fmt.Errorf("unexpected error when importing resource: %s", resp.Status)
@@ -330,7 +361,12 @@ func SendDeleteRequest(resourceId string, resourceType ResourceType, opts ...Sen
 	statusCode := resp.StatusCode
 	if statusCode == 204 {
 		return nil
-	} else if error, ok := ErrorCodes[statusCode]; ok {
+	}
+	debugBody, _ := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("%s %s", request.Method, request.URL.String()))
+	PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("Response [%d]: %s", statusCode, string(debugBody)))
+	if error, ok := ErrorCodes[statusCode]; ok {
 		return fmt.Errorf("error response for the delete request: %s", error)
 	}
 	return fmt.Errorf("unexpected error when deleting resource: %s", resp.Status)
@@ -406,6 +442,11 @@ func SendGetRequest(resourceType ResourceType, resourceId string, opts ...SendOp
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		if !(request.Method == "GET" && resp.StatusCode == 404) {
+			debugBody, _ := ioutil.ReadAll(resp.Body)
+			PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("%s %s", request.Method, request.URL.String()))
+			PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("Response [%d]: %s", resp.StatusCode, string(debugBody)))
+		}
 		if errMsg, ok := ErrorCodes[resp.StatusCode]; ok {
 			return nil, fmt.Errorf("error response for the GET request: %s", errMsg)
 		}
@@ -447,7 +488,13 @@ func SendPostRequest(resourceType ResourceType, requestBody []byte, opts ...Send
 	}
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
+		debugBody, _ := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
+		PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("%s %s", request.Method, request.URL.String()))
+		if TOOL_CONFIGS.Logs.LogRequestPayloads {
+			PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("Request body: %s", string(requestBody)))
+		}
+		PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("Response [%d]: %s", resp.StatusCode, string(debugBody)))
 		if errMsg, ok := ErrorCodes[resp.StatusCode]; ok {
 			return nil, fmt.Errorf("error response for the POST request: %s", errMsg)
 		}
@@ -484,7 +531,13 @@ func SendPutRequest(resourceType ResourceType, resourceId string, requestBody []
 	}
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		debugBody, _ := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
+		PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("%s %s", request.Method, request.URL.String()))
+		if TOOL_CONFIGS.Logs.LogRequestPayloads {
+			PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("Request body: %s", string(requestBody)))
+		}
+		PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("Response [%d]: %s", resp.StatusCode, string(debugBody)))
 		if errMsg, ok := ErrorCodes[resp.StatusCode]; ok {
 			return nil, fmt.Errorf("error response for the PUT request: %s", errMsg)
 		}
@@ -519,7 +572,13 @@ func SendPatchRequest(resourceType ResourceType, resourceId string, requestBody 
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		debugBody, _ := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
+		PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("%s %s", request.Method, request.URL.String()))
+		if TOOL_CONFIGS.Logs.LogRequestPayloads {
+			PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("Request body: %s", string(requestBody)))
+		}
+		PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("Response [%d]: %s", resp.StatusCode, string(debugBody)))
 		if errMsg, ok := ErrorCodes[resp.StatusCode]; ok {
 			return nil, fmt.Errorf("error response for the PATCH request: %s", errMsg)
 		}
@@ -562,6 +621,9 @@ func SendGetListRequest(resourceType ResourceType, opts ...SendOption) ([]byte, 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		debugBody, _ := ioutil.ReadAll(resp.Body)
+		PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("%s %s", req.Method, req.URL.String()))
+		PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("Response [%d]: %s", resp.StatusCode, string(debugBody)))
 		if errMsg, ok := ErrorCodes[resp.StatusCode]; ok {
 			return nil, fmt.Errorf("error response for the GET list request. Error: %s", errMsg)
 		}
@@ -676,6 +738,17 @@ func SendCustomRequest(method, reqURL string, body []byte, contentType string) (
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error sending %s request: %w", method, err)
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		debugBody, _ := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+		resp.Body = ioutil.NopCloser(bytes.NewReader(debugBody))
+		PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("%s %s", req.Method, req.URL.String()))
+		if TOOL_CONFIGS.Logs.LogRequestPayloads {
+			PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("Request body: %s", string(body)))
+		}
+		PrintLog(LogLevelDebug, NoResource, "", fmt.Sprintf("Response [%d]: %s", resp.StatusCode, string(debugBody)))
 	}
 	return resp, nil
 }

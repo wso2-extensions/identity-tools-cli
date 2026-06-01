@@ -265,11 +265,11 @@ func PrintExportSummary() {
 		fmt.Printf("%s\n", summary.ResourceType)
 		fmt.Println("----------------------------------------")
 		fmt.Printf("Successful Exports: %d\n", summary.SuccessfulExport)
-		if summary.FailedCount > 0 {
-			PrintFailedResources(summary)
-		}
 		if summary.Duration > 0 && summary.SuccessfulExport > 0 {
 			fmt.Printf("Execution time: %s\n", summary.Duration.Round(time.Millisecond))
+		}
+		if summary.FailedCount > 0 {
+			PrintFailedResources(summary)
 		}
 	}
 	fmt.Println("----------------------------------------")
@@ -291,14 +291,14 @@ func PrintImportSummary() {
 		fmt.Printf("Successful Imports: %d\n", summary.SuccessfulImport)
 		fmt.Printf("Successful Updates: %d\n", summary.SuccessfulUpdate)
 		fmt.Printf("Deleted: %d\n", summary.DeletedCount)
+		if summary.Duration > 0 && summary.SuccessfulImport+summary.SuccessfulUpdate > 0 {
+			fmt.Printf("Execution time: %s\n", summary.Duration.Round(time.Millisecond))
+		}
 		if summary.FailedCount > 0 {
 			PrintFailedResources(summary)
 		}
 		if summary.ResourceType == APPLICATIONS {
 			printNewSecretApplications(summary)
-		}
-		if summary.Duration > 0 && summary.SuccessfulImport+summary.SuccessfulUpdate > 0 {
-			fmt.Printf("Execution time: %s\n", summary.Duration.Round(time.Millisecond))
 		}
 	}
 }
