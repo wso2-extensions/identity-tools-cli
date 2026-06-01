@@ -222,3 +222,13 @@ func removeStaleClaimsFromLocalDialect() {
 	}
 	utils.UpdateSuccessSummary(utils.CLAIMS, utils.UPDATE)
 }
+
+func RoleClaimUnsupported() bool {
+
+	if utils.SERVER_CONFIGS.ServerVersion == "" {
+		return true
+	}
+	cmp, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_ROLE_CLAIM_REMOVED)
+	// Consider role claim unsupported when the server version is not properly configured
+	return err != nil || cmp >= 0
+}

@@ -314,6 +314,9 @@ func patchApplication(appId string, appMap map[string]interface{}) error {
 	if err := removeAdditionalSpProperties(appMap); err != nil {
 		return fmt.Errorf("error removing additional sp properties: %w", err)
 	}
+	if err := removeRoleClaimUri(appMap); err != nil {
+		return fmt.Errorf("error clearing role claim uri: %w", err)
+	}
 
 	body, err := json.Marshal(appMap)
 	if err != nil {

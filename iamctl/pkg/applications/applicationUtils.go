@@ -25,6 +25,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/claims"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
@@ -428,6 +429,33 @@ func injectDeployedReadOnlyFields(appId, protocolPath string, localConfig map[st
 			return fmt.Errorf("realm not found in deployed passive-sts config")
 		}
 		localConfig["realm"] = realm
+	}
+	return nil
+}
+
+func removeRoleClaimUri(appMap map[string]interface{}) error {
+
+	if !claims.RoleClaimUnsupported() {
+		return nil
+	}
+	claimConfMap, ok := appMap["claimConfiguration"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for claimConfiguration")
+	}
+	role, ok := claimConfMap["role"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for role in claimConfiguration")
+	}
+	claim, ok := role["claim"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for claim in role")
+	}
+	uri, ok := claim["uri"].(string)
+	if !ok {
+		return fmt.Errorf("unexpected format for uri in role claim")
+	}
+	if uri == "http://wso2.org/claims/role" {
+		claim["uri"] = ""
 	}
 	return nil
 }
