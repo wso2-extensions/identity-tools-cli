@@ -53,6 +53,11 @@ func ImportAll(inputDirPath string) {
 			return
 		}
 	}
+	if err := InitDeployedRoleIds(); err != nil {
+		utils.PrintLog(utils.LogLevelError, utils.APPLICATIONS, "", fmt.Sprintf("Error retrieving roles list: %s", err))
+		utils.MarkResTypeFailure(utils.APPLICATIONS)
+		return
+	}
 
 	deployedApps, err := getAppList()
 	if err != nil {
@@ -88,8 +93,8 @@ func ImportAll(inputDirPath string) {
 		}
 	}
 
-	if utils.IsResourceTypeExcluded(utils.ROLES) && exportAPIExists {
-		utils.PrintLog(utils.LogLevelWarn, utils.APPLICATIONS, "", "Roles are excluded from import. Import Roles to persist Role audiences of applications.")
+	if utils.IsResourceTypeExcluded(utils.ROLES) {
+		utils.PrintLog(utils.LogLevelWarn, utils.APPLICATIONS, "", "Roles are excluded from import. Import Roles to propagate new application roles.")
 	}
 }
 
@@ -219,6 +224,9 @@ func importAppWithCRUD(appName string, appMap map[string]interface{}) (string, e
 	if err := removeRoleClaimUri(appMap); err != nil {
 		return "", fmt.Errorf("error clearing role claim uri: %w", err)
 	}
+	if err := removeAssociatedApplicationRoles(appMap); err != nil {
+		return "", fmt.Errorf("error removing associated application roles: %w", err)
+	}
 
 	body, err := json.Marshal(appMap)
 	if err != nil {
@@ -260,6 +268,9 @@ func updateAppWithCRUD(appId, appName string, appMap map[string]interface{}) err
 		return fmt.Errorf("error processing inbound protocols: %w", err)
 	}
 
+	if err := filterAssociatedApplicationRoles(appMap); err != nil {
+		return fmt.Errorf("error filtering associated application roles: %w", err)
+	}
 	if err := patchApplication(appId, appMap); err != nil {
 		return fmt.Errorf("error updating application: %w", err)
 	}

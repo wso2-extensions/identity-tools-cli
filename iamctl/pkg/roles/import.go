@@ -41,7 +41,7 @@ func ImportAll(inputDirPath string) {
 		return
 	}
 
-	existingRoleList, err := getRoleList()
+	existingRoleList, err := GetRoleList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.ROLES, "", fmt.Sprintf("Error retrieving the deployed role list: %s", err))
 		utils.MarkResTypeFailure(utils.ROLES)

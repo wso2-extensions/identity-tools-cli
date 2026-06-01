@@ -107,8 +107,8 @@ func ExportAll(exportFilePath string, format string) {
 		}
 	}
 
-	if utils.IsResourceTypeExcluded(utils.ROLES) && exportAPIExists {
-		utils.PrintLog(utils.LogLevelWarn, utils.APPLICATIONS, "", "Roles are excluded from export. Export Roles to persist Role audiences of applications.")
+	if utils.IsResourceTypeExcluded(utils.ROLES) {
+		utils.PrintLog(utils.LogLevelWarn, utils.APPLICATIONS, "", "Roles are excluded from export. Export roles to propagate new application roles.")
 	}
 }
 

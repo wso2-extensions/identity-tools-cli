@@ -42,7 +42,7 @@ type rolePatchRequest struct {
 	Schemas    []string         `json:"schemas"`
 }
 
-func getRoleList() ([]role, error) {
+func GetRoleList() ([]role, error) {
 
 	data, err := utils.SendPaginatedGetListRequest(
 		utils.ROLES,
