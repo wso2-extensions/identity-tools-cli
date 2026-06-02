@@ -79,8 +79,8 @@ func ExportAll(exportFilePath string, format string) {
 			}
 		}
 	}
-	if (utils.IsResourceTypeExcluded(utils.CLAIMS) || utils.IsResourceExcluded(utils.LOCAL_CLAIM_DIALECT_URI, utils.TOOL_CONFIGS.ClaimConfigs)) && exportAPIExists {
-		utils.PrintLog(utils.LogLevelWarn, utils.USERSTORES, "", "Local claim dialect is excluded from export. Export local claims to persist claim attribute mappings of user stores.")
+	if utils.IsResourceTypeExcluded(utils.CLAIMS) || utils.IsResourceExcluded(utils.LOCAL_CLAIM_DIALECT_URI, utils.TOOL_CONFIGS.ClaimConfigs) {
+		utils.PrintLog(utils.LogLevelWarn, utils.USERSTORES, "", "Local claim dialect is excluded from export. Export local claims to propagate new claim attribute mappings of user stores.")
 	}
 }
 
