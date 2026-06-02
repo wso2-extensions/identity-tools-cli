@@ -143,7 +143,8 @@ func TestIsEntitySupportedInVersion(t *testing.T) {
 		expected   bool
 	}{
 		// No server version configured / no version requirements
-		{"no version configured", "", "6.0.0", "7.0.0", true},
+		{"no server version: no max version set", "", "6.0.0", "", true},
+		{"no server version: max version set", "", "6.0.0", "7.0.0", false},
 		{"no version requirement", "5.0.0", "", "", true},
 
 		// Min version checks
