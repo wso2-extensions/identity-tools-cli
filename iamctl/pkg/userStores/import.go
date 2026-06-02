@@ -64,12 +64,13 @@ func ImportAll(inputDirPath string) {
 				err := importUserStore(userStoreId, userStoreName, userStoreFilePath, exportAPIexists)
 				if err != nil {
 					utils.PrintLog(utils.LogLevelError, utils.USERSTORES, userStoreName, fmt.Sprintf("Error importing user store: %s", err))
+					utils.UpdateFailureSummary(utils.USERSTORES, userStoreName)
 				}
 			}
 		}
 	}
-	if (utils.IsResourceTypeExcluded(utils.CLAIMS) || utils.IsResourceExcluded(utils.LOCAL_CLAIM_DIALECT_URI, utils.TOOL_CONFIGS.ClaimConfigs)) && exportAPIexists {
-		utils.PrintLog(utils.LogLevelWarn, utils.USERSTORES, "", "Local claim dialect is excluded from import. Import local claims to persist claim attribute mappings of user stores.")
+	if utils.IsResourceTypeExcluded(utils.CLAIMS) || utils.IsResourceExcluded(utils.LOCAL_CLAIM_DIALECT_URI, utils.TOOL_CONFIGS.ClaimConfigs) {
+		utils.PrintLog(utils.LogLevelWarn, utils.USERSTORES, "", "Local claim dialect is excluded from import. Import local claims to propagate new claim attribute mappings of user stores.")
 	}
 }
 
@@ -113,7 +114,6 @@ func importUserStoreOperation(userStoreName, userStoreFilePath, modifiedFileData
 	utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userStoreName, "Creating new user store")
 	resp, err := utils.SendImportRequest(userStoreFilePath, modifiedFileData, utils.USERSTORES)
 	if err != nil {
-		utils.UpdateFailureSummary(utils.USERSTORES, userStoreName)
 		return fmt.Errorf("error when importing user store: %s", err)
 	}
 	defer resp.Body.Close()
@@ -127,7 +127,6 @@ func updateUserStoreOperation(userStoreId, userStoreName, userStoreFilePath, mod
 	utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userStoreName, "Updating user store")
 	err := utils.SendUpdateRequest(userStoreId, userStoreFilePath, modifiedFileData, utils.USERSTORES)
 	if err != nil {
-		utils.UpdateFailureSummary(utils.USERSTORES, userStoreName)
 		return fmt.Errorf("error when updating user store: %s", err)
 	}
 	utils.UpdateSuccessSummary(utils.USERSTORES, utils.UPDATE)
@@ -139,7 +138,7 @@ func importUserStoreWithCRUD(userStoreName string, requestBody []byte, format ut
 
 	utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userStoreName, "Creating new user store")
 
-	jsonBody, err := utils.PrepareJSONRequestBody(requestBody, format, utils.USERSTORES, "typeName", "className")
+	jsonBody, err := prepareUserStoreBodyForCRUD(requestBody, format)
 	if err != nil {
 		return err
 	}
@@ -158,11 +157,11 @@ func updateUserStoreWithCRUD(userStoreId, userStoreName string, requestBody []by
 
 	utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userStoreName, "Updating user store")
 
-	updateBody, err := utils.PrepareJSONRequestBody(requestBody, format, utils.USERSTORES, "typeName", "className")
+	jsonBody, err := prepareUserStoreBodyForCRUD(requestBody, format)
 	if err != nil {
 		return err
 	}
-	resp, err := utils.SendPutRequest(utils.USERSTORES, userStoreId, updateBody)
+	resp, err := utils.SendPutRequest(utils.USERSTORES, userStoreId, jsonBody)
 	if err != nil {
 		return fmt.Errorf("error when updating user store: %w", err)
 	}

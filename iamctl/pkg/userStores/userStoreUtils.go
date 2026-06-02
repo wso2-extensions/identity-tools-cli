@@ -88,6 +88,13 @@ func getUserStoreId(userStoreName string) (string, error) {
 	return "", nil
 }
 
+func removeClaimAttributeMappingsForCRUD(dataMap map[string]interface{}) {
+
+	if _, exists := dataMap["claimAttributeMappings"]; exists {
+		dataMap["claimAttributeMappings"] = []interface{}{}
+	}
+}
+
 func removeClaimAttributeMappings(fileContent string) string {
 
 	yamlPattern := regexp.MustCompile(`(?m)(^\s*claimAttributeMappings:)[^\n]*\n([ \t]+[^\n]+\n)*`)
@@ -97,4 +104,18 @@ func removeClaimAttributeMappings(fileContent string) string {
 	result = jsonPattern.ReplaceAllString(result, `${1}[]`)
 
 	return result
+}
+
+func prepareUserStoreBodyForCRUD(requestBody []byte, format utils.Format) ([]byte, error) {
+
+	dataMap, err := utils.DeserializeToMap(requestBody, format, utils.USERSTORES, "typeName", "className", "isLocal")
+	if err != nil {
+		return nil, err
+	}
+	removeClaimAttributeMappingsForCRUD(dataMap)
+	jsonBody, err := json.Marshal(dataMap)
+	if err != nil {
+		return nil, fmt.Errorf("error serializing user store to JSON: %w", err)
+	}
+	return jsonBody, nil
 }
