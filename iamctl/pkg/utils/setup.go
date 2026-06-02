@@ -127,11 +127,11 @@ func LoadConfigs(envConfigPath string) (baseDir string) {
 func loadServerConfigs(envConfigPath string) (baseDir string, toolConfigPath string, keywordConfigPath string) {
 
 	if envConfigPath == "" {
-		PrintLog(LogLevelInfo, NoResource, "", "Loading configs from environment variables.")
+		PrintLog(LogLevelInfo, UtilsResourceWrapper, "", "Loading configs from environment variables.")
 		toolConfigPath, keywordConfigPath = loadConfigsFromEnvVar()
 		baseDir = filepath.Dir(filepath.Dir(filepath.Dir(toolConfigPath)))
 	} else {
-		PrintLog(LogLevelInfo, NoResource, "", "Loading configs from config files.")
+		PrintLog(LogLevelInfo, UtilsResourceWrapper, "", "Loading configs from config files.")
 		baseDir = filepath.Dir(filepath.Dir(envConfigPath))
 		serverConfigFile := filepath.Join(envConfigPath, SERVER_CONFIG_FILE)
 		toolConfigPath = filepath.Join(envConfigPath, TOOL_CONFIG_FILE)
@@ -145,14 +145,14 @@ func loadServerConfigs(envConfigPath string) (baseDir string, toolConfigPath str
 	if SERVER_CONFIGS.ServerVersion != "" {
 		_, err := ParseVersion(SERVER_CONFIGS.ServerVersion)
 		if err != nil {
-			PrintLog(LogLevelWarn, NoResource, "", "Server version is not properly configured. Configure the server version properly to avoid failures.")
-			PrintLog(LogLevelError, NoResource, "", fmt.Sprintf("Error parsing server version: %s. Error: %s", SERVER_CONFIGS.ServerVersion, err))
+			PrintLog(LogLevelError, UtilsResourceWrapper, "", fmt.Sprintf("Error parsing server version: %s. Error: %s", SERVER_CONFIGS.ServerVersion, err))
+			log.Fatalln("ERROR: Utils - Unexpected format for Server Version.")
 		}
 	}
 
 	// Get access token.
 	SERVER_CONFIGS.Token = getAccessToken(SERVER_CONFIGS)
-	PrintLog(LogLevelInfo, NoResource, "", "Access Token received successfully.")
+	PrintLog(LogLevelInfo, UtilsResourceWrapper, "", "Access Token received successfully.")
 
 	return baseDir, toolConfigPath, keywordConfigPath
 }
@@ -165,7 +165,11 @@ func loadConfigsFromEnvVar() (toolConfigPath string, keywordConfigPath string) {
 	SERVER_CONFIGS.ClientSecret = os.Getenv(CLIENT_SECRET_CONFIG)
 	SERVER_CONFIGS.TenantDomain = os.Getenv(TENANT_DOMAIN_CONFIG)
 	SERVER_CONFIGS.Organization = os.Getenv(ORGANIZATION_CONFIG)
-	SERVER_CONFIGS.ServerVersion = os.Getenv(SERVER_VERSION_CONFIG)
+	serverVersion, exists := os.LookupEnv(SERVER_VERSION_CONFIG)
+	if !exists {
+		log.Fatalln("ERROR: Utils - Server Version environment variable is not set.")
+	}
+	SERVER_CONFIGS.ServerVersion = serverVersion
 
 	// Load tool config file path from environment variables.
 	toolConfigPath = os.Getenv(TOOL_CONFIG_PATH)
@@ -177,19 +181,27 @@ func loadServerConfigsFromFile(configFilePath string) (serverConfigs ServerConfi
 
 	configFile, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
-		log.Fatalln(err.Error())
+		log.Fatalln("ERROR: Utils -", err.Error())
 	}
 
 	// Replace placeholder keys with environment variable values
 	configFile = ReplacePlaceholders(configFile)
 
+	var rawMap map[string]json.RawMessage
+	if err = json.Unmarshal(configFile, &rawMap); err != nil {
+		log.Fatalln("ERROR: Utils -", err)
+	}
+	if _, exists := rawMap[SERVER_VERSION_CONFIG]; !exists {
+		log.Fatalln("ERROR: Utils - Server Version is missing from the server config file.")
+	}
+
 	reader := bytes.NewReader(configFile)
 	jsonParser := json.NewDecoder(reader)
 	err = jsonParser.Decode(&serverConfigs)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("ERROR: Utils -", err)
 	}
-	PrintLog(LogLevelInfo, NoResource, "", "Server configs loaded successfully from the config file.")
+	PrintLog(LogLevelInfo, UtilsResourceWrapper, "", "Server configs loaded successfully from the config file.")
 	return serverConfigs
 }
 
@@ -197,7 +209,7 @@ func loadToolConfigsFromFile(configFilePath string) (toolConfigs ToolConfigs) {
 
 	configFile, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
-		log.Fatalln("Error when reading the tool config file.", err.Error())
+		log.Fatalln("ERROR: Utils -", "Error when reading the tool config file.", err.Error())
 	}
 
 	toolConfigs.ExcludeSecrets = true
@@ -207,10 +219,10 @@ func loadToolConfigsFromFile(configFilePath string) (toolConfigs ToolConfigs) {
 
 	err = json.Unmarshal(configFile, &toolConfigs)
 	if err != nil {
-		log.Fatalln("Tool configs are not in the correct format. Please check the config file.", err)
+		log.Fatalln("ERROR: Utils - Tool configs are not in the correct format. Please check the config file.", err)
 	}
 
-	PrintLog(LogLevelInfo, NoResource, "", "Tool configs loaded successfully from the config file.")
+	PrintLog(LogLevelInfo, UtilsResourceWrapper, "", "Tool configs loaded successfully from the config file.")
 	return toolConfigs
 }
 
@@ -218,7 +230,7 @@ func loadKeywordConfigsFromFile(configFilePath string) (keywordConfigs KeywordCo
 
 	configFile, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
-		log.Fatalln("Error when reading the keyword config file.", err.Error())
+		log.Fatalln("ERROR: Utils - Error when reading the keyword config file.", err.Error())
 	}
 
 	if len(configFile) == 0 {
@@ -230,10 +242,10 @@ func loadKeywordConfigsFromFile(configFilePath string) (keywordConfigs KeywordCo
 
 	err = json.Unmarshal(configFile, &keywordConfigs)
 	if err != nil {
-		log.Fatalln("Keyword configs are not in the correct format. Please check the config file.", err)
+		log.Fatalln("ERROR: Utils - Keyword configs are not in the correct format. Please check the config file.", err)
 	}
 
-	PrintLog(LogLevelInfo, NoResource, "", "Keyword configs loaded successfully from the config file.")
+	PrintLog(LogLevelInfo, UtilsResourceWrapper, "", "Keyword configs loaded successfully from the config file.")
 	return keywordConfigs
 }
 
@@ -243,7 +255,7 @@ func getAccessToken(config ServerConfigs) string {
 	var response oAuthResponse
 
 	if config.ServerUrl == "" {
-		log.Fatalln("Server URL is not defined in the config file.")
+		log.Fatalln("ERROR: Utils -", "Server URL is not defined in the config file.")
 	}
 	authUrl := config.ServerUrl + "/t/" + config.TenantDomain + "/oauth2/token"
 
@@ -253,7 +265,7 @@ func getAccessToken(config ServerConfigs) string {
 
 	req, err := http.NewRequest("POST", authUrl, strings.NewReader(body.Encode()))
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("ERROR: Utils -", err)
 	}
 	req.SetBasicAuth(config.ClientId, config.ClientSecret)
 	req.Header.Set("Content-Type", MEDIA_TYPE_FORM)
@@ -268,25 +280,25 @@ func getAccessToken(config ServerConfigs) string {
 	}
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("ERROR: Utils -", err)
 	}
 	defer resp.Body.Close()
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("ERROR: Utils -", err)
 	}
 
 	if resp.StatusCode != 200 {
-		log.Fatalln("Error in getting access token, response: " + string(respBody))
+		log.Fatalln("ERROR: Utils -", "Error in getting access token, response: "+string(respBody))
 	}
 
 	err2 := json.Unmarshal(respBody, &response)
 	if err2 != nil {
-		log.Fatalln(err2)
+		log.Fatalln("ERROR: Utils -", err2)
 	}
 	if IsSubOrganization() {
-		PrintLog(LogLevelInfo, NoResource, "", "Getting access token for Organization: "+SERVER_CONFIGS.Organization)
+		PrintLog(LogLevelInfo, UtilsResourceWrapper, "", "Getting access token for Organization: "+SERVER_CONFIGS.Organization)
 		return switchAccessToken(config, response.AccessToken)
 	}
 	return response.AccessToken
@@ -307,7 +319,7 @@ func switchAccessToken(config ServerConfigs, accessToken string) string {
 
 	req, err := http.NewRequest("POST", authUrl, strings.NewReader(body.Encode()))
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("ERROR: Utils -", err)
 	}
 	req.SetBasicAuth(config.ClientId, config.ClientSecret)
 	req.Header.Set("Content-Type", MEDIA_TYPE_FORM)
@@ -322,22 +334,22 @@ func switchAccessToken(config ServerConfigs, accessToken string) string {
 	}
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("ERROR: Utils -", err)
 	}
 	defer resp.Body.Close()
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("ERROR: Utils -", err)
 	}
 
 	if resp.StatusCode != 200 {
-		log.Fatalln("Error in switching access token, response: " + string(respBody))
+		log.Fatalln("ERROR: Utils -", "Error in switching access token, response: "+string(respBody))
 	}
 
 	err2 := json.Unmarshal(respBody, &response)
 	if err2 != nil {
-		log.Fatalln(err2)
+		log.Fatalln("ERROR: Utils -", err2)
 	}
 	return response.AccessToken
 }
@@ -348,7 +360,7 @@ func sanitizeServerConfigs() {
 
 	// Set tenant domain if not defined in the config file.
 	if SERVER_CONFIGS.TenantDomain == "" {
-		PrintLog(LogLevelInfo, NoResource, "", "Tenant domain not defined. Defaulting to: carbon.super")
+		PrintLog(LogLevelInfo, UtilsResourceWrapper, "", "Tenant domain not defined. Defaulting to: carbon.super")
 		SERVER_CONFIGS.TenantDomain = DEFAULT_TENANT_DOMAIN
 	}
 }
