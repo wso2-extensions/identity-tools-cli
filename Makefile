@@ -14,7 +14,7 @@
 # limitations under the License.
 # -----------------------------------------------------------------------
 
-VERSION?=2.0.2-SNAPSHOT
+VERSION?=3.0.0-SNAPSHOT
 
 .PHONY: install-cli
 install-cli:
