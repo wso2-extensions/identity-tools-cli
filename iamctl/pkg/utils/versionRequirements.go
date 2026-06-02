@@ -68,7 +68,6 @@ var EntityMaxSupportedVersion = map[ResourceType]string{
 const (
 	MIN_VERSION_USERSTORE_EXPORT_API       = "6.1.0"
 	MIN_VERSION_IDP_EXPORT_API             = "6.1.0"
-	MIN_VERSION_APP_EXPORT_API             = "6.1.0"
 	MIN_VERSION_ROLES_V2_API               = "7.0.0"
 	MIN_VERSION_NOTIFICATION_TEMPLATES_API = "7.1.0"
 )
@@ -84,5 +83,4 @@ const (
 var ExportAPIMinVersionRequirements = map[ResourceType]string{
 	USERSTORES:         MIN_VERSION_USERSTORE_EXPORT_API,
 	IDENTITY_PROVIDERS: MIN_VERSION_IDP_EXPORT_API,
-	APPLICATIONS:       MIN_VERSION_APP_EXPORT_API,
 }

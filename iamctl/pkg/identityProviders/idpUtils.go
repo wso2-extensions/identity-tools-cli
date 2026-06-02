@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/claims"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
@@ -248,18 +249,18 @@ func processOutboundConnectors(idpId string, idpStruct idpConfig, idpMap map[str
 
 func processClaims(idpMap map[string]interface{}) error {
 
-	claims, ok := idpMap["claims"].(map[string]interface{})
+	claimMap, ok := idpMap["claims"].(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("invalid format for claims")
 	}
 
 	for _, claimKey := range []string{"userIdClaim", "roleClaim"} {
-		claim, ok := claims[claimKey].(map[string]interface{})
+		claim, ok := claimMap[claimKey].(map[string]interface{})
 		if !ok {
 			return fmt.Errorf("invalid format for claim: %s", claimKey)
 		}
 		if len(claim) == 0 {
-			claims[claimKey] = map[string]interface{}{"uri": ""}
+			claimMap[claimKey] = map[string]interface{}{"uri": ""}
 			continue
 		}
 
@@ -268,7 +269,7 @@ func processClaims(idpMap map[string]interface{}) error {
 			if !ok {
 				return fmt.Errorf("invalid format for roleClaim uri")
 			}
-			if shouldRemoveRoleClaim() && roleClaimUri == "http://wso2.org/claims/role" {
+			if claims.RoleClaimUnsupported() && roleClaimUri == "http://wso2.org/claims/role" {
 				claim["uri"] = ""
 			}
 		}
@@ -647,15 +648,5 @@ func shouldRemoveOutboundProvisioningRoles() bool {
 	}
 	cmp, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_OUTBOUND_PROV_GROUPS)
 	// Consider outbound provisioning groups exist when the server version is not properly configured
-	return err != nil || cmp >= 0
-}
-
-func shouldRemoveRoleClaim() bool {
-
-	if utils.SERVER_CONFIGS.ServerVersion == "" {
-		return true
-	}
-	cmp, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_ROLE_CLAIM_REMOVED)
-	// Consider role claim unsupported when the server version is not properly configured
 	return err != nil || cmp >= 0
 }

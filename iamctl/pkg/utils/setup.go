@@ -189,7 +189,7 @@ func loadServerConfigsFromFile(configFilePath string) (serverConfigs ServerConfi
 	if err != nil {
 		log.Fatalln(err)
 	}
-	PrintLog(LogLevelInfo, NoResource, "", "Server configs loaded succesfully from the config file.")
+	PrintLog(LogLevelInfo, NoResource, "", "Server configs loaded successfully from the config file.")
 	return serverConfigs
 }
 

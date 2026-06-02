@@ -25,6 +25,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/claims"
+	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/roles"
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
 )
 
@@ -61,6 +63,8 @@ type AuthConfig struct {
 		} `yaml:"inboundAuthenticationRequestConfigs" json:"inboundAuthenticationRequestConfigs"`
 	} `yaml:"inboundAuthenticationConfig" json:"inboundAuthenticationConfig"`
 }
+
+var deployedRoleNameMap map[string]string
 
 func getDeployedAppNames(apps []Application) []string {
 
@@ -428,6 +432,110 @@ func injectDeployedReadOnlyFields(appId, protocolPath string, localConfig map[st
 			return fmt.Errorf("realm not found in deployed passive-sts config")
 		}
 		localConfig["realm"] = realm
+	}
+	return nil
+}
+
+func removeRoleClaimUri(appMap map[string]interface{}) error {
+
+	if !claims.RoleClaimUnsupported() {
+		return nil
+	}
+	claimConfMap, ok := appMap["claimConfiguration"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for claimConfiguration")
+	}
+	role, ok := claimConfMap["role"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for role in claimConfiguration")
+	}
+	claim, ok := role["claim"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for claim in role")
+	}
+	uri, ok := claim["uri"].(string)
+	if !ok {
+		return fmt.Errorf("unexpected format for uri in role claim")
+	}
+	if uri == "http://wso2.org/claims/role" {
+		claim["uri"] = ""
+	}
+	return nil
+}
+
+func filterAssociatedApplicationRoles(appMap map[string]interface{}) error {
+
+	assocRolesRaw, exists := appMap["associatedRoles"]
+	if !exists {
+		return nil
+	}
+	assocRoles, ok := assocRolesRaw.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for associatedRoles")
+	}
+	rolesRaw, exists := assocRoles["roles"]
+	if !exists {
+		return nil
+	}
+	rolesList, ok := rolesRaw.([]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for roles in associatedRoles")
+	}
+
+	filtered := make([]interface{}, 0, len(rolesList))
+	for _, item := range rolesList {
+		roleMap, ok := item.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected format for role in associatedRoles")
+		}
+		name, ok := roleMap["name"].(string)
+		if !ok {
+			return fmt.Errorf("unexpected format for role name in associatedRoles")
+		}
+		deployedId, exists := deployedRoleNameMap[name]
+		if !exists {
+			continue
+		}
+		roleMap["id"] = deployedId
+		filtered = append(filtered, roleMap)
+	}
+	assocRoles["roles"] = filtered
+	return nil
+}
+
+func removeAssociatedApplicationRoles(appMap map[string]interface{}) error {
+
+	assocRolesRaw, exists := appMap["associatedRoles"]
+	if !exists {
+		return nil
+	}
+	assocRoles, ok := assocRolesRaw.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for associatedRoles")
+	}
+	delete(assocRoles, "roles")
+	return nil
+}
+
+func removeAdditionalSpProperties(appMap map[string]interface{}) error {
+
+	advConf, ok := appMap["advancedConfigurations"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("unexpected format for advancedConfigurations")
+	}
+	delete(advConf, "additionalSpProperties")
+	return nil
+}
+
+func InitDeployedRoleIds() error {
+
+	roleList, err := roles.GetRoleList()
+	if err != nil {
+		return fmt.Errorf("error retrieving role list: %w", err)
+	}
+	deployedRoleNameMap = make(map[string]string, len(roleList))
+	for _, r := range roleList {
+		deployedRoleNameMap[r.DisplayName] = r.Id
 	}
 	return nil
 }

@@ -107,8 +107,8 @@ func ExportAll(exportFilePath string, format string) {
 		}
 	}
 
-	if utils.IsResourceTypeExcluded(utils.ROLES) && exportAPIExists {
-		utils.PrintLog(utils.LogLevelWarn, utils.APPLICATIONS, "", "Roles are excluded from export. Export Roles to persist Role audiences of applications.")
+	if utils.IsResourceTypeExcluded(utils.ROLES) {
+		utils.PrintLog(utils.LogLevelWarn, utils.APPLICATIONS, "", "Roles are excluded from export. Export roles to propagate new application roles.")
 	}
 }
 
@@ -189,6 +189,9 @@ func exportAppWithCRUD(appId, appName, outputDirPath, formatString string, exclu
 		return fmt.Errorf("error when writing exported content to file: %w", err)
 	}
 
+	if err := applicationAuthorizedApis.ExportAPIs(appId, appName, outputDirPath, formatString); err != nil {
+		return fmt.Errorf("error exporting authorized APIs: %w", err)
+	}
 	return nil
 }
 

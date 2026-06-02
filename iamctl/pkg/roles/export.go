@@ -36,7 +36,7 @@ func ExportAll(exportFilePath string, format string) {
 	if utils.ShouldSkip(utils.ROLES) {
 		return
 	}
-	roles, err := getRoleList()
+	roles, err := GetRoleList()
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.ROLES, "", fmt.Sprintf("Error retrieving the deployed roles list: %s", err))
 		utils.MarkResTypeFailure(utils.ROLES)

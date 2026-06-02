@@ -45,10 +45,12 @@ func ImportAll(inputDirPath string) {
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.ACTIONS, "", fmt.Sprintf("Error retrieving action types list: %s", err))
 		utils.MarkResTypeFailure(utils.ACTIONS)
+		return
 	}
 	typeFolders, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
 		utils.PrintLog(utils.LogLevelError, utils.ACTIONS, "", fmt.Sprintf("Error reading action type directories: %s", err))
+		utils.MarkResTypeFailure(utils.ACTIONS)
 		return
 	}
 
