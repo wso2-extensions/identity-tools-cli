@@ -210,14 +210,9 @@ func TestGetKeywordLocations(t *testing.T) {
 		"key1": []interface{}{},
 		"claimMappings": []interface{}{
 			map[interface{}]interface{}{
-				"defaultValue": "some string",
+				"applicationClaim": "http://wso2.org/claims/{{KEYWORD}}",
 				"localClaim": map[interface{}]interface{}{
-					"claimId":  1,
-					"claimUri": "http://wso2.org/claims/identity/accountLocked",
-				},
-				"remoteClaim": map[interface{}]interface{}{
-					"claimId":  0,
-					"claimUri": "http://wso2.org/claims/identity/{{KEYWORD}}",
+					"uri": "http://wso2.org/claims/username",
 				},
 			},
 		},
@@ -229,9 +224,8 @@ func TestGetKeywordLocations(t *testing.T) {
 		"description",
 		"stringArray",
 		"nestedObject.subKey2.subSubKey1",
-		"properties.[name=element1].subKey1",
 		"array1.[name=element1].subKey2",
-		"claimMappings.[localClaim.claimUri=http://wso2.org/claims/identity/accountLocked].remoteClaim.claimUri",
+		"claimMappings.[localClaim.uri=http://wso2.org/claims/username].applicationClaim",
 	}
 
 	result := utils.GetKeywordLocations(fileData, []string{}, keywordMapping, utils.APPLICATIONS)
@@ -546,12 +540,12 @@ func TestAddKeywords(t *testing.T) {
 		},
 		"properties": []interface{}{
 			map[string]interface{}{
-				"name":    "element1",
+				"key":     "element1",
 				"subKey1": "A sample string 1",
 				"subKey2": "A sample string with the keyword value",
 			},
 			map[string]interface{}{
-				"name":    "element2",
+				"key":     "element2",
 				"subKey1": "A sample string 1",
 				"subKey2": "A sample string 2",
 			},
@@ -567,10 +561,10 @@ func TestAddKeywords(t *testing.T) {
             subSubKey1: A sample string without a keyword.
             subSubKey2: A sample string with the {{KEYWORD}}.
         properties:
-          - name: element1
+          - key: element1
             subKey1: A sample string 1
             subKey2: A sample string with the {{KEYWORD}}
-          - name: element2
+          - key: element2
             subKey1: A sample string 1
             subKey2: A sample string 2
         `)
@@ -587,12 +581,12 @@ func TestAddKeywords(t *testing.T) {
 		},
 		"properties": []interface{}{
 			map[string]interface{}{
-				"name":    "element1",
+				"key":     "element1",
 				"subKey1": "A sample string 1",
 				"subKey2": "A sample string with the {{KEYWORD}}",
 			},
 			map[string]interface{}{
-				"name":    "element2",
+				"key":     "element2",
 				"subKey1": "A sample string 1",
 				"subKey2": "A sample string 2",
 			},
