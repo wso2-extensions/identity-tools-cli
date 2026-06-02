@@ -114,7 +114,6 @@ func importUserStoreOperation(userStoreName, userStoreFilePath, modifiedFileData
 	utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userStoreName, "Creating new user store")
 	resp, err := utils.SendImportRequest(userStoreFilePath, modifiedFileData, utils.USERSTORES)
 	if err != nil {
-		utils.UpdateFailureSummary(utils.USERSTORES, userStoreName)
 		return fmt.Errorf("error when importing user store: %s", err)
 	}
 	defer resp.Body.Close()
@@ -128,7 +127,6 @@ func updateUserStoreOperation(userStoreId, userStoreName, userStoreFilePath, mod
 	utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userStoreName, "Updating user store")
 	err := utils.SendUpdateRequest(userStoreId, userStoreFilePath, modifiedFileData, utils.USERSTORES)
 	if err != nil {
-		utils.UpdateFailureSummary(utils.USERSTORES, userStoreName)
 		return fmt.Errorf("error when updating user store: %s", err)
 	}
 	utils.UpdateSuccessSummary(utils.USERSTORES, utils.UPDATE)
