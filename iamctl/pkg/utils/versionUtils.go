@@ -38,7 +38,7 @@ func IsEntitySupportedInVersion(resourceType ResourceType) bool {
 	maxVersion, hasMax := EntityMaxSupportedVersion[resourceType]
 
 	if hasMax {
-		// When server version is "" (Asgardeo), consider it as the latest version
+		// When server version is "", consider it as the latest version
 		if SERVER_CONFIGS.ServerVersion == "" {
 			return false
 		}

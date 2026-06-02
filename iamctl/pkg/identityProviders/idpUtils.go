@@ -647,6 +647,6 @@ func shouldRemoveOutboundProvisioningRoles() bool {
 		return true
 	}
 	cmp, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_OUTBOUND_PROV_GROUPS)
-	// Consider outbound provisioning groups exist when the server version is "" (Asgardeo)
+	// Consider outbound provisioning groups exist when the server version is ""
 	return err != nil || cmp >= 0
 }

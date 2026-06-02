@@ -216,7 +216,7 @@ func setRolesV2ApiExists() {
 
 	res, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_ROLES_V2_API)
 
-	// Use the V2 API when the server version is "" (Asgardeo)
+	// Use the V2 API when the server version is ""
 	if err != nil || res >= 0 {
 		utils.RolesV2ApiExists = true
 	} else {
