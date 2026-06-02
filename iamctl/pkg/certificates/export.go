@@ -21,7 +21,6 @@ package certificates
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,15 +29,16 @@ import (
 
 func ExportAll(exportFilePath string, format string) {
 
-	log.Println("Exporting certificates...")
+	utils.PrintLog(utils.LogLevelInfo, utils.CERTIFICATES, "", "Exporting certificates...")
 	exportFilePath = filepath.Join(exportFilePath, utils.CERTIFICATES.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.CERTIFICATES) || !utils.IsEntitySupportedInOrg(utils.CERTIFICATES) || utils.IsResourceTypeExcluded(utils.CERTIFICATES) {
+	if utils.ShouldSkip(utils.CERTIFICATES) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Println("Error creating certificates directory:", err)
+			utils.PrintLog(utils.LogLevelError, utils.CERTIFICATES, "", fmt.Sprintf("Error creating certificates directory: %s", err))
+			utils.MarkResTypeFailure(utils.CERTIFICATES)
 			return
 		}
 	} else {
@@ -50,19 +50,20 @@ func ExportAll(exportFilePath string, format string) {
 
 	certs, err := getCertificateList()
 	if err != nil {
-		log.Println("Error: when exporting certificates.", err)
+		utils.PrintLog(utils.LogLevelError, utils.CERTIFICATES, "", fmt.Sprintf("Error retrieving the deployed certificates list: %s", err))
+		utils.MarkResTypeFailure(utils.CERTIFICATES)
 	} else {
 		for _, cert := range certs {
 			if !utils.IsResourceExcluded(cert.Alias, utils.TOOL_CONFIGS.CertificateConfigs) {
-				log.Println("Exporting certificate: ", cert.Alias)
+				utils.PrintLog(utils.LogLevelInfo, utils.CERTIFICATES, cert.Alias, "Exporting")
 
 				err := exportCertificate(cert.Alias, exportFilePath, format)
 				if err != nil {
 					utils.UpdateFailureSummary(utils.CERTIFICATES, cert.Alias)
-					log.Printf("Error while exporting certificate: %s. %s", cert.Alias, err)
+					utils.PrintLog(utils.LogLevelError, utils.CERTIFICATES, cert.Alias, fmt.Sprintf("Error while exporting: %s", err))
 				} else {
 					utils.UpdateSuccessSummary(utils.CERTIFICATES, utils.EXPORT)
-					log.Println("Certificate exported successfully: ", cert.Alias)
+					utils.PrintLog(utils.LogLevelInfo, utils.CERTIFICATES, cert.Alias, "Exported successfully")
 				}
 			}
 		}

@@ -21,7 +21,6 @@ package userstores
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"mime"
 	"os"
 	"path/filepath"
@@ -33,7 +32,7 @@ import (
 func ExportAll(exportFilePath string, format string) {
 
 	// Export all userstores to the UserStores folder.
-	log.Println("Exporting user stores...")
+	utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, "", "Exporting user stores...")
 	exportFilePath = filepath.Join(exportFilePath, utils.USERSTORES.String())
 
 	if utils.IsResourceTypeExcluded(utils.USERSTORES) {
@@ -41,7 +40,8 @@ func ExportAll(exportFilePath string, format string) {
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Println("Error creating user stores directory:", err)
+			utils.PrintLog(utils.LogLevelError, utils.USERSTORES, "", fmt.Sprintf("Error creating user stores directory: %s", err))
+			utils.MarkResTypeFailure(utils.USERSTORES)
 			return
 		}
 	} else {
@@ -53,14 +53,15 @@ func ExportAll(exportFilePath string, format string) {
 	exportAPIExists := utils.ExportAPIExists(utils.USERSTORES)
 	userstores, err := getUserStoreList()
 	if err != nil {
-		log.Println("Error: when exporting user stores.", err)
+		utils.PrintLog(utils.LogLevelError, utils.USERSTORES, "", fmt.Sprintf("Error retrieving the deployed user stores list: %s", err))
+		utils.MarkResTypeFailure(utils.USERSTORES)
 	} else {
 		if !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.UserStoreConfigs) {
-			log.Println("Warn: Secrets exclusion cannot be disabled for user stores. All secrets will be masked.")
+			utils.PrintLog(utils.LogLevelWarn, utils.USERSTORES, "", "Secrets exclusion cannot be disabled for user stores. All secrets will be masked.")
 		}
 		for _, userstore := range userstores {
 			if !utils.IsResourceExcluded(userstore.Name, utils.TOOL_CONFIGS.UserStoreConfigs) {
-				log.Println("Exporting user store: ", userstore.Name)
+				utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userstore.Name, "Exporting")
 
 				if exportAPIExists {
 					err = exportUserStore(userstore.Id, exportFilePath, format)
@@ -70,16 +71,16 @@ func ExportAll(exportFilePath string, format string) {
 
 				if err != nil {
 					utils.UpdateFailureSummary(utils.USERSTORES, userstore.Name)
-					log.Printf("Error while exporting user store: %s. %s", userstore.Name, err)
+					utils.PrintLog(utils.LogLevelError, utils.USERSTORES, userstore.Name, fmt.Sprintf("Error while exporting: %s", err))
 				} else {
 					utils.UpdateSuccessSummary(utils.USERSTORES, utils.EXPORT)
-					log.Println("User store exported successfully: ", userstore.Name)
+					utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userstore.Name, "Exported successfully")
 				}
 			}
 		}
 	}
 	if (utils.IsResourceTypeExcluded(utils.CLAIMS) || utils.IsResourceExcluded(utils.LOCAL_CLAIM_DIALECT_URI, utils.TOOL_CONFIGS.ClaimConfigs)) && exportAPIExists {
-		log.Println("Warn: Local claim dialect is excluded from export. Export local claims to persist claim attribute mappings of user stores.")
+		utils.PrintLog(utils.LogLevelWarn, utils.USERSTORES, "", "Local claim dialect is excluded from export. Export local claims to persist claim attribute mappings of user stores.")
 	}
 }
 

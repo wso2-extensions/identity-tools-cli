@@ -19,8 +19,8 @@
 package utils
 
 import (
+	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,7 +40,7 @@ func IsResourceExcluded(resourceName string, resourceConfigs map[string]interfac
 				return false
 			}
 		}
-		log.Println("Excluded resource: " + resourceName)
+		PrintLog(LogLevelInfo, NoResource, "", fmt.Sprintf("Excluded resource: %s", resourceName))
 		return true
 	} else {
 		// Exclude resources added to EXCLUDE config.
@@ -48,7 +48,7 @@ func IsResourceExcluded(resourceName string, resourceConfigs map[string]interfac
 		if ok {
 			for _, resource := range resourcesToExclude {
 				if resource.(string) == resourceName {
-					log.Println("Excluded resource: " + resourceName)
+					PrintLog(LogLevelInfo, NoResource, "", fmt.Sprintf("Excluded resource: %s", resourceName))
 					return true
 				}
 			}
@@ -66,13 +66,13 @@ func IsResourceTypeExcluded(resourceType ResourceType) bool {
 				return false
 			}
 		}
-		log.Println("Skipping Excluded resource: " + resourceType)
+		PrintLog(LogLevelInfo, resourceType, "", "Skipping excluded resource type")
 		return true
 	} else if len(TOOL_CONFIGS.Exclude) > 0 {
 		// Exclude resource types added to EXCLUDE config.
 		for _, resource := range TOOL_CONFIGS.Exclude {
 			if resource == resourceType.String() {
-				log.Println("Skipping Excluded resource: " + resourceType)
+				PrintLog(LogLevelInfo, resourceType, "", "Skipping excluded resource type")
 				return true
 			}
 		}
@@ -88,7 +88,24 @@ func IsEntitySupportedInOrg(resourceType ResourceType) bool {
 	if entitySupportedInSubOrg[resourceType] {
 		return true
 	}
-	log.Printf("Skipping %s: Not supported for sub organizations", resourceType)
+	PrintLog(LogLevelInfo, resourceType, "", "Not supported for sub organizations")
+	return false
+}
+
+func ShouldSkip(resourceType ResourceType) bool {
+
+	if !IsEntitySupportedInVersion(resourceType) {
+		UpdateSkipSummary(resourceType, "Not supported in server version")
+		return true
+	}
+	if !IsEntitySupportedInOrg(resourceType) {
+		UpdateSkipSummary(resourceType, "Not supported in sub-organizations")
+		return true
+	}
+	if IsResourceTypeExcluded(resourceType) {
+		UpdateSkipSummary(resourceType, "Excluded via tool configs")
+		return true
+	}
 	return false
 }
 
@@ -135,7 +152,7 @@ func RemoveDeletedLocalDirectories(parentDir string, deployedDirNames []string) 
 
 	localEntries, err := ioutil.ReadDir(parentDir)
 	if err != nil {
-		log.Println("Error loading directory:", err)
+		PrintLog(LogLevelError, NoResource, "", fmt.Sprintf("Error loading directory: %s", err))
 		return
 	}
 
@@ -146,9 +163,9 @@ func RemoveDeletedLocalDirectories(parentDir string, deployedDirNames []string) 
 		if _, exists := deployedNames[entry.Name()]; !exists {
 			dirPath := filepath.Join(parentDir, entry.Name())
 			if err := os.RemoveAll(dirPath); err != nil {
-				log.Printf("Error when removing the directory %s: %s", entry.Name(), err)
+				PrintLog(LogLevelError, NoResource, "", fmt.Sprintf("Error when removing the directory %s: %s", entry.Name(), err))
 			} else {
-				log.Println("Removed the directory:", entry.Name())
+				PrintLog(LogLevelInfo, NoResource, "", fmt.Sprintf("Removed the directory: %s", entry.Name()))
 			}
 		}
 	}
@@ -159,7 +176,7 @@ func RemoveDeletedLocalResources(filePath string, deployedResourceNames []string
 	// Remove local files of resources that do not exist in the remote during export.
 	files, err := ioutil.ReadDir(filePath)
 	if err != nil {
-		log.Println("Error loading local files: ", err)
+		PrintLog(LogLevelError, NoResource, "", fmt.Sprintf("Error loading local files: %s", err))
 		return
 	}
 
@@ -171,9 +188,9 @@ func RemoveDeletedLocalResources(filePath string, deployedResourceNames []string
 		if !Contains(deployedResourceNames, GetFileInfo(fileName).ResourceName) {
 			err := os.Remove(filepath.Join(filePath, fileName))
 			if err != nil {
-				log.Println("Error when removing the file: ", fileName, err)
+				PrintLog(LogLevelError, NoResource, "", fmt.Sprintf("Error when removing the file: %s %s", fileName, err))
 			} else {
-				log.Println("Removed the file:", fileName)
+				PrintLog(LogLevelInfo, NoResource, "", fmt.Sprintf("Removed the file: %s", fileName))
 			}
 		}
 	}

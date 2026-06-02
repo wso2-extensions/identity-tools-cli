@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"mime"
 	"os"
 	"path/filepath"
@@ -33,7 +32,7 @@ import (
 func ExportAll(exportFilePath string, format string) {
 
 	// Export all identity providers to the IdentityProviders folder.
-	log.Println("Exporting identity providers...")
+	utils.PrintLog(utils.LogLevelInfo, utils.IDENTITY_PROVIDERS, "", "Exporting identity providers...")
 	exportFilePath = filepath.Join(exportFilePath, utils.IDENTITY_PROVIDERS.String())
 	exportAPIExists := utils.ExportAPIExists(utils.IDENTITY_PROVIDERS)
 
@@ -42,7 +41,8 @@ func ExportAll(exportFilePath string, format string) {
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Println("Error creating identity providers directory:", err)
+			utils.PrintLog(utils.LogLevelError, utils.IDENTITY_PROVIDERS, "", fmt.Sprintf("Error creating identity providers directory: %s", err))
+			utils.MarkResTypeFailure(utils.IDENTITY_PROVIDERS)
 			return
 		}
 	} else {
@@ -58,36 +58,37 @@ func ExportAll(exportFilePath string, format string) {
 	excludeSecerts := utils.AreSecretsExcluded(utils.TOOL_CONFIGS.IdpConfigs)
 	idps, err := getIdpList()
 	if err != nil {
-		log.Println("Error: when exporting identity providers.", err)
+		utils.PrintLog(utils.LogLevelError, utils.IDENTITY_PROVIDERS, "", fmt.Sprintf("Error retrieving the deployed identity providers list: %s", err))
+		utils.MarkResTypeFailure(utils.IDENTITY_PROVIDERS)
 	} else {
 		for _, idp := range idps {
 			if !utils.IsResourceExcluded(idp.Name, utils.TOOL_CONFIGS.IdpConfigs) {
-				log.Println("Exporting identity provider: ", idp.Name)
+				utils.PrintLog(utils.LogLevelInfo, utils.IDENTITY_PROVIDERS, idp.Name, "Exporting")
 
 				err := exportIdpWithCRUD(idp.Id, idp.Name, exportFilePath, format, excludeSecerts)
 				if err != nil {
 					utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, idp.Name)
-					log.Printf("Error while exporting identity providers: %s. %s", idp.Name, err)
+					utils.PrintLog(utils.LogLevelError, utils.IDENTITY_PROVIDERS, idp.Name, fmt.Sprintf("Error while exporting: %s", err))
 				} else {
 					utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.EXPORT)
-					log.Println("Identity provider exported successfully: ", idp.Name)
+					utils.PrintLog(utils.LogLevelInfo, utils.IDENTITY_PROVIDERS, idp.Name, "Exported successfully")
 				}
 			}
 		}
 	}
 	if !utils.IsResourceExcluded(utils.RESIDENT_IDP_NAME, utils.TOOL_CONFIGS.IdpConfigs) && exportAPIExists {
-		log.Println("Exporting Resident identity provider")
+		utils.PrintLog(utils.LogLevelInfo, utils.IDENTITY_PROVIDERS, utils.RESIDENT_IDP_NAME, "Exporting Resident identity provider")
 		err := exportIdp(utils.RESIDENT_IDP_NAME, exportFilePath, format, excludeSecerts)
 		if err != nil {
 			utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, utils.RESIDENT_IDP_NAME)
-			log.Printf("Error while exporting resident identity provider: %s", err)
+			utils.PrintLog(utils.LogLevelError, utils.IDENTITY_PROVIDERS, utils.RESIDENT_IDP_NAME, fmt.Sprintf("Error while exporting resident identity provider: %s", err))
 		} else {
 			utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.EXPORT)
-			log.Println("Resident identity provider exported successfully")
+			utils.PrintLog(utils.LogLevelInfo, utils.IDENTITY_PROVIDERS, utils.RESIDENT_IDP_NAME, "Exported successfully")
 		}
 	}
 	if shouldRemoveOutboundProvisioningRoles() {
-		log.Println("Warn: Outbound provisioning groups of identity providers are not exported")
+		utils.PrintLog(utils.LogLevelWarn, utils.IDENTITY_PROVIDERS, "", "Outbound provisioning groups of identity providers are not exported")
 	}
 }
 

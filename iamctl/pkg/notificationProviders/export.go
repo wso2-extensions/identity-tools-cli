@@ -21,7 +21,6 @@ package notificationProviders
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -31,30 +30,33 @@ import (
 func exportAll(resType utils.ResourceType, exportFilePath string, format string) {
 
 	logName := getProviderLogName(resType)
-	log.Printf("Exporting %s...", logName)
+	utils.PrintLog(utils.LogLevelInfo, resType, "", fmt.Sprintf("Exporting %s...", logName))
 	exportFilePath = filepath.Join(exportFilePath, resType.String())
 
 	if resType == utils.EMAIL_PROVIDERS && utils.SERVER_CONFIGS.TenantDomain == utils.DEFAULT_TENANT_DOMAIN {
-		log.Println("Exporting email providers for super tenant not supported.")
+		utils.PrintLog(utils.LogLevelInfo, resType, "", "Exporting email providers for super tenant not supported.")
+		utils.UpdateSkipSummary(utils.EMAIL_PROVIDERS, "Not supported in super tenant")
 		return
 	}
-	if !utils.IsEntitySupportedInVersion(resType) || !utils.IsEntitySupportedInOrg(resType) || utils.IsResourceTypeExcluded(resType) {
+	if utils.ShouldSkip(resType) {
 		return
 	}
 
 	providers, err := getProviderList(resType)
 	if err != nil {
-		log.Printf("Error while retrieving the %s list: %s", logName, err)
+		utils.PrintLog(utils.LogLevelError, resType, "", fmt.Sprintf("Error while retrieving the %s list: %s", logName, err))
+		utils.MarkResTypeFailure(resType)
 		return
 	}
 
 	if resType == utils.EMAIL_PROVIDERS && !utils.AreSecretsExcluded(utils.TOOL_CONFIGS.EmailProviderConfigs) {
-		log.Println("Warn: Secrets exclusion cannot be disabled for email providers. All secrets will be masked.")
+		utils.PrintLog(utils.LogLevelWarn, resType, "", "Secrets exclusion cannot be disabled for email providers. All secrets will be masked.")
 	}
 
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Printf("Error creating %s directory: %s", logName, err)
+			utils.PrintLog(utils.LogLevelError, resType, "", fmt.Sprintf("Error creating %s directory: %s", logName, err))
+			utils.MarkResTypeFailure(resType)
 			return
 		}
 	} else {
@@ -65,15 +67,15 @@ func exportAll(resType utils.ResourceType, exportFilePath string, format string)
 
 	for _, provider := range providers {
 		if !utils.IsResourceExcluded(provider.Name, getProviderResourceConfig(resType)) {
-			log.Printf("Exporting %s: %s", logName, provider.Name)
+			utils.PrintLog(utils.LogLevelInfo, resType, provider.Name, fmt.Sprintf("Exporting %s", logName))
 
 			err := exportProvider(resType, logName, provider.Name, exportFilePath, format)
 			if err != nil {
 				utils.UpdateFailureSummary(resType, provider.Name)
-				log.Printf("Error while exporting %s: %s. %s", logName, provider.Name, err)
+				utils.PrintLog(utils.LogLevelError, resType, provider.Name, fmt.Sprintf("Error while exporting %s: %s", logName, err))
 			} else {
 				utils.UpdateSuccessSummary(resType, utils.EXPORT)
-				log.Printf("%s exported successfully: %s", logName, provider.Name)
+				utils.PrintLog(utils.LogLevelInfo, resType, provider.Name, fmt.Sprintf("%s exported successfully", logName))
 			}
 		}
 	}

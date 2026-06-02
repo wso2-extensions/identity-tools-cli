@@ -21,7 +21,6 @@ package validationRules
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,14 +29,14 @@ import (
 
 func ImportAll(inputDirPath string) {
 
-	log.Println("Importing validation rules...")
+	utils.PrintLog(utils.LogLevelInfo, utils.VALIDATION_RULES, "", "Importing validation rules...")
 	importFilePath := filepath.Join(inputDirPath, utils.VALIDATION_RULES.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.VALIDATION_RULES) || !utils.IsEntitySupportedInOrg(utils.VALIDATION_RULES) || utils.IsResourceTypeExcluded(utils.VALIDATION_RULES) {
+	if utils.ShouldSkip(utils.VALIDATION_RULES) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Println("No validation rules to import.")
+		utils.PrintLog(utils.LogLevelInfo, utils.VALIDATION_RULES, "", "No validation rules to import.")
 		return
 	}
 	filePath, err := getValidationRulesFilePath(importFilePath)
@@ -47,7 +46,7 @@ func ImportAll(inputDirPath string) {
 	}
 	if err != nil {
 		utils.UpdateFailureSummary(utils.VALIDATION_RULES, resourceFileName)
-		log.Println("Error importing validation rules:", err)
+		utils.PrintLog(utils.LogLevelError, utils.VALIDATION_RULES, "", fmt.Sprintf("Error importing validation rules: %s", err))
 	}
 }
 
@@ -70,7 +69,7 @@ func importValidationRules(filePath string) error {
 
 func updateValidationRules(requestBody []byte, format utils.Format) error {
 
-	log.Println("Updating validation rules.")
+	utils.PrintLog(utils.LogLevelInfo, utils.VALIDATION_RULES, "", "Updating validation rules")
 
 	jsonBody, err := prepareValidationRulesRequestBody(requestBody, format)
 	if err != nil {
@@ -84,6 +83,6 @@ func updateValidationRules(requestBody []byte, format utils.Format) error {
 	defer resp.Body.Close()
 
 	utils.UpdateSuccessSummary(utils.VALIDATION_RULES, utils.UPDATE)
-	log.Println("Validation rules updated successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.VALIDATION_RULES, "", "Updated successfully")
 	return nil
 }

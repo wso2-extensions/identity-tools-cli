@@ -21,7 +21,6 @@ package claims
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"mime"
 	"os"
 	"path/filepath"
@@ -32,17 +31,18 @@ import (
 func ExportAll(exportFilePath string, format string) {
 
 	// Export all claim dialects with related claims.
-	log.Println("Exporting claims...")
+	utils.PrintLog(utils.LogLevelInfo, utils.CLAIMS, "", "Exporting claims...")
 	exportFilePath = filepath.Join(exportFilePath, utils.CLAIMS.String())
 
-	if !utils.IsEntitySupportedInOrg(utils.CLAIMS) || utils.IsResourceTypeExcluded(utils.CLAIMS) {
+	if utils.ShouldSkip(utils.CLAIMS) {
 		return
 	}
 
 	claimDialects, err := getClaimDialectsList()
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Println("Error creating claims directory:", err)
+			utils.PrintLog(utils.LogLevelError, utils.CLAIMS, "", fmt.Sprintf("Error creating claims directory: %s", err))
+			utils.MarkResTypeFailure(utils.CLAIMS)
 			return
 		}
 	} else {
@@ -54,11 +54,11 @@ func ExportAll(exportFilePath string, format string) {
 	// Min version requirement for claims export api is removed. CRUD apis used for all versions
 	exportAPIExists := utils.ExportAPIExists(utils.CLAIMS)
 	if err != nil {
-		log.Println("Error while retrieving Claim Dialect list.", err)
+		utils.PrintLog(utils.LogLevelError, utils.CLAIMS, "", fmt.Sprintf("Error while retrieving Claim Dialect list: %s", err))
 	} else {
 		for _, dialect := range claimDialects {
 			if !utils.IsResourceExcluded(dialect.DialectURI, utils.TOOL_CONFIGS.ClaimConfigs) {
-				log.Println("Exporting Claim Dialect: ", dialect.DialectURI)
+				utils.PrintLog(utils.LogLevelInfo, utils.CLAIMS, dialect.DialectURI, "Exporting")
 
 				var err error
 				if exportAPIExists {
@@ -69,10 +69,10 @@ func ExportAll(exportFilePath string, format string) {
 
 				if err != nil {
 					utils.UpdateFailureSummary(utils.CLAIMS, dialect.DialectURI)
-					log.Printf("Error while exporting Claim Dialect: %s. %s", dialect.DialectURI, err)
+					utils.PrintLog(utils.LogLevelError, utils.CLAIMS, dialect.DialectURI, fmt.Sprintf("Error while exporting: %s", err))
 				} else {
 					utils.UpdateSuccessSummary(utils.CLAIMS, utils.EXPORT)
-					log.Println("Claim Dialect exported successfully: ", dialect.DialectURI)
+					utils.PrintLog(utils.LogLevelInfo, utils.CLAIMS, dialect.DialectURI, "Exported successfully")
 				}
 			}
 		}

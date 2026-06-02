@@ -21,7 +21,6 @@ package governanceConnectors
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,26 +29,28 @@ import (
 
 func ImportAll(inputDirPath string) {
 
-	log.Println("Importing governance connectors...")
+	utils.PrintLog(utils.LogLevelInfo, utils.GOVERNANCE_CONNECTORS, "", "Importing governance connectors...")
 	importFilePath := filepath.Join(inputDirPath, utils.GOVERNANCE_CONNECTORS.String())
 
-	if !utils.IsEntitySupportedInOrg(utils.GOVERNANCE_CONNECTORS) || utils.IsResourceTypeExcluded(utils.GOVERNANCE_CONNECTORS) {
+	if utils.ShouldSkip(utils.GOVERNANCE_CONNECTORS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Println("No governance connectors to import.")
+		utils.PrintLog(utils.LogLevelInfo, utils.GOVERNANCE_CONNECTORS, "", "No governance connectors to import.")
 		return
 	}
 
 	deployedCategories, err := getCategoryList()
 	if err != nil {
-		log.Println("Error retrieving governance connector categories:", err)
+		utils.PrintLog(utils.LogLevelError, utils.GOVERNANCE_CONNECTORS, "", fmt.Sprintf("Error retrieving governance connector categories: %s", err))
+		utils.MarkResTypeFailure(utils.GOVERNANCE_CONNECTORS)
 		return
 	}
 
 	localCategoryDirs, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Println("Error reading governance connectors directory:", err)
+		utils.PrintLog(utils.LogLevelError, utils.GOVERNANCE_CONNECTORS, "", fmt.Sprintf("Error reading governance connectors directory: %s", err))
+		utils.MarkResTypeFailure(utils.GOVERNANCE_CONNECTORS)
 		return
 	}
 
@@ -64,7 +65,7 @@ func ImportAll(inputDirPath string) {
 			err := importCategory(localCategoryPath, catName, deployedCategories)
 			if err != nil {
 				utils.UpdateFailureSummary(utils.GOVERNANCE_CONNECTORS, catName)
-				log.Printf("Error importing governance connector category %s: %s", catName, err)
+				utils.PrintLog(utils.LogLevelError, utils.GOVERNANCE_CONNECTORS, catName, fmt.Sprintf("Error importing: %s", err))
 			}
 		}
 	}
@@ -74,7 +75,7 @@ func importCategory(localCategoryPath, catName string, deployedCategories []conn
 
 	catInfo := isCategoryExists(catName, deployedCategories)
 	if catInfo == nil {
-		log.Printf("Governance connector category %s not found on server, skipping.", catName)
+		utils.PrintLog(utils.LogLevelInfo, utils.GOVERNANCE_CONNECTORS, catName, "Not found on server, skipping.")
 		return nil
 	}
 
@@ -97,7 +98,7 @@ func importCategory(localCategoryPath, catName string, deployedCategories []conn
 
 		conId := getConnectorId(connectorName, deployedConnectors)
 		if conId == "" {
-			log.Printf("Connector %s not found on server, skipping.", connectorName)
+			utils.PrintLog(utils.LogLevelInfo, utils.GOVERNANCE_CONNECTORS, connectorName, "Not found on server, skipping.")
 			continue
 		}
 
@@ -108,7 +109,7 @@ func importCategory(localCategoryPath, catName string, deployedCategories []conn
 	}
 
 	utils.UpdateSuccessSummary(utils.GOVERNANCE_CONNECTORS, utils.UPDATE)
-	log.Println("Governance connector category imported successfully:", catName)
+	utils.PrintLog(utils.LogLevelInfo, utils.GOVERNANCE_CONNECTORS, catName, "Imported successfully")
 
 	if catName == utils.USER_ONBOARDING_GOVERNANCE_CATEGORY_NAME {
 		utils.AddToIdentifierMap(utils.GOVERNANCE_CONNECTORS, catInfo.Id, catName, utils.IMPORT)

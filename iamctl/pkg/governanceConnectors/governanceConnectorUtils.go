@@ -21,7 +21,6 @@ package governanceConnectors
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
@@ -233,7 +232,7 @@ func buildPatchRequestBody(requestBody []byte, format utils.Format, connectorId,
 			if err != nil {
 				return nil, fmt.Errorf("error retrieving deployed rules of password expiry connector: %w", err)
 			}
-			log.Println("Warn: Group-based password expiry rules are removed during import")
+			utils.PrintLog(utils.LogLevelWarn, utils.GOVERNANCE_CONNECTORS, "", "Group-based password expiry rules are removed during import")
 		}
 		if err := processPasswordExpiryConnector(connectorMap, deployedRuleNames); err != nil {
 			return nil, fmt.Errorf("error processing password expiry connector: %w", err)

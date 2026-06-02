@@ -21,7 +21,6 @@ package workflows
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,26 +29,28 @@ import (
 
 func ImportAll(inputDirPath string) {
 
-	log.Println("Importing workflows...")
+	utils.PrintLog(utils.LogLevelInfo, utils.WORKFLOWS, "", "Importing workflows...")
 	importFilePath := filepath.Join(inputDirPath, utils.WORKFLOWS.String())
 	setWorkflowVersionConfigs()
 
-	if !utils.IsEntitySupportedInVersion(utils.WORKFLOWS) || !utils.IsEntitySupportedInOrg(utils.WORKFLOWS) || utils.IsResourceTypeExcluded(utils.WORKFLOWS) {
+	if utils.ShouldSkip(utils.WORKFLOWS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Println("No workflows to import.")
+		utils.PrintLog(utils.LogLevelInfo, utils.WORKFLOWS, "", "No workflows to import.")
 		return
 	}
 
 	existingWorkflows, err := getWorkflowList()
 	if err != nil {
-		log.Println("Error retrieving the deployed workflow list:", err)
+		utils.PrintLog(utils.LogLevelError, utils.WORKFLOWS, "", fmt.Sprintf("Error retrieving the deployed workflow list: %s", err))
+		utils.MarkResTypeFailure(utils.WORKFLOWS)
 		return
 	}
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Println("Error importing workflows:", err)
+		utils.PrintLog(utils.LogLevelError, utils.WORKFLOWS, "", fmt.Sprintf("Error reading workflows directory: %s", err))
+		utils.MarkResTypeFailure(utils.WORKFLOWS)
 		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {
@@ -61,7 +62,7 @@ func ImportAll(inputDirPath string) {
 	if !assocSharingSupported {
 		existingAssoc, err = getWorkflowAssociationsList()
 		if err != nil {
-			log.Println("Error retrieving the deployed workflow association list:", err)
+			utils.PrintLog(utils.LogLevelError, utils.WORKFLOWS, "", fmt.Sprintf("Error retrieving the deployed workflow association list: %s", err))
 			utils.UpdateFailureSummary(utils.WORKFLOWS, utils.WORKFLOW_ASSOCIATIONS.String())
 			return
 		}
@@ -69,7 +70,7 @@ func ImportAll(inputDirPath string) {
 		if utils.TOOL_CONFIGS.AllowDelete {
 			localAssoc, err := readLocalAssociationNames(importFilePath)
 			if err != nil {
-				log.Println("Error reading local workflow association list:", err)
+				utils.PrintLog(utils.LogLevelError, utils.WORKFLOWS, "", fmt.Sprintf("Error reading local workflow association list: %s", err))
 				utils.UpdateFailureSummary(utils.WORKFLOWS, utils.WORKFLOW_ASSOCIATIONS.String())
 				return
 			}
@@ -86,7 +87,7 @@ func ImportAll(inputDirPath string) {
 			continue
 		}
 		if _, failed := failedWorkflows[workflowName]; failed {
-			log.Printf("Skipping workflow %s: deleting stale workflow associations failed", workflowName)
+			utils.PrintLog(utils.LogLevelError, utils.WORKFLOWS, workflowName, "Skipping workflow: deleting stale workflow associations failed")
 			utils.UpdateFailureSummary(utils.WORKFLOWS, workflowName)
 			continue
 		}
@@ -94,12 +95,12 @@ func ImportAll(inputDirPath string) {
 		if !utils.IsResourceExcluded(workflowName, utils.TOOL_CONFIGS.WorkflowConfigs) {
 			workflowId := getWorkflowId(workflowName, existingWorkflows)
 			if err := importWorkflow(workflowName, workflowId, wfFilePath, existingAssoc); err != nil {
-				log.Println("Error importing workflow:", err)
+				utils.PrintLog(utils.LogLevelError, utils.WORKFLOWS, workflowName, fmt.Sprintf("Error importing workflow: %s", err))
 				utils.UpdateFailureSummary(utils.WORKFLOWS, workflowName)
 			}
 		}
 	}
-	log.Println("Warn: Users associated with workflow steps are removed during import")
+	utils.PrintLog(utils.LogLevelWarn, utils.WORKFLOWS, "", "Users associated with workflow steps are removed during import")
 }
 
 func importWorkflow(workflowName string, workflowId string, importFilePath string, existingAssoc []workflowAssociation) error {
@@ -129,7 +130,7 @@ func importWorkflow(workflowName string, workflowId string, importFilePath strin
 
 func createWorkflow(requestBody []byte, workflowName string, associations []map[string]interface{}, existingAssoc []workflowAssociation) error {
 
-	log.Println("Creating new workflow:", workflowName)
+	utils.PrintLog(utils.LogLevelInfo, utils.WORKFLOWS, workflowName, "Creating new workflow")
 
 	resp, err := utils.SendPostRequest(utils.WORKFLOWS, requestBody)
 	if err != nil {
@@ -146,13 +147,13 @@ func createWorkflow(requestBody []byte, workflowName string, associations []map[
 	}
 
 	utils.UpdateSuccessSummary(utils.WORKFLOWS, utils.IMPORT)
-	log.Println("Workflow imported successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.WORKFLOWS, workflowName, "Imported successfully")
 	return nil
 }
 
 func updateWorkflow(workflowId string, requestBody []byte, workflowName string, associations []map[string]interface{}, existingAssoc []workflowAssociation) error {
 
-	log.Println("Updating workflow:", workflowName)
+	utils.PrintLog(utils.LogLevelInfo, utils.WORKFLOWS, workflowName, "Updating workflow")
 
 	resp, err := utils.SendPutRequest(utils.WORKFLOWS, workflowId, requestBody)
 	if err != nil {
@@ -165,7 +166,7 @@ func updateWorkflow(workflowId string, requestBody []byte, workflowName string, 
 	}
 
 	utils.UpdateSuccessSummary(utils.WORKFLOWS, utils.UPDATE)
-	log.Println("Workflow updated successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.WORKFLOWS, workflowName, "Updated successfully")
 	return nil
 }
 
@@ -252,14 +253,14 @@ func removeDeletedDeployedWorkflows(localFiles []os.FileInfo, deployedWorkflows 
 			continue
 		}
 		if utils.IsResourceExcluded(wf.Name, utils.TOOL_CONFIGS.WorkflowConfigs) {
-			log.Println("Workflow is excluded from deletion:", wf.Name)
+			utils.PrintLog(utils.LogLevelInfo, utils.WORKFLOWS, wf.Name, "Excluded from deletion.")
 			continue
 		}
 
-		log.Printf("Workflow: %s not found locally. Deleting workflow.\n", wf.Name)
+		utils.PrintLog(utils.LogLevelInfo, utils.WORKFLOWS, wf.Name, "Not found locally. Deleting workflow.")
 		if err := utils.SendDeleteRequest(wf.ID, utils.WORKFLOWS); err != nil {
 			utils.UpdateFailureSummary(utils.WORKFLOWS, wf.Name)
-			log.Println("Error deleting workflow:", wf.Name, err)
+			utils.PrintLog(utils.LogLevelError, utils.WORKFLOWS, wf.Name, fmt.Sprintf("Error deleting workflow: %s", err))
 		} else {
 			utils.UpdateSuccessSummary(utils.WORKFLOWS, utils.DELETE)
 		}
@@ -288,7 +289,7 @@ func removeDeletedDeployedWfAssociations(localNames []string, deployedAssociatio
 			if assocSharingSupported {
 				return nil, fmt.Errorf("error deleting workflow association: %s. %w", assoc.Name, err)
 			} else {
-				log.Printf("Error deleting workflow association %s of workflow %s: %v", assoc.Name, assoc.WorkflowName, err)
+				utils.PrintLog(utils.LogLevelError, utils.WORKFLOWS, assoc.WorkflowName, fmt.Sprintf("Error deleting workflow association %s: %s", assoc.Name, err))
 				failedWorkflows[assoc.WorkflowName] = struct{}{}
 			}
 		}

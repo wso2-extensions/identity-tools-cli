@@ -21,7 +21,6 @@ package validationRules
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,15 +29,16 @@ import (
 
 func ExportAll(exportFilePath string, format string) {
 
-	log.Println("Exporting validation rules...")
+	utils.PrintLog(utils.LogLevelInfo, utils.VALIDATION_RULES, "", "Exporting validation rules...")
 	exportFilePath = filepath.Join(exportFilePath, utils.VALIDATION_RULES.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.VALIDATION_RULES) || !utils.IsEntitySupportedInOrg(utils.VALIDATION_RULES) || utils.IsResourceTypeExcluded(utils.VALIDATION_RULES) {
+	if utils.ShouldSkip(utils.VALIDATION_RULES) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Println("Error creating validation rules directory:", err)
+			utils.PrintLog(utils.LogLevelError, utils.VALIDATION_RULES, "", fmt.Sprintf("Error creating validation rules directory: %s", err))
+			utils.MarkResTypeFailure(utils.VALIDATION_RULES)
 			return
 		}
 	}
@@ -46,10 +46,10 @@ func ExportAll(exportFilePath string, format string) {
 	err := exportValidationRules(exportFilePath, format)
 	if err != nil {
 		utils.UpdateFailureSummary(utils.VALIDATION_RULES, resourceFileName)
-		log.Printf("Error while exporting validation rules: %s", err)
+		utils.PrintLog(utils.LogLevelError, utils.VALIDATION_RULES, "", fmt.Sprintf("Error while exporting validation rules: %s", err))
 	} else {
 		utils.UpdateSuccessSummary(utils.VALIDATION_RULES, utils.EXPORT)
-		log.Println("Validation rules exported successfully.")
+		utils.PrintLog(utils.LogLevelInfo, utils.VALIDATION_RULES, "", "Exported successfully")
 	}
 }
 

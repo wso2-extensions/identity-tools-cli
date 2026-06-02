@@ -21,7 +21,6 @@ package applications
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"path"
 	"regexp"
 	"strings"
@@ -275,7 +274,7 @@ func processInboundProtocolConfigs(appId string, inboundProtocols []inboundProto
 		result["custom"] = customProtocols
 	}
 	if len(skippedProtocols) > 0 {
-		log.Printf("Warn: Skipped unsupported inbound protocols: %v", skippedProtocols)
+		utils.PrintLog(utils.LogLevelWarn, utils.APPLICATIONS, "", fmt.Sprintf("Skipped unsupported inbound protocols: %v", skippedProtocols))
 	}
 
 	delete(appMap, "inboundProtocols")

@@ -21,7 +21,6 @@ package customTexts
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,25 +29,27 @@ import (
 
 func ImportAll(parentDir string) {
 
-	log.Println("Importing custom texts...")
+	utils.PrintLog(utils.LogLevelInfo, utils.CUSTOM_TEXTS, "", "Importing custom texts...")
 	importFilePath := filepath.Join(parentDir, utils.CUSTOM_TEXTS.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.CUSTOM_TEXTS) || !utils.IsEntitySupportedInOrg(utils.CUSTOM_TEXTS) || utils.IsResourceTypeExcluded(utils.CUSTOM_TEXTS) {
+	if utils.ShouldSkip(utils.CUSTOM_TEXTS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Println("No custom texts to import.")
+		utils.PrintLog(utils.LogLevelInfo, utils.CUSTOM_TEXTS, "", "No custom texts to import.")
 		return
 	}
 
 	deployedTexts, err := getCustomTextList()
 	if err != nil {
-		log.Printf("Error while retrieving deployed custom text list: %s", err)
+		utils.PrintLog(utils.LogLevelError, utils.CUSTOM_TEXTS, "", fmt.Sprintf("Error while retrieving deployed custom text list: %s", err))
+		utils.MarkResTypeFailure(utils.CUSTOM_TEXTS)
 		return
 	}
 	localScreenDirs, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Printf("Error reading custom texts directory: %s", err)
+		utils.PrintLog(utils.LogLevelError, utils.CUSTOM_TEXTS, "", fmt.Sprintf("Error reading custom texts directory: %s", err))
+		utils.MarkResTypeFailure(utils.CUSTOM_TEXTS)
 		return
 	}
 
@@ -66,7 +67,7 @@ func ImportAll(parentDir string) {
 		if !utils.IsResourceExcluded(screen, utils.TOOL_CONFIGS.CustomTextConfigs) {
 			if err := importCustomTextScreen(screen, screenDir, deployedTexts[screen]); err != nil {
 				utils.UpdateFailureSummary(utils.CUSTOM_TEXTS, screen)
-				log.Printf("Error while importing custom text for screen: %s. %s", screen, err)
+				utils.PrintLog(utils.LogLevelError, utils.CUSTOM_TEXTS, screen, fmt.Sprintf("Error while importing: %s", err))
 			}
 		}
 	}
@@ -75,9 +76,9 @@ func ImportAll(parentDir string) {
 func importCustomTextScreen(screen, screenDir string, deployedLocales map[string]struct{}) error {
 
 	if len(deployedLocales) == 0 {
-		log.Printf("Importing custom text for screen: %s", screen)
+		utils.PrintLog(utils.LogLevelInfo, utils.CUSTOM_TEXTS, screen, "Importing")
 	} else {
-		log.Printf("Updating custom text for screen: %s", screen)
+		utils.PrintLog(utils.LogLevelInfo, utils.CUSTOM_TEXTS, screen, "Updating")
 	}
 
 	localFiles, err := ioutil.ReadDir(screenDir)
@@ -104,10 +105,10 @@ func importCustomTextScreen(screen, screenDir string, deployedLocales map[string
 
 	if len(deployedLocales) == 0 {
 		utils.UpdateSuccessSummary(utils.CUSTOM_TEXTS, utils.IMPORT)
-		log.Printf("Custom text for screen imported successfully")
+		utils.PrintLog(utils.LogLevelInfo, utils.CUSTOM_TEXTS, screen, "Imported successfully")
 	} else {
 		utils.UpdateSuccessSummary(utils.CUSTOM_TEXTS, utils.UPDATE)
-		log.Printf("Custom text for screen updated successfully")
+		utils.PrintLog(utils.LogLevelInfo, utils.CUSTOM_TEXTS, screen, "Updated successfully")
 	}
 	return nil
 }
@@ -177,14 +178,14 @@ func removeDeletedDeployedScreens(localScreenDirs []os.FileInfo, deployedTexts m
 			continue
 		}
 		if utils.IsResourceExcluded(screen, utils.TOOL_CONFIGS.CustomTextConfigs) {
-			log.Printf("Custom text for screen %s is excluded from deletion.", screen)
+			utils.PrintLog(utils.LogLevelInfo, utils.CUSTOM_TEXTS, screen, "Excluded from deletion.")
 			continue
 		}
 
-		log.Printf("Custom text for screen %s not found locally. Deleting all locales", screen)
+		utils.PrintLog(utils.LogLevelInfo, utils.CUSTOM_TEXTS, screen, "Not found locally. Deleting all locales.")
 		for locale := range locales {
 			if err := deleteCustomText(screen, locale); err != nil {
-				log.Printf("Error deleting locale %s of screen %s: %s", locale, screen, err)
+				utils.PrintLog(utils.LogLevelError, utils.CUSTOM_TEXTS, screen, fmt.Sprintf("Error deleting locale %s: %s", locale, err))
 				utils.UpdateFailureSummary(utils.CUSTOM_TEXTS, screen+"/"+locale)
 				continue
 			} else {
@@ -206,7 +207,7 @@ func removeDeletedDeployedLocales(screen string, localFiles []os.FileInfo, deplo
 		if _, existsLocally := localLocales[locale]; existsLocally {
 			continue
 		}
-		log.Printf("Locale %s not found locally. Deleting locale.", locale)
+		utils.PrintLog(utils.LogLevelInfo, utils.CUSTOM_TEXTS, screen, fmt.Sprintf("Locale %s not found locally. Deleting.", locale))
 		if err := deleteCustomText(screen, locale); err != nil {
 			return fmt.Errorf("error deleting locale: %s. %w", locale, err)
 		}

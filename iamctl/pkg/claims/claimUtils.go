@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"path/filepath"
 	"regexp"
 
@@ -214,10 +213,10 @@ func removeStaleClaimsFromLocalDialect() {
 	if !localClaimDialectSummary.Success {
 		return
 	}
-	log.Println("Removing deleted claims from local claim dialect")
+	utils.PrintLog(utils.LogLevelInfo, utils.CLAIMS, utils.LOCAL_CLAIM_DIALECT, "Removing deleted claims from local claim dialect")
 
 	if err := removeDeletedDeployedClaims(utils.LOCAL_CLAIM_DIALECT, localClaimDialectSummary.DeployedClaims, localClaimDialectSummary.LocalClaims); err != nil {
-		log.Println("error removing deleted local claims: ", err)
+		utils.PrintLog(utils.LogLevelError, utils.CLAIMS, utils.LOCAL_CLAIM_DIALECT, fmt.Sprintf("Error removing deleted local claims: %s", err))
 		utils.UpdateFailureSummary(utils.CLAIMS, localClaimDialectSummary.DialectURI)
 		return
 	}

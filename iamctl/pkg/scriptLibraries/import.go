@@ -21,7 +21,6 @@ package scriptLibraries
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,26 +29,28 @@ import (
 
 func ImportAll(inputDirPath string) {
 
-	log.Println("Importing script libraries...")
+	utils.PrintLog(utils.LogLevelInfo, utils.SCRIPT_LIBRARIES, "", "Importing script libraries...")
 	importFilePath := filepath.Join(inputDirPath, utils.SCRIPT_LIBRARIES.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.SCRIPT_LIBRARIES) || !utils.IsEntitySupportedInOrg(utils.SCRIPT_LIBRARIES) || utils.IsResourceTypeExcluded(utils.SCRIPT_LIBRARIES) {
+	if utils.ShouldSkip(utils.SCRIPT_LIBRARIES) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Println("No script libraries to import.")
+		utils.PrintLog(utils.LogLevelInfo, utils.SCRIPT_LIBRARIES, "", "No script libraries to import.")
 		return
 	}
 
 	existingList, err := getScriptLibraryList()
 	if err != nil {
-		log.Println("Error retrieving the deployed script library list: ", err)
+		utils.PrintLog(utils.LogLevelError, utils.SCRIPT_LIBRARIES, "", fmt.Sprintf("Error retrieving the deployed script library list: %s", err))
+		utils.MarkResTypeFailure(utils.SCRIPT_LIBRARIES)
 		return
 	}
 
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Println("Error importing script libraries: ", err)
+		utils.PrintLog(utils.LogLevelError, utils.SCRIPT_LIBRARIES, "", fmt.Sprintf("Error reading script libraries directory: %s", err))
+		utils.MarkResTypeFailure(utils.SCRIPT_LIBRARIES)
 		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {
@@ -65,7 +66,7 @@ func ImportAll(inputDirPath string) {
 			libraryExists := isScriptLibraryExists(libraryName, existingList)
 			err := importScriptLibrary(libraryName, libraryExists, libraryFilePath)
 			if err != nil {
-				log.Println("Error importing script library: ", err)
+				utils.PrintLog(utils.LogLevelError, utils.SCRIPT_LIBRARIES, libraryName, fmt.Sprintf("Error importing script library: %s", err))
 				utils.UpdateFailureSummary(utils.SCRIPT_LIBRARIES, libraryName)
 			}
 		}
@@ -95,7 +96,7 @@ func importScriptLibrary(libraryName string, libraryExists bool, importFilePath 
 
 func createScriptLibrary(name string, data []byte, format utils.Format) error {
 
-	log.Println("Creating new script library: " + name)
+	utils.PrintLog(utils.LogLevelInfo, utils.SCRIPT_LIBRARIES, name, "Creating new script library")
 
 	body, contentType, err := utils.PrepareMultipartFormBody(data, format, utils.SCRIPT_LIBRARIES)
 	if err != nil {
@@ -109,13 +110,13 @@ func createScriptLibrary(name string, data []byte, format utils.Format) error {
 	defer resp.Body.Close()
 
 	utils.UpdateSuccessSummary(utils.SCRIPT_LIBRARIES, utils.IMPORT)
-	log.Println("Script library created successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.SCRIPT_LIBRARIES, name, "Created successfully")
 	return nil
 }
 
 func updateScriptLibrary(name string, data []byte, format utils.Format) error {
 
-	log.Println("Updating script library: " + name)
+	utils.PrintLog(utils.LogLevelInfo, utils.SCRIPT_LIBRARIES, name, "Updating script library")
 
 	body, contentType, err := utils.PrepareMultipartFormBody(data, format, utils.SCRIPT_LIBRARIES, "name")
 	if err != nil {
@@ -129,7 +130,7 @@ func updateScriptLibrary(name string, data []byte, format utils.Format) error {
 	defer resp.Body.Close()
 
 	utils.UpdateSuccessSummary(utils.SCRIPT_LIBRARIES, utils.UPDATE)
-	log.Println("Script library updated successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.SCRIPT_LIBRARIES, name, "Updated successfully")
 	return nil
 }
 
@@ -150,14 +151,14 @@ func removeDeletedDeployedScriptLibraries(localFiles []os.FileInfo, deployedLibr
 			continue
 		}
 		if utils.IsResourceExcluded(library.Name, utils.TOOL_CONFIGS.ScriptLibraryConfigs) {
-			log.Println("Script library is excluded from deletion:", library.Name)
+			utils.PrintLog(utils.LogLevelInfo, utils.SCRIPT_LIBRARIES, library.Name, "Excluded from deletion.")
 			continue
 		}
 
-		log.Printf("Script library: %s not found locally. Deleting library.\n", library.Name)
+		utils.PrintLog(utils.LogLevelInfo, utils.SCRIPT_LIBRARIES, library.Name, "Not found locally. Deleting library.")
 		if err := utils.SendDeleteRequest(library.Name, utils.SCRIPT_LIBRARIES); err != nil {
 			utils.UpdateFailureSummary(utils.SCRIPT_LIBRARIES, library.Name)
-			log.Println("Error deleting script library:", library.Name, err)
+			utils.PrintLog(utils.LogLevelError, utils.SCRIPT_LIBRARIES, library.Name, fmt.Sprintf("Error deleting script library: %s", err))
 		} else {
 			utils.UpdateSuccessSummary(utils.SCRIPT_LIBRARIES, utils.DELETE)
 		}

@@ -19,7 +19,6 @@
 package branding
 
 import (
-	"log"
 	"path/filepath"
 
 	brandingPreferences "github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/branding/brandingPreferences"
@@ -29,18 +28,28 @@ import (
 
 func ExportAll(exportFilePath string, format string) {
 
-	log.Println("Exporting branding...")
+	utils.PrintLog(utils.LogLevelInfo, utils.BRANDING, "", "Exporting branding...")
 	exportFilePath = filepath.Join(exportFilePath, utils.BRANDING.String())
 
+	utils.MarkResTypeStart(utils.BRANDING_PREFERENCES)
 	brandingPreferences.ExportAll(exportFilePath, format)
+	utils.MarkResTypeEnd(utils.BRANDING_PREFERENCES)
+
+	utils.MarkResTypeStart(utils.CUSTOM_TEXTS)
 	customTexts.ExportAll(exportFilePath, format)
+	utils.MarkResTypeEnd(utils.CUSTOM_TEXTS)
 }
 
 func ImportAll(inputDirPath string) {
 
-	log.Println("Importing branding...")
+	utils.PrintLog(utils.LogLevelInfo, utils.BRANDING, "", "Importing branding...")
 	inputDirPath = filepath.Join(inputDirPath, utils.BRANDING.String())
 
+	utils.MarkResTypeStart(utils.BRANDING_PREFERENCES)
 	brandingPreferences.ImportAll(inputDirPath)
+	utils.MarkResTypeEnd(utils.BRANDING_PREFERENCES)
+
+	utils.MarkResTypeStart(utils.CUSTOM_TEXTS)
 	customTexts.ImportAll(inputDirPath)
+	utils.MarkResTypeEnd(utils.CUSTOM_TEXTS)
 }

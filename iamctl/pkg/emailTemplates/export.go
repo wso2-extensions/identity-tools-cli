@@ -21,7 +21,6 @@ package emailTemplates
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -41,15 +40,16 @@ func ExportAll(exportFilePath string, format string) {
 
 func ExportAllLegacyApi(exportFilePath string, format string) {
 
-	log.Println("Exporting email templates...")
+	utils.PrintLog(utils.LogLevelInfo, utils.EMAIL_TEMPLATES, "", "Exporting email templates...")
 	exportFilePath = filepath.Join(exportFilePath, utils.EMAIL_TEMPLATES.String())
 
-	if !utils.IsEntitySupportedInOrg(utils.EMAIL_TEMPLATES) || utils.IsResourceTypeExcluded(utils.EMAIL_TEMPLATES) {
+	if utils.ShouldSkip(utils.EMAIL_TEMPLATES) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Println("Error creating email templates directory:", err)
+			utils.PrintLog(utils.LogLevelError, utils.EMAIL_TEMPLATES, "", fmt.Sprintf("Error creating email templates directory: %s", err))
+			utils.MarkResTypeFailure(utils.EMAIL_TEMPLATES)
 			return
 		}
 	} else {
@@ -61,18 +61,19 @@ func ExportAllLegacyApi(exportFilePath string, format string) {
 
 	types, err := getEmailTemplateTypeList()
 	if err != nil {
-		log.Println("Error: when exporting email templates.", err)
+		utils.PrintLog(utils.LogLevelError, utils.EMAIL_TEMPLATES, "", fmt.Sprintf("Error retrieving the deployed email templates list: %s", err))
+		utils.MarkResTypeFailure(utils.EMAIL_TEMPLATES)
 	} else {
 		for _, emailType := range types {
 			if !utils.IsResourceExcluded(emailType.DisplayName, utils.TOOL_CONFIGS.EmailTemplateConfigs) {
-				log.Println("Exporting email template type:", emailType.DisplayName)
+				utils.PrintLog(utils.LogLevelInfo, utils.EMAIL_TEMPLATES, emailType.DisplayName, "Exporting")
 				err := exportEmailTemplateType(emailType.ID, emailType.DisplayName, exportFilePath, format)
 				if err != nil {
 					utils.UpdateFailureSummary(utils.EMAIL_TEMPLATES, emailType.DisplayName)
-					log.Printf("Error while exporting email template type: %s. %s", emailType.DisplayName, err)
+					utils.PrintLog(utils.LogLevelError, utils.EMAIL_TEMPLATES, emailType.DisplayName, fmt.Sprintf("Error while exporting: %s", err))
 				} else {
 					utils.UpdateSuccessSummary(utils.EMAIL_TEMPLATES, utils.EXPORT)
-					log.Println("Email template type exported successfully:", emailType.DisplayName)
+					utils.PrintLog(utils.LogLevelInfo, utils.EMAIL_TEMPLATES, emailType.DisplayName, "Exported successfully")
 				}
 			}
 		}

@@ -21,7 +21,6 @@ package oidcScopes
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,27 +29,29 @@ import (
 
 func ImportAll(inputDirPath string) {
 
-	log.Println("Importing OIDC scopes...")
+	utils.PrintLog(utils.LogLevelInfo, utils.OIDC_SCOPES, "", "Importing OIDC scopes...")
 	importFilePath := filepath.Join(inputDirPath, utils.OIDC_SCOPES.String())
 
-	if !utils.IsEntitySupportedInOrg(utils.OIDC_SCOPES) || utils.IsResourceTypeExcluded(utils.OIDC_SCOPES) {
+	if utils.ShouldSkip(utils.OIDC_SCOPES) {
 		return
 	}
 	var files []os.FileInfo
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Println("No OIDC scopes to import.")
+		utils.PrintLog(utils.LogLevelInfo, utils.OIDC_SCOPES, "", "No OIDC scopes to import.")
 		return
 	}
 
 	existingScopeList, err := getOidcScopeList()
 	if err != nil {
-		log.Println("Error retrieving the deployed OIDC scope lists: ", err)
+		utils.PrintLog(utils.LogLevelError, utils.OIDC_SCOPES, "", fmt.Sprintf("Error retrieving the deployed OIDC scope list: %s", err))
+		utils.MarkResTypeFailure(utils.OIDC_SCOPES)
 		return
 	}
 
 	files, err = ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Println("Error importing OIDC scopes: ", err)
+		utils.PrintLog(utils.LogLevelError, utils.OIDC_SCOPES, "", fmt.Sprintf("Error reading OIDC scopes directory: %s", err))
+		utils.MarkResTypeFailure(utils.OIDC_SCOPES)
 		return
 	}
 	if utils.TOOL_CONFIGS.AllowDelete {
@@ -66,7 +67,7 @@ func ImportAll(inputDirPath string) {
 			scopeExists := isScopeExists(scopeName, existingScopeList)
 			err := importOidcScope(scopeName, scopeExists, scopeFilePath)
 			if err != nil {
-				log.Println("Error importing OIDC scope: ", err)
+				utils.PrintLog(utils.LogLevelError, utils.OIDC_SCOPES, scopeName, fmt.Sprintf("Error importing OIDC scope: %s", err))
 				utils.UpdateFailureSummary(utils.OIDC_SCOPES, scopeName)
 			}
 		}
@@ -96,7 +97,7 @@ func importOidcScope(scopeName string, scopeExists bool, importFilePath string) 
 
 func importScope(requestBody []byte, format utils.Format, scopeName string) error {
 
-	log.Println("Creating new OIDC scope: " + scopeName)
+	utils.PrintLog(utils.LogLevelInfo, utils.OIDC_SCOPES, scopeName, "Creating new OIDC scope")
 
 	jsonBody, err := utils.PrepareJSONRequestBody(requestBody, format, utils.OIDC_SCOPES)
 	if err != nil {
@@ -110,13 +111,13 @@ func importScope(requestBody []byte, format utils.Format, scopeName string) erro
 	defer resp.Body.Close()
 
 	utils.UpdateSuccessSummary(utils.OIDC_SCOPES, utils.IMPORT)
-	log.Println("OIDC scope imported successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.OIDC_SCOPES, scopeName, "Imported successfully")
 	return nil
 }
 
 func updateScope(scopeId string, requestBody []byte, format utils.Format, scopeName string) error {
 
-	log.Println("Updating OIDC scope: " + scopeName)
+	utils.PrintLog(utils.LogLevelInfo, utils.OIDC_SCOPES, scopeName, "Updating OIDC scope")
 
 	updateBody, err := utils.PrepareJSONRequestBody(requestBody, format, utils.OIDC_SCOPES, "name")
 	if err != nil {
@@ -130,7 +131,7 @@ func updateScope(scopeId string, requestBody []byte, format utils.Format, scopeN
 	defer resp.Body.Close()
 
 	utils.UpdateSuccessSummary(utils.OIDC_SCOPES, utils.UPDATE)
-	log.Println("OIDC scope updated successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.OIDC_SCOPES, scopeName, "Updated successfully")
 	return nil
 }
 
@@ -151,14 +152,14 @@ func removeDeletedDeployedScopes(localFiles []os.FileInfo, deployedScopes []oidc
 			continue
 		}
 		if utils.IsResourceExcluded(scope.Name, utils.TOOL_CONFIGS.OidcScopeConfigs) {
-			log.Println("OIDC scope is excluded from deletion:", scope.Name)
+			utils.PrintLog(utils.LogLevelInfo, utils.OIDC_SCOPES, scope.Name, "Excluded from deletion.")
 			continue
 		}
 
-		log.Printf("OIDC scope: %s not found locally. Deleting scope.\n", scope.Name)
+		utils.PrintLog(utils.LogLevelInfo, utils.OIDC_SCOPES, scope.Name, "Not found locally. Deleting scope.")
 		if err := utils.SendDeleteRequest(scope.Name, utils.OIDC_SCOPES); err != nil {
 			utils.UpdateFailureSummary(utils.OIDC_SCOPES, scope.Name)
-			log.Println("Error deleting OIDC scope:", scope.Name, err)
+			utils.PrintLog(utils.LogLevelError, utils.OIDC_SCOPES, scope.Name, fmt.Sprintf("Error deleting OIDC scope: %s", err))
 		} else {
 			utils.UpdateSuccessSummary(utils.OIDC_SCOPES, utils.DELETE)
 		}

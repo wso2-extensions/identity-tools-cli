@@ -21,7 +21,6 @@ package scriptLibraries
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,15 +29,16 @@ import (
 
 func ExportAll(exportFilePath string, format string) {
 
-	log.Println("Exporting script libraries...")
+	utils.PrintLog(utils.LogLevelInfo, utils.SCRIPT_LIBRARIES, "", "Exporting script libraries...")
 	exportFilePath = filepath.Join(exportFilePath, utils.SCRIPT_LIBRARIES.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.SCRIPT_LIBRARIES) || !utils.IsEntitySupportedInOrg(utils.SCRIPT_LIBRARIES) || utils.IsResourceTypeExcluded(utils.SCRIPT_LIBRARIES) {
+	if utils.ShouldSkip(utils.SCRIPT_LIBRARIES) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Println("Error creating script libraries directory:", err)
+			utils.PrintLog(utils.LogLevelError, utils.SCRIPT_LIBRARIES, "", fmt.Sprintf("Error creating script libraries directory: %s", err))
+			utils.MarkResTypeFailure(utils.SCRIPT_LIBRARIES)
 			return
 		}
 	} else {
@@ -50,19 +50,20 @@ func ExportAll(exportFilePath string, format string) {
 
 	libraries, err := getScriptLibraryList()
 	if err != nil {
-		log.Println("Error: when exporting script libraries.", err)
+		utils.PrintLog(utils.LogLevelError, utils.SCRIPT_LIBRARIES, "", fmt.Sprintf("Error retrieving the deployed script libraries list: %s", err))
+		utils.MarkResTypeFailure(utils.SCRIPT_LIBRARIES)
 	} else {
 		for _, library := range libraries {
 			if !utils.IsResourceExcluded(library.Name, utils.TOOL_CONFIGS.ScriptLibraryConfigs) {
-				log.Println("Exporting script library: ", library.Name)
+				utils.PrintLog(utils.LogLevelInfo, utils.SCRIPT_LIBRARIES, library.Name, "Exporting")
 
 				err := exportScriptLibrary(library.Name, exportFilePath, format)
 				if err != nil {
 					utils.UpdateFailureSummary(utils.SCRIPT_LIBRARIES, library.Name)
-					log.Printf("Error while exporting script library: %s. %s", library.Name, err)
+					utils.PrintLog(utils.LogLevelError, utils.SCRIPT_LIBRARIES, library.Name, fmt.Sprintf("Error while exporting: %s", err))
 				} else {
 					utils.UpdateSuccessSummary(utils.SCRIPT_LIBRARIES, utils.EXPORT)
-					log.Println("Script library exported successfully: ", library.Name)
+					utils.PrintLog(utils.LogLevelInfo, utils.SCRIPT_LIBRARIES, library.Name, "Exported successfully")
 				}
 			}
 		}

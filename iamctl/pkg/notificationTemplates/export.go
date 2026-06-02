@@ -21,7 +21,6 @@ package notificationTemplates
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -31,22 +30,23 @@ import (
 
 func ExportAll(rt utils.ResourceType, exportFilePath string, format string) {
 
-	logName := getTemplateLogName(rt)
-	log.Printf("Exporting %s...", logName)
+	utils.PrintLog(utils.LogLevelInfo, rt, "", fmt.Sprintf("Exporting %s...", getTemplateLogName(rt)))
 	exportFilePath = filepath.Join(exportFilePath, rt.String())
 
-	if !utils.IsEntitySupportedInVersion(rt) || !utils.IsEntitySupportedInOrg(rt) || utils.IsResourceTypeExcluded(rt) {
+	if utils.ShouldSkip(rt) {
 		return
 	}
 
 	types, err := getTemplateTypeList(rt)
 	if err != nil {
-		log.Printf("Error while retrieving the %s list: %s", logName, err)
+		utils.PrintLog(utils.LogLevelError, rt, "", fmt.Sprintf("Error while retrieving the list: %s", err))
+		utils.MarkResTypeFailure(rt)
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Printf("Error creating %s directory: %s", logName, err)
+			utils.PrintLog(utils.LogLevelError, rt, "", fmt.Sprintf("Error creating %s directory: %s", getTemplateLogName(rt), err))
+			utils.MarkResTypeFailure(rt)
 			return
 		}
 	}
@@ -57,17 +57,17 @@ func ExportAll(rt utils.ResourceType, exportFilePath string, format string) {
 		allTypeNames = append(allTypeNames, templateType.DisplayName)
 
 		if !utils.IsResourceExcluded(templateType.DisplayName, getTemplateResourceConfig(rt)) {
-			log.Printf("Exporting %s type: %s", logName, templateType.DisplayName)
+			utils.PrintLog(utils.LogLevelInfo, rt, templateType.DisplayName, "Exporting")
 			hadTemplates, err := exportTemplateType(rt, templateType.ID, templateType.DisplayName, exportFilePath, format)
 			if err != nil {
 				utils.UpdateFailureSummary(rt, templateType.DisplayName)
-				log.Printf("Error while exporting %s type: %s. %s", logName, templateType.DisplayName, err)
+				utils.PrintLog(utils.LogLevelError, rt, templateType.DisplayName, fmt.Sprintf("Error while exporting: %s", err))
 			} else {
 				if hadTemplates {
 					typesWithTemplates = append(typesWithTemplates, templateType.DisplayName)
 				}
 				utils.UpdateSuccessSummary(rt, utils.EXPORT)
-				log.Printf("%s type exported successfully: %s", logName, templateType.DisplayName)
+				utils.PrintLog(utils.LogLevelInfo, rt, templateType.DisplayName, "Exported successfully")
 			}
 		}
 	}
@@ -77,7 +77,7 @@ func ExportAll(rt utils.ResourceType, exportFilePath string, format string) {
 	}
 
 	if err := writeTemplateTypesList(exportFilePath, allTypeNames, rt, utils.FormatFromString(format)); err != nil {
-		log.Printf("Error writing %s type list: %s", logName, err)
+		utils.PrintLog(utils.LogLevelError, rt, "", fmt.Sprintf("Error writing type list: %s", err))
 		utils.UpdateFailureSummary(rt, "TemplateTypes")
 	}
 }
@@ -116,9 +116,9 @@ func exportTemplateType(rt utils.ResourceType, typeId, displayName, parentDir, f
 	} else if utils.TOOL_CONFIGS.AllowDelete {
 		if _, err := os.Stat(orgDir); err == nil {
 			if err := os.RemoveAll(orgDir); err != nil {
-				log.Println("Error removing organization templates directory:", err)
+				utils.PrintLog(utils.LogLevelError, rt, displayName, fmt.Sprintf("Error removing organization templates directory: %s", err))
 			} else {
-				log.Println("Removed the directory:", orgTemplatesDir)
+				utils.PrintLog(utils.LogLevelInfo, rt, displayName, fmt.Sprintf("Removed the directory: %s", orgTemplatesDir))
 			}
 		}
 	}

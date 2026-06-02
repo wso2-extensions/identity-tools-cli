@@ -21,7 +21,6 @@ package brandingPreferences
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,15 +29,16 @@ import (
 
 func ExportAll(parentDir string, formatString string) {
 
-	log.Println("Exporting branding preferences...")
+	utils.PrintLog(utils.LogLevelInfo, utils.BRANDING_PREFERENCES, "", "Exporting branding preferences...")
 	exportFilePath := filepath.Join(parentDir, utils.BRANDING_PREFERENCES.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.BRANDING_PREFERENCES) || !utils.IsEntitySupportedInOrg(utils.BRANDING_PREFERENCES) || utils.IsResourceTypeExcluded(utils.BRANDING_PREFERENCES) {
+	if utils.ShouldSkip(utils.BRANDING_PREFERENCES) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Println("Error creating branding preferences directory:", err)
+			utils.PrintLog(utils.LogLevelError, utils.BRANDING_PREFERENCES, "", fmt.Sprintf("Error creating branding preferences directory: %s", err))
+			utils.MarkResTypeFailure(utils.BRANDING_PREFERENCES)
 			return
 		}
 	}
@@ -46,17 +46,17 @@ func ExportAll(parentDir string, formatString string) {
 	err := exportBrandingPreferences(exportFilePath, formatString)
 	if err != nil {
 		if utils.IsResourceNotFound(err) {
-			log.Println("No branding preferences configured.")
+			utils.PrintLog(utils.LogLevelInfo, utils.BRANDING_PREFERENCES, "", "No branding preferences configured.")
 			if utils.TOOL_CONFIGS.AllowDelete {
 				utils.RemoveDeletedLocalResources(exportFilePath, []string{})
 			}
 			return
 		}
 		utils.UpdateFailureSummary(utils.BRANDING_PREFERENCES, resourceFileName)
-		log.Println("Error while exporting branding preferences:", err)
+		utils.PrintLog(utils.LogLevelError, utils.BRANDING_PREFERENCES, "", fmt.Sprintf("Error while exporting branding preferences: %s", err))
 	} else {
 		utils.UpdateSuccessSummary(utils.BRANDING_PREFERENCES, utils.EXPORT)
-		log.Println("Branding preferences exported successfully.")
+		utils.PrintLog(utils.LogLevelInfo, utils.BRANDING_PREFERENCES, "", "Exported successfully")
 	}
 }
 

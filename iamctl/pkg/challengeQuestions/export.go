@@ -21,7 +21,6 @@ package challengeQuestions
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,15 +29,16 @@ import (
 
 func ExportAll(exportFilePath string, format string) {
 
-	log.Println("Exporting challenge question sets...")
+	utils.PrintLog(utils.LogLevelInfo, utils.CHALLENGE_QUESTIONS, "", "Exporting challenge question sets...")
 	exportFilePath = filepath.Join(exportFilePath, utils.CHALLENGE_QUESTIONS.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.CHALLENGE_QUESTIONS) || !utils.IsEntitySupportedInOrg(utils.CHALLENGE_QUESTIONS) || utils.IsResourceTypeExcluded(utils.CHALLENGE_QUESTIONS) {
+	if utils.ShouldSkip(utils.CHALLENGE_QUESTIONS) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Println("Error creating challenge questions directory:", err)
+			utils.PrintLog(utils.LogLevelError, utils.CHALLENGE_QUESTIONS, "", fmt.Sprintf("Error creating challenge questions directory: %s", err))
+			utils.MarkResTypeFailure(utils.CHALLENGE_QUESTIONS)
 			return
 		}
 	} else {
@@ -50,20 +50,21 @@ func ExportAll(exportFilePath string, format string) {
 
 	sets, err := getChallengeSetList()
 	if err != nil {
-		log.Println("Error: when exporting challenge question sets.", err)
+		utils.PrintLog(utils.LogLevelError, utils.CHALLENGE_QUESTIONS, "", fmt.Sprintf("Error retrieving the deployed challenge question sets list: %s", err))
+		utils.MarkResTypeFailure(utils.CHALLENGE_QUESTIONS)
 		return
 	}
 
 	for _, set := range sets {
 		if !utils.IsResourceExcluded(set.QuestionSetId, utils.TOOL_CONFIGS.ChallengeQuestionConfigs) {
-			log.Println("Exporting challenge question set:", set.QuestionSetId)
+			utils.PrintLog(utils.LogLevelInfo, utils.CHALLENGE_QUESTIONS, set.QuestionSetId, "Exporting")
 			err := exportChallengeSet(set.QuestionSetId, exportFilePath, format)
 			if err != nil {
 				utils.UpdateFailureSummary(utils.CHALLENGE_QUESTIONS, set.QuestionSetId)
-				log.Printf("Error while exporting challenge question set: %s. %s", set.QuestionSetId, err)
+				utils.PrintLog(utils.LogLevelError, utils.CHALLENGE_QUESTIONS, set.QuestionSetId, fmt.Sprintf("Error while exporting: %s", err))
 			} else {
 				utils.UpdateSuccessSummary(utils.CHALLENGE_QUESTIONS, utils.EXPORT)
-				log.Println("Challenge question set exported successfully:", set.QuestionSetId)
+				utils.PrintLog(utils.LogLevelInfo, utils.CHALLENGE_QUESTIONS, set.QuestionSetId, "Exported successfully")
 			}
 		}
 	}

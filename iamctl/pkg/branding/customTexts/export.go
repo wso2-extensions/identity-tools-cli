@@ -21,7 +21,6 @@ package customTexts
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,15 +29,16 @@ import (
 
 func ExportAll(parentDir string, formatString string) {
 
-	log.Println("Exporting custom texts...")
+	utils.PrintLog(utils.LogLevelInfo, utils.CUSTOM_TEXTS, "", "Exporting custom texts...")
 	exportFilePath := filepath.Join(parentDir, utils.CUSTOM_TEXTS.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.CUSTOM_TEXTS) || !utils.IsEntitySupportedInOrg(utils.CUSTOM_TEXTS) || utils.IsResourceTypeExcluded(utils.CUSTOM_TEXTS) {
+	if utils.ShouldSkip(utils.CUSTOM_TEXTS) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Println("Error creating custom texts directory:", err)
+			utils.PrintLog(utils.LogLevelError, utils.CUSTOM_TEXTS, "", fmt.Sprintf("Error creating custom texts directory: %s", err))
+			utils.MarkResTypeFailure(utils.CUSTOM_TEXTS)
 			return
 		}
 	}
@@ -48,19 +48,19 @@ func ExportAll(parentDir string, formatString string) {
 		if utils.IsResourceExcluded(screen, utils.TOOL_CONFIGS.CustomTextConfigs) {
 			continue
 		}
-		log.Println("Exporting custom text for screen:", screen)
+		utils.PrintLog(utils.LogLevelInfo, utils.CUSTOM_TEXTS, screen, "Exporting")
 		hadLocales, err := exportCustomTextScreen(screen, exportFilePath, formatString)
 
 		if err != nil {
 			utils.UpdateFailureSummary(utils.CUSTOM_TEXTS, screen)
-			log.Printf("Error while exporting custom text for screen: %s. %s", screen, err)
+			utils.PrintLog(utils.LogLevelError, utils.CUSTOM_TEXTS, screen, fmt.Sprintf("Error while exporting: %s", err))
 		} else {
 			if hadLocales {
 				screensWithLocales = append(screensWithLocales, screen)
 				utils.UpdateSuccessSummary(utils.CUSTOM_TEXTS, utils.EXPORT)
-				log.Println("Custom text exported successfully for screen:", screen)
+				utils.PrintLog(utils.LogLevelInfo, utils.CUSTOM_TEXTS, screen, "Exported successfully")
 			} else {
-				log.Println("No custom text to export for screen:", screen)
+				utils.PrintLog(utils.LogLevelInfo, utils.CUSTOM_TEXTS, screen, "No custom text to export")
 			}
 		}
 	}

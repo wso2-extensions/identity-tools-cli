@@ -21,7 +21,6 @@ package roles
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,22 +29,24 @@ import (
 
 func ExportAll(exportFilePath string, format string) {
 
-	log.Println("Exporting roles...")
+	utils.PrintLog(utils.LogLevelInfo, utils.ROLES, "", "Exporting roles...")
 	exportFilePath = filepath.Join(exportFilePath, utils.ROLES.String())
 	setRolesV2ApiExists()
 
-	if !utils.IsEntitySupportedInOrg(utils.ROLES) || utils.IsResourceTypeExcluded(utils.ROLES) {
+	if utils.ShouldSkip(utils.ROLES) {
 		return
 	}
 	roles, err := getRoleList()
 	if err != nil {
-		log.Println("Error: when exporting roles.", err)
+		utils.PrintLog(utils.LogLevelError, utils.ROLES, "", fmt.Sprintf("Error retrieving the deployed roles list: %s", err))
+		utils.MarkResTypeFailure(utils.ROLES)
 		return
 	}
 
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Println("Error creating roles directory:", err)
+			utils.PrintLog(utils.LogLevelError, utils.ROLES, "", fmt.Sprintf("Error creating roles directory: %s", err))
+			utils.MarkResTypeFailure(utils.ROLES)
 			return
 		}
 	} else {
@@ -57,16 +58,16 @@ func ExportAll(exportFilePath string, format string) {
 
 	for _, r := range roles {
 		if !utils.IsResourceExcluded(r.DisplayName, utils.TOOL_CONFIGS.RoleConfigs) {
-			log.Println("Exporting role:", r.DisplayName)
+			utils.PrintLog(utils.LogLevelInfo, utils.ROLES, r.DisplayName, "Exporting")
 
 			err := exportRole(r, exportFilePath, format)
 			if err != nil {
 				utils.UpdateFailureSummary(utils.ROLES, r.DisplayName)
-				log.Printf("Error while exporting role: %s. %s", r.DisplayName, err)
+				utils.PrintLog(utils.LogLevelError, utils.ROLES, r.DisplayName, fmt.Sprintf("Error while exporting: %s", err))
 			} else {
 				utils.AddToIdentifierMap(utils.ROLES, r.Id, r.DisplayName, utils.EXPORT)
 				utils.UpdateSuccessSummary(utils.ROLES, utils.EXPORT)
-				log.Println("Role exported successfully:", r.DisplayName)
+				utils.PrintLog(utils.LogLevelInfo, utils.ROLES, r.DisplayName, "Exported successfully")
 			}
 		}
 	}

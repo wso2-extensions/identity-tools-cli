@@ -21,7 +21,6 @@ package oidcScopes
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,15 +29,16 @@ import (
 
 func ExportAll(exportFilePath string, format string) {
 
-	log.Println("Exporting OIDC scopes...")
+	utils.PrintLog(utils.LogLevelInfo, utils.OIDC_SCOPES, "", "Exporting OIDC scopes...")
 	exportFilePath = filepath.Join(exportFilePath, utils.OIDC_SCOPES.String())
 
-	if !utils.IsEntitySupportedInOrg(utils.OIDC_SCOPES) || utils.IsResourceTypeExcluded(utils.OIDC_SCOPES) {
+	if utils.ShouldSkip(utils.OIDC_SCOPES) {
 		return
 	}
 	if _, err := os.Stat(exportFilePath); os.IsNotExist(err) {
 		if err := os.MkdirAll(exportFilePath, 0700); err != nil {
-			log.Println("Error creating OIDC scopes directory:", err)
+			utils.PrintLog(utils.LogLevelError, utils.OIDC_SCOPES, "", fmt.Sprintf("Error creating OIDC scopes directory: %s", err))
+			utils.MarkResTypeFailure(utils.OIDC_SCOPES)
 			return
 		}
 	} else {
@@ -50,19 +50,20 @@ func ExportAll(exportFilePath string, format string) {
 
 	scopes, err := getOidcScopeList()
 	if err != nil {
-		log.Println("Error: when exporting OIDC scopes.", err)
+		utils.PrintLog(utils.LogLevelError, utils.OIDC_SCOPES, "", fmt.Sprintf("Error retrieving the deployed OIDC scopes list: %s", err))
+		utils.MarkResTypeFailure(utils.OIDC_SCOPES)
 	} else {
 		for _, scope := range scopes {
 			if !utils.IsResourceExcluded(scope.Name, utils.TOOL_CONFIGS.OidcScopeConfigs) {
-				log.Println("Exporting OIDC scope: ", scope.Name)
+				utils.PrintLog(utils.LogLevelInfo, utils.OIDC_SCOPES, scope.Name, "Exporting")
 
 				err := exportOidcScope(scope.Name, exportFilePath, format)
 				if err != nil {
 					utils.UpdateFailureSummary(utils.OIDC_SCOPES, scope.Name)
-					log.Printf("Error while exporting OIDC scope: %s. %s", scope.Name, err)
+					utils.PrintLog(utils.LogLevelError, utils.OIDC_SCOPES, scope.Name, fmt.Sprintf("Error while exporting: %s", err))
 				} else {
 					utils.UpdateSuccessSummary(utils.OIDC_SCOPES, utils.EXPORT)
-					log.Println("OIDC scope exported successfully: ", scope.Name)
+					utils.PrintLog(utils.LogLevelInfo, utils.OIDC_SCOPES, scope.Name, "Exported successfully")
 				}
 			}
 		}

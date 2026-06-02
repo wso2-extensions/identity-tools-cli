@@ -21,7 +21,6 @@ package identityproviders
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"regexp"
 
 	"github.com/wso2-extensions/identity-tools-cli/iamctl/pkg/utils"
@@ -75,6 +74,8 @@ var idpPatchSkipKeys = map[string]bool{
 	"implicitAssociation":     true,
 	"templateId":              true,
 }
+
+var customAuthSecretsWarningLogged bool
 
 func getIdpList() ([]identityProvider, error) {
 
@@ -169,8 +170,9 @@ func processFederatedAuthenticators(idpId string, idpStruct idpConfig, idpMap ma
 			return fmt.Errorf("unexpected format for definedBy field of federated authenticator: %s", authId)
 		}
 		if definedBy == "USER" {
-			if !excludeSecrets {
-				log.Println("Warn: Secrets exclusion cannot be disabled for custom authenticators(service-based). All secrets will be masked.")
+			if !excludeSecrets && !customAuthSecretsWarningLogged {
+				utils.PrintLog(utils.LogLevelWarn, utils.IDENTITY_PROVIDERS, "", "Secrets exclusion cannot be disabled for custom authenticators(service-based). All secrets will be masked.")
+				customAuthSecretsWarningLogged = true
 			}
 			if err := processEndpointAuthProperties(fullAuthMap); err != nil {
 				return fmt.Errorf("error processing endpoint auth properties for authenticator %s: %v", authId, err)

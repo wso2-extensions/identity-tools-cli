@@ -21,7 +21,6 @@ package notificationProviders
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -31,29 +30,32 @@ import (
 func importAll(resType utils.ResourceType, inputDirPath string) {
 
 	logName := getProviderLogName(resType)
-	log.Printf("Importing %s...", logName)
+	utils.PrintLog(utils.LogLevelInfo, resType, "", fmt.Sprintf("Importing %s...", logName))
 	importFilePath := filepath.Join(inputDirPath, resType.String())
 
 	if resType == utils.EMAIL_PROVIDERS && utils.SERVER_CONFIGS.TenantDomain == utils.DEFAULT_TENANT_DOMAIN {
-		log.Println("Importing email providers for super tenant not supported.")
+		utils.PrintLog(utils.LogLevelInfo, resType, "", "Importing email providers for super tenant not supported.")
+		utils.UpdateSkipSummary(utils.EMAIL_PROVIDERS, "Not supported in super tenant")
 		return
 	}
-	if !utils.IsEntitySupportedInVersion(resType) || !utils.IsEntitySupportedInOrg(resType) || utils.IsResourceTypeExcluded(resType) {
+	if utils.ShouldSkip(resType) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Printf("No %s to import.", logName)
+		utils.PrintLog(utils.LogLevelInfo, resType, "", fmt.Sprintf("No %s to import.", logName))
 		return
 	}
 
 	existingProviderList, err := getProviderList(resType)
 	if err != nil {
-		log.Printf("Error retrieving the deployed %s list: %s", logName, err)
+		utils.PrintLog(utils.LogLevelError, resType, "", fmt.Sprintf("Error retrieving the deployed %s list: %s", logName, err))
+		utils.MarkResTypeFailure(resType)
 		return
 	}
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Printf("Error importing %s: %s", logName, err)
+		utils.PrintLog(utils.LogLevelError, resType, "", fmt.Sprintf("Error reading %s directory: %s", logName, err))
+		utils.MarkResTypeFailure(resType)
 		return
 	}
 
@@ -70,7 +72,7 @@ func importAll(resType utils.ResourceType, inputDirPath string) {
 			providerExists := isProviderExists(providerName, existingProviderList)
 			err := importProvider(resType, logName, providerName, providerExists, providerFilePath)
 			if err != nil {
-				log.Printf("Error importing %s: %s", logName, err)
+				utils.PrintLog(utils.LogLevelError, resType, providerName, fmt.Sprintf("Error importing %s: %s", logName, err))
 				utils.UpdateFailureSummary(resType, providerName)
 			}
 		}
@@ -100,7 +102,7 @@ func importProvider(resType utils.ResourceType, logName string, name string, exi
 
 func createProvider(resType utils.ResourceType, requestBody []byte, format utils.Format, name string, logName string) error {
 
-	log.Printf("Creating new %s: %s", logName, name)
+	utils.PrintLog(utils.LogLevelInfo, resType, name, fmt.Sprintf("Creating new %s", logName))
 
 	jsonBody, err := utils.PrepareJSONRequestBody(requestBody, format, resType)
 	if err != nil {
@@ -114,13 +116,13 @@ func createProvider(resType utils.ResourceType, requestBody []byte, format utils
 	defer resp.Body.Close()
 
 	utils.UpdateSuccessSummary(resType, utils.IMPORT)
-	log.Printf("%s created successfully: %s", logName, name)
+	utils.PrintLog(utils.LogLevelInfo, resType, name, fmt.Sprintf("%s created successfully", logName))
 	return nil
 }
 
 func updateProvider(resType utils.ResourceType, name string, requestBody []byte, format utils.Format, logName string) error {
 
-	log.Printf("Updating %s: %s", logName, name)
+	utils.PrintLog(utils.LogLevelInfo, resType, name, fmt.Sprintf("Updating %s", logName))
 
 	updateBody, err := utils.PrepareJSONRequestBody(requestBody, format, resType, "name")
 	if err != nil {
@@ -134,7 +136,7 @@ func updateProvider(resType utils.ResourceType, name string, requestBody []byte,
 	defer resp.Body.Close()
 
 	utils.UpdateSuccessSummary(resType, utils.UPDATE)
-	log.Printf("%s updated successfully: %s", logName, name)
+	utils.PrintLog(utils.LogLevelInfo, resType, name, fmt.Sprintf("%s updated successfully", logName))
 	return nil
 }
 
@@ -155,14 +157,14 @@ func removeDeletedDeployedProviders(resType utils.ResourceType, localFiles []os.
 			continue
 		}
 		if utils.IsResourceExcluded(provider.Name, getProviderResourceConfig(resType)) {
-			log.Printf("%s is excluded from deletion: %s", logName, provider.Name)
+			utils.PrintLog(utils.LogLevelInfo, resType, provider.Name, fmt.Sprintf("%s is excluded from deletion", logName))
 			continue
 		}
 
-		log.Printf("%s: %s not found locally. Deleting.\n", logName, provider.Name)
+		utils.PrintLog(utils.LogLevelInfo, resType, provider.Name, fmt.Sprintf("%s not found locally. Deleting.", logName))
 		if err := utils.SendDeleteRequest(provider.Name, resType); err != nil {
 			utils.UpdateFailureSummary(resType, provider.Name)
-			log.Printf("Error deleting %s: %s. %s", logName, provider.Name, err)
+			utils.PrintLog(utils.LogLevelError, resType, provider.Name, fmt.Sprintf("Error deleting %s: %s", logName, err))
 		} else {
 			utils.UpdateSuccessSummary(resType, utils.DELETE)
 		}

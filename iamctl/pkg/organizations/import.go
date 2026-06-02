@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -31,30 +30,33 @@ import (
 
 func ImportAll(inputDirPath string) {
 
-	log.Println("Importing organizations...")
+	utils.PrintLog(utils.LogLevelInfo, utils.ORGANIZATIONS, "", "Importing organizations...")
 	importFilePath := filepath.Join(inputDirPath, utils.ORGANIZATIONS.String())
 
-	if !utils.IsEntitySupportedInVersion(utils.ORGANIZATIONS) || !utils.IsEntitySupportedInOrg(utils.ORGANIZATIONS) || utils.IsResourceTypeExcluded(utils.ORGANIZATIONS) {
+	if utils.ShouldSkip(utils.ORGANIZATIONS) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Println("No organizations to import.")
+		utils.PrintLog(utils.LogLevelInfo, utils.ORGANIZATIONS, "", "No organizations to import.")
 		return
 	}
 
 	existingList, err := getOrganizationList()
 	if err != nil {
-		log.Println("Error retrieving the deployed organization list: ", err)
+		utils.PrintLog(utils.LogLevelError, utils.ORGANIZATIONS, "", fmt.Sprintf("Error retrieving the deployed organization list: %s", err))
+		utils.MarkResTypeFailure(utils.ORGANIZATIONS)
 		return
 	}
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Println("Error reading local organization files: ", err)
+		utils.PrintLog(utils.LogLevelError, utils.ORGANIZATIONS, "", fmt.Sprintf("Error reading local organization files: %s", err))
+		utils.MarkResTypeFailure(utils.ORGANIZATIONS)
 		return
 	}
 	curOrgId, err = GetCurrentOrganizationId()
 	if err != nil {
-		log.Println("error while retrieving current organization ID")
+		utils.PrintLog(utils.LogLevelError, utils.ORGANIZATIONS, "", "Error while retrieving current organization ID")
+		utils.MarkResTypeFailure(utils.ORGANIZATIONS)
 		return
 	}
 
@@ -71,7 +73,7 @@ func ImportAll(inputDirPath string) {
 			orgId := getOrgId(resourceName, existingList)
 			err := importOrganization(resourceName, orgId, orgFilePath)
 			if err != nil {
-				log.Println("Error importing organization: ", err)
+				utils.PrintLog(utils.LogLevelError, utils.ORGANIZATIONS, resourceName, fmt.Sprintf("Error importing organization: %s", err))
 				utils.UpdateFailureSummary(utils.ORGANIZATIONS, resourceName)
 			}
 		}
@@ -101,7 +103,7 @@ func importOrganization(resourceName, orgId, importFilePath string) error {
 
 func createOrganization(requestBody []byte, format utils.Format, resourceName string) error {
 
-	log.Println("Creating new organization: " + resourceName)
+	utils.PrintLog(utils.LogLevelInfo, utils.ORGANIZATIONS, resourceName, "Creating new organization")
 
 	jsonBody, status, err := prepareOrganizationPostBody(requestBody, format, curOrgId)
 	if err != nil {
@@ -128,13 +130,13 @@ func createOrganization(requestBody []byte, format utils.Format, resourceName st
 	}
 
 	utils.UpdateSuccessSummary(utils.ORGANIZATIONS, utils.IMPORT)
-	log.Println("Organization created successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.ORGANIZATIONS, resourceName, "Created successfully")
 	return nil
 }
 
 func updateOrganization(orgId string, requestBody []byte, format utils.Format, resourceName string) error {
 
-	log.Println("Updating organization: " + resourceName)
+	utils.PrintLog(utils.LogLevelInfo, utils.ORGANIZATIONS, resourceName, "Updating organization")
 
 	updateBody, err := utils.PrepareJSONRequestBody(requestBody, format, utils.ORGANIZATIONS,
 		"id", "orgHandle", "type", "parent", "permissions", "created", "lastModified", "hasChildren", "ancestorPath")
@@ -149,7 +151,7 @@ func updateOrganization(orgId string, requestBody []byte, format utils.Format, r
 	defer resp.Body.Close()
 
 	utils.UpdateSuccessSummary(utils.ORGANIZATIONS, utils.UPDATE)
-	log.Println("Organization updated successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.ORGANIZATIONS, resourceName, "Updated successfully")
 	return nil
 }
 
@@ -171,14 +173,14 @@ func removeDeletedDeployedOrganizations(localFiles []os.FileInfo, deployedOrgs [
 			continue
 		}
 		if utils.IsResourceExcluded(resourceName, utils.TOOL_CONFIGS.OrganizationConfigs) {
-			log.Println("Organization is excluded from deletion:", resourceName)
+			utils.PrintLog(utils.LogLevelInfo, utils.ORGANIZATIONS, resourceName, "Excluded from deletion")
 			continue
 		}
 
-		log.Printf("Organization: %s not found locally. Deleting organization.\n", resourceName)
+		utils.PrintLog(utils.LogLevelInfo, utils.ORGANIZATIONS, resourceName, "Not found locally. Deleting organization.")
 		if err := utils.SendDeleteRequest(org.Id, utils.ORGANIZATIONS); err != nil {
 			utils.UpdateFailureSummary(utils.ORGANIZATIONS, resourceName)
-			log.Println("Error deleting organization:", resourceName, err)
+			utils.PrintLog(utils.LogLevelError, utils.ORGANIZATIONS, resourceName, fmt.Sprintf("Error deleting organization: %s", err))
 		} else {
 			utils.UpdateSuccessSummary(utils.ORGANIZATIONS, utils.DELETE)
 		}

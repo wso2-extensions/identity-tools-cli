@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -32,7 +31,7 @@ import (
 
 func ImportAll(inputDirPath string) {
 
-	log.Println("Importing identity providers...")
+	utils.PrintLog(utils.LogLevelInfo, utils.IDENTITY_PROVIDERS, "", "Importing identity providers...")
 	importFilePath := filepath.Join(inputDirPath, utils.IDENTITY_PROVIDERS.String())
 	exportAPIExists := utils.ExportAPIExists(utils.IDENTITY_PROVIDERS)
 
@@ -40,19 +39,21 @@ func ImportAll(inputDirPath string) {
 		return
 	}
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Println("No identity providers to import.")
+		utils.PrintLog(utils.LogLevelInfo, utils.IDENTITY_PROVIDERS, "", "No identity providers to import.")
 		return
 	}
 
 	existingIdpList, err := getIdpList()
 	if err != nil {
-		log.Printf("error when retrieving the deployed identity provider list. %s", err)
+		utils.PrintLog(utils.LogLevelError, utils.IDENTITY_PROVIDERS, "", fmt.Sprintf("Error when retrieving the deployed identity provider list. %s", err))
+		utils.MarkResTypeFailure(utils.IDENTITY_PROVIDERS)
 		return
 	}
 
 	files, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Println("Error importing identity providers: ", err)
+		utils.PrintLog(utils.LogLevelError, utils.IDENTITY_PROVIDERS, "", fmt.Sprintf("Error reading identity providers directory: %s", err))
+		utils.MarkResTypeFailure(utils.IDENTITY_PROVIDERS)
 		return
 	}
 
@@ -74,13 +75,13 @@ func ImportAll(inputDirPath string) {
 
 			err := importIdp(idpId, idpName, idpFilePath, exportAPIExists)
 			if err != nil {
-				log.Println("Error importing identity provider: ", err)
+				utils.PrintLog(utils.LogLevelError, utils.IDENTITY_PROVIDERS, idpName, fmt.Sprintf("Error importing identity provider: %s", err))
 				utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, idpName)
 			}
 		}
 	}
 	if shouldRemoveOutboundProvisioningRoles() {
-		log.Println("Warn: Outbound provisioning groups of identity providers are removed during import")
+		utils.PrintLog(utils.LogLevelWarn, utils.IDENTITY_PROVIDERS, "", "Outbound provisioning groups of identity providers are removed during import")
 	}
 }
 
@@ -111,32 +112,32 @@ func importIdp(idpId string, idpName string, importFilePath string, exportAPIExi
 
 func importIdentityProvider(idpName, importFilePath, modifiedFileData string) error {
 
-	log.Println("Creating new identity provider: " + idpName)
+	utils.PrintLog(utils.LogLevelInfo, utils.IDENTITY_PROVIDERS, idpName, "Creating new identity provider")
 	resp, err := utils.SendImportRequest(importFilePath, modifiedFileData, utils.IDENTITY_PROVIDERS)
 	if err != nil {
 		return fmt.Errorf("error when importing identity provider: %s", err)
 	}
 	defer resp.Body.Close()
 	utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.IMPORT)
-	log.Println("Identity provider imported successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.IDENTITY_PROVIDERS, idpName, "Imported successfully")
 	return nil
 }
 
 func updateIdentityProvider(idpId, idpName, importFilePath, modifiedFileData string) error {
 
-	log.Println("Updating identity provider: " + idpName)
+	utils.PrintLog(utils.LogLevelInfo, utils.IDENTITY_PROVIDERS, idpName, "Updating identity provider")
 	err := utils.SendUpdateRequest(idpId, importFilePath, modifiedFileData, utils.IDENTITY_PROVIDERS)
 	if err != nil {
 		return fmt.Errorf("error when updating identity provider: %s", err)
 	}
 	utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.UPDATE)
-	log.Println("Identity provider updated successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.IDENTITY_PROVIDERS, idpName, "Updated successfully")
 	return nil
 }
 
 func importIdpWithCRUD(idpName string, requestBody []byte, format utils.Format) error {
 
-	log.Println("Creating new identity provider: " + idpName)
+	utils.PrintLog(utils.LogLevelInfo, utils.IDENTITY_PROVIDERS, idpName, "Creating new identity provider")
 
 	idpMap, err := utils.DeserializeToMap(requestBody, format, utils.IDENTITY_PROVIDERS)
 	if err != nil {
@@ -153,13 +154,13 @@ func importIdpWithCRUD(idpName string, requestBody []byte, format utils.Format) 
 	}
 
 	utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.IMPORT)
-	log.Println("Identity provider imported successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.IDENTITY_PROVIDERS, idpName, "Imported successfully")
 	return nil
 }
 
 func updateIdpWithCRUD(idpId, idpName string, requestBody []byte, format utils.Format) error {
 
-	log.Println("Updating identity provider: " + idpName)
+	utils.PrintLog(utils.LogLevelInfo, utils.IDENTITY_PROVIDERS, idpName, "Updating identity provider")
 
 	idpMap, err := utils.DeserializeToMap(requestBody, format, utils.IDENTITY_PROVIDERS)
 	if err != nil {
@@ -185,7 +186,7 @@ func updateIdpWithCRUD(idpId, idpName string, requestBody []byte, format utils.F
 	}
 
 	utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.UPDATE)
-	log.Println("Identity provider updated successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.IDENTITY_PROVIDERS, idpName, "Updated successfully")
 	return nil
 }
 
@@ -331,7 +332,7 @@ func updateIdpSubResources(idpId string, idpStruct idpConfig) error {
 
 func RemoveDeletedDeployedIdps(inputDirPath string) {
 
-	log.Println("Removing deleted identity providers...")
+	utils.PrintLog(utils.LogLevelInfo, utils.IDENTITY_PROVIDERS, "", "Removing deleted identity providers...")
 
 	if !utils.TOOL_CONFIGS.AllowDelete {
 		return
@@ -347,12 +348,13 @@ func RemoveDeletedDeployedIdps(inputDirPath string) {
 
 	localFiles, err := ioutil.ReadDir(importFilePath)
 	if err != nil {
-		log.Println("Error reading local identity provider files: ", err)
+		utils.PrintLog(utils.LogLevelError, utils.IDENTITY_PROVIDERS, "", fmt.Sprintf("Error reading local identity provider files: %s", err))
 		return
 	}
 	deployedIdps, err := getIdpList()
 	if err != nil {
-		log.Printf("error when retrieving deployed identity provider list: %s", err)
+		utils.PrintLog(utils.LogLevelError, utils.IDENTITY_PROVIDERS, "", fmt.Sprintf("Error when retrieving deployed identity provider list: %s", err))
+		utils.MarkResTypeFailure(utils.IDENTITY_PROVIDERS)
 		return
 	}
 
@@ -366,14 +368,14 @@ func RemoveDeletedDeployedIdps(inputDirPath string) {
 			continue
 		}
 		if utils.IsResourceExcluded(idp.Name, utils.TOOL_CONFIGS.IdpConfigs) || idp.Name == utils.RESIDENT_IDP_NAME {
-			log.Println("Identity provider is excluded from deletion: ", idp.Name)
+			utils.PrintLog(utils.LogLevelInfo, utils.IDENTITY_PROVIDERS, idp.Name, "Excluded from deletion")
 			continue
 		}
 
-		log.Printf("Identity provider: %s not found locally. Deleting idp.\n", idp.Name)
+		utils.PrintLog(utils.LogLevelInfo, utils.IDENTITY_PROVIDERS, idp.Name, "Not found locally. Deleting idp.")
 		if err := utils.SendDeleteRequest(idp.Id, utils.IDENTITY_PROVIDERS); err != nil {
 			utils.UpdateFailureSummary(utils.IDENTITY_PROVIDERS, idp.Name)
-			log.Println("Error deleting idp: ", idp.Name, err)
+			utils.PrintLog(utils.LogLevelError, utils.IDENTITY_PROVIDERS, idp.Name, fmt.Sprintf("Error deleting idp: %s", err))
 		} else {
 			utils.UpdateSuccessSummary(utils.IDENTITY_PROVIDERS, utils.DELETE)
 		}

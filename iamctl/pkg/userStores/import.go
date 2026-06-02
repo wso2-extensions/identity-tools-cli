@@ -21,7 +21,6 @@ package userstores
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -30,7 +29,7 @@ import (
 
 func ImportAll(inputDirPath string) {
 
-	log.Println("Importing user stores...")
+	utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, "", "Importing user stores...")
 	importFilePath := filepath.Join(inputDirPath, utils.USERSTORES.String())
 
 	if utils.IsResourceTypeExcluded(utils.USERSTORES) {
@@ -38,11 +37,12 @@ func ImportAll(inputDirPath string) {
 	}
 	var files []os.FileInfo
 	if _, err := os.Stat(importFilePath); os.IsNotExist(err) {
-		log.Println("No user stores to import.")
+		utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, "", "No user stores to import.")
 	} else {
 		files, err = ioutil.ReadDir(importFilePath)
 		if err != nil {
-			log.Println("Error importing user stores: ", err)
+			utils.PrintLog(utils.LogLevelError, utils.USERSTORES, "", fmt.Sprintf("Error reading user stores directory: %s", err))
+			utils.MarkResTypeFailure(utils.USERSTORES)
 			return
 		}
 		if utils.TOOL_CONFIGS.AllowDelete {
@@ -59,17 +59,17 @@ func ImportAll(inputDirPath string) {
 		if !utils.IsResourceExcluded(userStoreName, utils.TOOL_CONFIGS.UserStoreConfigs) {
 			userStoreId, err := getUserStoreId(userStoreName)
 			if err != nil {
-				log.Printf("Invalid file configurations for user store: %s. %s", userStoreName, err)
+				utils.PrintLog(utils.LogLevelError, utils.USERSTORES, userStoreName, fmt.Sprintf("Invalid file configurations: %s", err))
 			} else {
 				err := importUserStore(userStoreId, userStoreName, userStoreFilePath, exportAPIexists)
 				if err != nil {
-					log.Println("Error importing user store: ", err)
+					utils.PrintLog(utils.LogLevelError, utils.USERSTORES, userStoreName, fmt.Sprintf("Error importing user store: %s", err))
 				}
 			}
 		}
 	}
 	if (utils.IsResourceTypeExcluded(utils.CLAIMS) || utils.IsResourceExcluded(utils.LOCAL_CLAIM_DIALECT_URI, utils.TOOL_CONFIGS.ClaimConfigs)) && exportAPIexists {
-		log.Println("Warn: Local claim dialect is excluded from import. Import local claims to persist claim attribute mappings of user stores.")
+		utils.PrintLog(utils.LogLevelWarn, utils.USERSTORES, "", "Local claim dialect is excluded from import. Import local claims to persist claim attribute mappings of user stores.")
 	}
 }
 
@@ -77,7 +77,7 @@ func importUserStore(userStoreId, userStoreName, userStoreFilePath string, expor
 
 	// AGENT and DEFAULT user stores are not allowed to be modified in Asgardeo
 	if utils.SERVER_CONFIGS.ServerVersion == "" && (userStoreName == utils.AGENT_USERSTORE || userStoreName == utils.DEFAULT_USERSTORE) {
-		log.Printf("User store: %s is a system user store. Skipping import.", userStoreName)
+		utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userStoreName, "System user store. Skipping import.")
 		return nil
 	}
 	fileBytes, err := ioutil.ReadFile(userStoreFilePath)
@@ -110,7 +110,7 @@ func importUserStore(userStoreId, userStoreName, userStoreFilePath string, expor
 
 func importUserStoreOperation(userStoreName, userStoreFilePath, modifiedFileData string) error {
 
-	log.Println("Creating new user store: " + userStoreName)
+	utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userStoreName, "Creating new user store")
 	resp, err := utils.SendImportRequest(userStoreFilePath, modifiedFileData, utils.USERSTORES)
 	if err != nil {
 		utils.UpdateFailureSummary(utils.USERSTORES, userStoreName)
@@ -118,26 +118,26 @@ func importUserStoreOperation(userStoreName, userStoreFilePath, modifiedFileData
 	}
 	defer resp.Body.Close()
 	utils.UpdateSuccessSummary(utils.USERSTORES, utils.IMPORT)
-	log.Println("User store imported successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userStoreName, "Imported successfully")
 	return nil
 }
 
 func updateUserStoreOperation(userStoreId, userStoreName, userStoreFilePath, modifiedFileData string) error {
 
-	log.Println("Updating user store: " + userStoreName)
+	utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userStoreName, "Updating user store")
 	err := utils.SendUpdateRequest(userStoreId, userStoreFilePath, modifiedFileData, utils.USERSTORES)
 	if err != nil {
 		utils.UpdateFailureSummary(utils.USERSTORES, userStoreName)
 		return fmt.Errorf("error when updating user store: %s", err)
 	}
 	utils.UpdateSuccessSummary(utils.USERSTORES, utils.UPDATE)
-	log.Println("User store updated successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userStoreName, "Updated successfully")
 	return nil
 }
 
 func importUserStoreWithCRUD(userStoreName string, requestBody []byte, format utils.Format) error {
 
-	log.Println("Creating new user store: " + userStoreName)
+	utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userStoreName, "Creating new user store")
 
 	jsonBody, err := utils.PrepareJSONRequestBody(requestBody, format, utils.USERSTORES, "typeName", "className")
 	if err != nil {
@@ -150,13 +150,13 @@ func importUserStoreWithCRUD(userStoreName string, requestBody []byte, format ut
 	defer resp.Body.Close()
 
 	utils.UpdateSuccessSummary(utils.USERSTORES, utils.IMPORT)
-	log.Println("User store imported successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userStoreName, "Imported successfully")
 	return nil
 }
 
 func updateUserStoreWithCRUD(userStoreId, userStoreName string, requestBody []byte, format utils.Format) error {
 
-	log.Println("Updating user store: " + userStoreName)
+	utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userStoreName, "Updating user store")
 
 	updateBody, err := utils.PrepareJSONRequestBody(requestBody, format, utils.USERSTORES, "typeName", "className")
 	if err != nil {
@@ -169,7 +169,7 @@ func updateUserStoreWithCRUD(userStoreId, userStoreName string, requestBody []by
 	defer resp.Body.Close()
 
 	utils.UpdateSuccessSummary(utils.USERSTORES, utils.UPDATE)
-	log.Println("User store updated successfully.")
+	utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userStoreName, "Updated successfully")
 	return nil
 }
 
@@ -178,7 +178,7 @@ func removeDeletedDeployedUserstores(localFiles []os.FileInfo) {
 	// Remove deployed user stores that do not exist locally.
 	deployedUserstores, err := getUserStoreList()
 	if err != nil {
-		log.Println("Error retrieving deployed user stores: ", err)
+		utils.PrintLog(utils.LogLevelError, utils.USERSTORES, "", fmt.Sprintf("Error retrieving deployed user stores: %s", err))
 		return
 	}
 deployedResourcess:
@@ -190,18 +190,18 @@ deployedResourcess:
 		}
 		// DEFAULT is a Asgardeo only system user store
 		if (utils.SERVER_CONFIGS.ServerVersion == "" && userstore.Name == utils.DEFAULT_USERSTORE) || userstore.Name == utils.AGENT_USERSTORE {
-			log.Printf("User store: %s is a system user store. Skipping deletion.", userstore.Name)
+			utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userstore.Name, "System user store. Skipping deletion.")
 			continue
 		}
 		if utils.IsResourceExcluded(userstore.Name, utils.TOOL_CONFIGS.UserStoreConfigs) {
-			log.Printf("Userstore: %s is excluded from deletion.\n", userstore.Name)
+			utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userstore.Name, "Excluded from deletion.")
 			continue
 		}
-		log.Println("User store not found locally. Deleting user store: ", userstore.Name)
+		utils.PrintLog(utils.LogLevelInfo, utils.USERSTORES, userstore.Name, "Not found locally. Deleting user store.")
 		err := utils.SendDeleteRequest(userstore.Id, utils.USERSTORES)
 		if err != nil {
 			utils.UpdateFailureSummary(utils.USERSTORES, userstore.Name)
-			log.Println("Error deleting user store: ", err)
+			utils.PrintLog(utils.LogLevelError, utils.USERSTORES, userstore.Name, fmt.Sprintf("Error deleting user store: %s", err))
 		}
 		utils.UpdateSuccessSummary(utils.USERSTORES, utils.DELETE)
 	}
