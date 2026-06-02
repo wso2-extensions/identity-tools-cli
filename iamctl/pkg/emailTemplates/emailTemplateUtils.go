@@ -149,7 +149,7 @@ func setNotificationTemplatesApiExists() {
 	}
 
 	res, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_NOTIFICATION_TEMPLATES_API)
-	// Use the Notification Templates API when the server version is not properly configured
+	// Use the Notification Templates API when the server version "" (Asgardeo)
 	if err != nil || res >= 0 {
 		utils.NotificationTemplatesApiExists = true
 	} else {

@@ -150,8 +150,8 @@ const (
 	LogLevelError                 // 3 — least verbose
 )
 
-// NoResource is used with PrintLog when there is no resource type context.
-const NoResource ResourceType = ""
+// UtilsResourceWrapper is used with PrintLog for printing logs of utils package
+const UtilsResourceWrapper ResourceType = "Utils"
 
 // Resource types that are supported in sub-organizations
 var entitySupportedInSubOrg = map[ResourceType]bool{

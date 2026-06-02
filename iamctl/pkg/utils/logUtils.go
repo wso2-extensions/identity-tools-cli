@@ -160,15 +160,13 @@ func UpdateFailureSummary(resourceType ResourceType, resourceName string) {
 	ResTypeSummaryMap[resourceType] = summary
 }
 
-func PrintLog(level LogLevel, resourceType ResourceType, resourceName string, msg string) {
+func PrintLog(level LogLevel, packageName ResourceType, resourceName string, msg string) {
 
 	var body string
-	if resourceType == NoResource {
-		body = msg
-	} else if resourceName == "" {
-		body = fmt.Sprintf("%s - %s", resourceType, msg)
+	if resourceName == "" {
+		body = fmt.Sprintf("%s - %s", packageName, msg)
 	} else {
-		body = fmt.Sprintf("%s - %s - %s", resourceType, resourceName, msg)
+		body = fmt.Sprintf("%s - %s - %s", packageName, resourceName, msg)
 	}
 
 	if level == LogLevelWarn {

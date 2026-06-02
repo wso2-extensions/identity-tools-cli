@@ -229,6 +229,6 @@ func RoleClaimUnsupported() bool {
 		return true
 	}
 	cmp, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_ROLE_CLAIM_REMOVED)
-	// Consider role claim unsupported when the server version is not properly configured
+	// Consider role claim unsupported when the server version is "" (Asgardeo)
 	return err != nil || cmp >= 0
 }

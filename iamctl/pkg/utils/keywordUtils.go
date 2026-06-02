@@ -37,7 +37,7 @@ func ReplaceKeywords(fileContent string, keywordMapping map[string]interface{}) 
 		if value, ok := value.(string); ok {
 			fileContent = strings.ReplaceAll(fileContent, "{{"+keyword+"}}", value)
 		} else {
-			PrintLog(LogLevelError, NoResource, "", fmt.Sprintf("keyword value for %s is not a string", keyword))
+			PrintLog(LogLevelError, UtilsResourceWrapper, "", fmt.Sprintf("keyword value for %s is not a string", keyword))
 		}
 	}
 	return fileContent
@@ -47,14 +47,14 @@ func ProcessExportedData(exportedData interface{}, localFilePath string, format 
 
 	localFileContent, err := ioutil.ReadFile(localFilePath)
 	if err != nil {
-		PrintLog(LogLevelInfo, NoResource, "", fmt.Sprintf("Local file not found at %s. Creating new file.", localFilePath))
+		PrintLog(LogLevelInfo, UtilsResourceWrapper, "", fmt.Sprintf("Local file not found at %s. Creating new file.", localFilePath))
 		return exportedData, nil
 	}
 
 	// Replace ESVs in the exported file according to the keyword placeholders added in the local file.
 	modifiedData, err := AddLocalKeywords(exportedData, format, localFileContent, keywordMapping, resourceType)
 	if err != nil {
-		PrintLog(LogLevelError, NoResource, "", fmt.Sprintf("Error processing keywords. Using exported content. %s", err))
+		PrintLog(LogLevelError, UtilsResourceWrapper, "", fmt.Sprintf("Error processing keywords. Using exported content. %s", err))
 		return exportedData, nil
 	}
 
@@ -81,7 +81,7 @@ func ProcessExportedContent(exportedFileName string, exportedFileContent []byte,
 	// Process exported content
 	modifiedData, err := ProcessExportedData(exportedData, exportedFileName, format, keywordMapping, resourceType)
 	if err != nil {
-		PrintLog(LogLevelError, NoResource, "", fmt.Sprintf("Error when processing with keywords. Using exported content. %s", err))
+		PrintLog(LogLevelError, UtilsResourceWrapper, "", fmt.Sprintf("Error when processing with keywords. Using exported content. %s", err))
 		modifiedData = exportedData
 	}
 
@@ -158,7 +158,7 @@ func GetKeywordLocations(fileData interface{}, path []string, keywordMapping map
 				}
 				arrayElementPath, err := resolvePathWithIdentifiers(arrayName, val, arrayIdentifiers)
 				if err != nil {
-					PrintLog(LogLevelError, NoResource, "", fmt.Sprintf("cannot resolve path for the field %s. %s.", strings.Join(path, "."), err))
+					PrintLog(LogLevelError, UtilsResourceWrapper, "", fmt.Sprintf("cannot resolve path for the field %s. %s.", strings.Join(path, "."), err))
 					break
 				}
 				newPath := append(path, arrayElementPath)
@@ -222,7 +222,7 @@ func resolvePathWithIdentifiers(arrayName string, element interface{}, identifie
 	if !ok {
 		elementMap, ok = element.(map[string]interface{})
 		if !ok {
-			PrintLog(LogLevelError, NoResource, "", fmt.Sprintf("cannot convert %T to a map", element))
+			PrintLog(LogLevelError, UtilsResourceWrapper, "", fmt.Sprintf("cannot convert %T to a map", element))
 		}
 	}
 	identifier := identifiers[arrayName]
@@ -260,13 +260,13 @@ func ModifyFieldsWithKeywords(exportedFileData interface{}, localFileData interf
 		if exportedValue != localReplacedValue {
 			if exportedValue == strings.ReplaceAll(SENSITIVE_FIELD_MASK, "'", "") {
 				ReplaceValue(exportedFileData, location, localValue)
-				PrintLog(LogLevelInfo, NoResource, "", fmt.Sprintf("Keyword added at %s field", location))
+				PrintLog(LogLevelInfo, UtilsResourceWrapper, "", fmt.Sprintf("Keyword added at %s field", location))
 			} else {
-				PrintLog(LogLevelWarn, NoResource, "", fmt.Sprintf("Keywords at %s field in the local file will be replaced by exported content.", location))
+				PrintLog(LogLevelWarn, UtilsResourceWrapper, "", fmt.Sprintf("Keywords at %s field in the local file will be replaced by exported content.", location))
 			}
 		} else {
 			ReplaceValue(exportedFileData, location, localValue)
-			PrintLog(LogLevelInfo, NoResource, "", fmt.Sprintf("Keyword added at %s field", location))
+			PrintLog(LogLevelInfo, UtilsResourceWrapper, "", fmt.Sprintf("Keyword added at %s field", location))
 		}
 	}
 	return exportedFileData
@@ -344,7 +344,7 @@ func ReplaceRawValue(data interface{}, pathString string, replacement interface{
 			currentKey := path[0]
 			index, err := GetArrayIndex(v, currentKey)
 			if err != nil {
-				PrintLog(LogLevelError, NoResource, "", fmt.Sprintf("when resolving array index for element %s.", currentKey))
+				PrintLog(LogLevelError, UtilsResourceWrapper, "", fmt.Sprintf("when resolving array index for element %s.", currentKey))
 				return data
 			}
 			if len(v) > index {

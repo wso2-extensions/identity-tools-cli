@@ -356,7 +356,7 @@ func setWorkflowVersionConfigs() {
 
 	res, err := utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_ASSOCIATION_SHARING_ACROSS_WORKFLOWS)
 
-	// Assume association sharing is supported if the server version is not properly configured
+	// Assume association sharing is supported if the server version is "" (Asgardeo)
 	if err != nil || res >= 0 {
 		assocSharingSupported = true
 	} else {
@@ -365,7 +365,7 @@ func setWorkflowVersionConfigs() {
 
 	res, err = utils.CompareVersions(utils.SERVER_CONFIGS.ServerVersion, utils.MIN_VERSION_WORKFLOW_ASSOCIATION_RULES)
 
-	// Assume association rules are supported if the server version is not properly configured
+	// Assume association rules are supported if the server version is "" (Asgardeo)
 	if err != nil || res >= 0 {
 		assocRulesSupported = true
 	} else {

@@ -40,7 +40,7 @@ func IsResourceExcluded(resourceName string, resourceConfigs map[string]interfac
 				return false
 			}
 		}
-		PrintLog(LogLevelInfo, NoResource, "", fmt.Sprintf("Excluded resource: %s", resourceName))
+		PrintLog(LogLevelInfo, UtilsResourceWrapper, "", fmt.Sprintf("Excluded resource: %s", resourceName))
 		return true
 	} else {
 		// Exclude resources added to EXCLUDE config.
@@ -48,7 +48,7 @@ func IsResourceExcluded(resourceName string, resourceConfigs map[string]interfac
 		if ok {
 			for _, resource := range resourcesToExclude {
 				if resource.(string) == resourceName {
-					PrintLog(LogLevelInfo, NoResource, "", fmt.Sprintf("Excluded resource: %s", resourceName))
+					PrintLog(LogLevelInfo, UtilsResourceWrapper, "", fmt.Sprintf("Excluded resource: %s", resourceName))
 					return true
 				}
 			}
@@ -152,7 +152,7 @@ func RemoveDeletedLocalDirectories(parentDir string, deployedDirNames []string) 
 
 	localEntries, err := ioutil.ReadDir(parentDir)
 	if err != nil {
-		PrintLog(LogLevelError, NoResource, "", fmt.Sprintf("Error loading directory: %s", err))
+		PrintLog(LogLevelError, UtilsResourceWrapper, "", fmt.Sprintf("Error loading directory: %s", err))
 		return
 	}
 
@@ -163,9 +163,9 @@ func RemoveDeletedLocalDirectories(parentDir string, deployedDirNames []string) 
 		if _, exists := deployedNames[entry.Name()]; !exists {
 			dirPath := filepath.Join(parentDir, entry.Name())
 			if err := os.RemoveAll(dirPath); err != nil {
-				PrintLog(LogLevelError, NoResource, "", fmt.Sprintf("Error when removing the directory %s: %s", entry.Name(), err))
+				PrintLog(LogLevelError, UtilsResourceWrapper, "", fmt.Sprintf("Error when removing the directory %s: %s", entry.Name(), err))
 			} else {
-				PrintLog(LogLevelInfo, NoResource, "", fmt.Sprintf("Removed the directory: %s", entry.Name()))
+				PrintLog(LogLevelInfo, UtilsResourceWrapper, "", fmt.Sprintf("Removed the directory: %s", entry.Name()))
 			}
 		}
 	}
@@ -176,7 +176,7 @@ func RemoveDeletedLocalResources(filePath string, deployedResourceNames []string
 	// Remove local files of resources that do not exist in the remote during export.
 	files, err := ioutil.ReadDir(filePath)
 	if err != nil {
-		PrintLog(LogLevelError, NoResource, "", fmt.Sprintf("Error loading local files: %s", err))
+		PrintLog(LogLevelError, UtilsResourceWrapper, "", fmt.Sprintf("Error loading local files: %s", err))
 		return
 	}
 
@@ -188,9 +188,9 @@ func RemoveDeletedLocalResources(filePath string, deployedResourceNames []string
 		if !Contains(deployedResourceNames, GetFileInfo(fileName).ResourceName) {
 			err := os.Remove(filepath.Join(filePath, fileName))
 			if err != nil {
-				PrintLog(LogLevelError, NoResource, "", fmt.Sprintf("Error when removing the file: %s %s", fileName, err))
+				PrintLog(LogLevelError, UtilsResourceWrapper, "", fmt.Sprintf("Error when removing the file: %s %s", fileName, err))
 			} else {
-				PrintLog(LogLevelInfo, NoResource, "", fmt.Sprintf("Removed the file: %s", fileName))
+				PrintLog(LogLevelInfo, UtilsResourceWrapper, "", fmt.Sprintf("Removed the file: %s", fileName))
 			}
 		}
 	}

@@ -38,15 +38,12 @@ func IsEntitySupportedInVersion(resourceType ResourceType) bool {
 	maxVersion, hasMax := EntityMaxSupportedVersion[resourceType]
 
 	if hasMax {
-		// When server version is not configured, consider it as the latest version
+		// When server version is "" (Asgardeo), consider it as the latest version
 		if SERVER_CONFIGS.ServerVersion == "" {
 			return false
 		}
-		comparison, err := CompareVersions(SERVER_CONFIGS.ServerVersion, maxVersion)
-		// When server version is not properly configured, all resources are allowed with a warning logged at setup time
-		if err != nil {
-			return true
-		} else if comparison > 0 {
+		comparison, _ := CompareVersions(SERVER_CONFIGS.ServerVersion, maxVersion)
+		if comparison > 0 {
 			PrintLog(LogLevelInfo, resourceType, "", fmt.Sprintf("Skipping: Supported up to IS version %s", maxVersion))
 			return false
 		}
@@ -56,10 +53,8 @@ func IsEntitySupportedInVersion(resourceType ResourceType) bool {
 		if SERVER_CONFIGS.ServerVersion == "" {
 			return true
 		}
-		comparison, err := CompareVersions(SERVER_CONFIGS.ServerVersion, minVersion)
-		if err != nil {
-			return true
-		} else if comparison < 0 {
+		comparison, _ := CompareVersions(SERVER_CONFIGS.ServerVersion, minVersion)
+		if comparison < 0 {
 			PrintLog(LogLevelInfo, resourceType, "", fmt.Sprintf("Skipping: Supported from IS version %s or higher", minVersion))
 			return false
 		}
