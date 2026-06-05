@@ -5,10 +5,11 @@ IAM-CTL is a tool that can manage WSO2 Identity Server configurations from the c
 For version-specific setup instructions, supported resource types, and other guidelines, refer to the official Identity Server documentation.
 
 ### Supported versions
-- [5.11](https://is.docs.wso2.com/en/5.11.0/setup/promote-configurations/)
-- [7.0](https://is.docs.wso2.com/en/7.0.0/deploy/promote-configurations/)
-- [7.1](https://is.docs.wso2.com/en/7.1.0/deploy/promote-configurations/)
-- [7.2](https://is.docs.wso2.com/en/7.2.0/deploy/promote-configurations/)
+- [IS 5.11](https://is.docs.wso2.com/en/5.11.0/setup/promote-configurations/)
+- [IS 7.0](https://is.docs.wso2.com/en/7.0.0/deploy/promote-configurations/)
+- [IS 7.1](https://is.docs.wso2.com/en/7.1.0/deploy/promote-configurations/)
+- [IS 7.2](https://is.docs.wso2.com/en/7.2.0/deploy/promote-configurations/)
+- [IS 7.3](https://is.docs.wso2.com/en/7.3.0/deploy/promote-configurations/)
 
 ### Prerequisites
 You need to [setup](https://is.docs.wso2.com/en/latest/get-started/sample-use-cases/set-up/) WSO2 Identity Server.
