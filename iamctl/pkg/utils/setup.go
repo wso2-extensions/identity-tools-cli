@@ -114,6 +114,7 @@ type KeywordConfigs struct {
 var SERVER_CONFIGS ServerConfigs
 var TOOL_CONFIGS ToolConfigs
 var KEYWORD_CONFIGS KeywordConfigs
+var DRY_RUN bool
 
 func LoadConfigs(envConfigPath string) (baseDir string) {
 

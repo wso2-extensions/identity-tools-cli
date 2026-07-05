@@ -54,8 +54,10 @@ var exportAllCmd = &cobra.Command{
 		outputDirPath, _ := cmd.Flags().GetString("outputDir")
 		format, _ := cmd.Flags().GetString("format")
 		configFile, _ := cmd.Flags().GetString("config")
+		dryRun, _ := cmd.Flags().GetBool("dryRun")
 
 		baseDir := utils.LoadConfigs(configFile)
+		utils.DRY_RUN = dryRun
 		if outputDirPath == "" {
 			outputDirPath = baseDir
 		}
@@ -107,4 +109,5 @@ func init() {
 	exportAllCmd.Flags().StringP("outputDir", "o", "", "Path to the output directory")
 	exportAllCmd.Flags().StringP("format", "f", "yaml", "Format of the exported files")
 	exportAllCmd.Flags().StringP("config", "c", "", "Path to the environment specific config folder")
+	exportAllCmd.Flags().BoolP("dryRun", "d", false, "Preview file deletions without removing local files")
 }

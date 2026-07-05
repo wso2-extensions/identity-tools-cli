@@ -136,7 +136,7 @@ func createRole(requestBody []byte, format utils.Format, displayName string) err
 	if _, err := utils.ParseResponseBody(resp, &created); err != nil {
 		return fmt.Errorf("error reading create role response: %w", err)
 	}
-	utils.AddToIdentifierMap(utils.ROLES, created.Id, created.DisplayName, utils.IMPORT)
+	utils.AddToIdentifierMap(utils.ROLES, created.Id, displayName, utils.IMPORT)
 
 	utils.UpdateSuccessSummary(utils.ROLES, utils.IMPORT)
 	utils.PrintLog(utils.LogLevelInfo, utils.ROLES, displayName, "Created successfully")

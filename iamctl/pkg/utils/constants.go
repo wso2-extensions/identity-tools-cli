@@ -139,6 +139,7 @@ const USER_ONBOARDING_GOVERNANCE_CATEGORY_NAME = "User Onboarding"
 const USER_ONBOARDING_GOVERNANCE_CATEGORY_ID = "VXNlciBPbmJvYXJkaW5n"
 const OAUTH2 = "oauth2"
 const ALL_ITEMS = "all_items" // Wildcard to match all elements in an array
+const DRY_RUN_RESOURCE_ID = "created-resource-id"
 
 // Log levels
 type LogLevel int

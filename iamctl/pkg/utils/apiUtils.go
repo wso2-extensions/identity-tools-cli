@@ -173,6 +173,15 @@ func SendImportRequest(importFilePath, fileData string, resourceType ResourceTyp
 
 	reqUrl := buildRequestUrl(IMPORT, resourceType, "")
 
+	if DRY_RUN {
+		PrintLog(LogLevelInfo, UtilsResourceWrapper, "", fmt.Sprintf("[DRY RUN] Would POST: %s", reqUrl))
+		return &http.Response{
+			StatusCode: http.StatusCreated,
+			Header:     http.Header{"Location": []string{"/" + DRY_RUN_RESOURCE_ID}},
+			Body:       ioutil.NopCloser(bytes.NewReader([]byte{})),
+		}, nil
+	}
+
 	var buf bytes.Buffer
 	var err error
 	_, err = io.WriteString(&buf, fileData)
@@ -251,6 +260,11 @@ func SendUpdateRequest(resourceId, importFilePath, fileData string, resourceType
 
 	reqUrl := buildRequestUrl(UPDATE, resourceType, resourceId)
 	formattedReqUrl := addQueryParams(reqUrl, resourceType, UPDATE)
+
+	if DRY_RUN {
+		PrintLog(LogLevelInfo, UtilsResourceWrapper, "", fmt.Sprintf("[DRY RUN] Would PUT: %s", formattedReqUrl))
+		return nil
+	}
 
 	var buf bytes.Buffer
 	var err error
@@ -333,6 +347,12 @@ func SendDeleteRequest(resourceId string, resourceType ResourceType, opts ...Sen
 
 	cfg := applySendOptions(opts)
 	reqUrl := buildRequestUrl(DELETE, resourceType, resourceId)
+
+	if DRY_RUN {
+		PrintLog(LogLevelInfo, UtilsResourceWrapper, "", fmt.Sprintf("[DRY RUN] Would DELETE: %s", reqUrl))
+		return nil
+	}
+
 	request, err := http.NewRequest("DELETE", reqUrl, bytes.NewBuffer(nil))
 	if err != nil {
 		return fmt.Errorf("error when creating the delete request: %s", err)
@@ -413,6 +433,11 @@ func SendGetRequest(resourceType ResourceType, resourceId string, opts ...SendOp
 
 	cfg := applySendOptions(opts)
 	reqUrl := buildRequestUrl(GET, resourceType, resourceId)
+
+	if DRY_RUN && strings.Contains(resourceId, DRY_RUN_RESOURCE_ID) {
+		return []byte("null"), nil
+	}
+
 	formattedReqUrl := addQueryParams(reqUrl, resourceType, GET)
 	request, err := http.NewRequest("GET", formattedReqUrl, nil)
 	if err != nil {
@@ -466,6 +491,15 @@ func SendPostRequest(resourceType ResourceType, requestBody []byte, opts ...Send
 	cfg := applySendOptions(opts)
 	reqUrl := buildRequestUrl(POST, resourceType, cfg.pathSuffix)
 
+	if DRY_RUN {
+		PrintLog(LogLevelInfo, UtilsResourceWrapper, "", fmt.Sprintf("[DRY RUN] Would POST: %s", reqUrl))
+		return &http.Response{
+			StatusCode: http.StatusCreated,
+			Header:     http.Header{"Location": []string{"/" + DRY_RUN_RESOURCE_ID}},
+			Body:       ioutil.NopCloser(bytes.NewReader([]byte(`{"id":"` + DRY_RUN_RESOURCE_ID + `"}`))),
+		}, nil
+	}
+
 	request, err := http.NewRequest("POST", reqUrl, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, fmt.Errorf("error creating POST request: %w", err)
@@ -509,6 +543,14 @@ func SendPutRequest(resourceType ResourceType, resourceId string, requestBody []
 	cfg := applySendOptions(opts)
 	reqUrl := buildRequestUrl(PUT, resourceType, resourceId)
 
+	if DRY_RUN {
+		PrintLog(LogLevelInfo, UtilsResourceWrapper, "", fmt.Sprintf("[DRY RUN] Would PUT: %s", reqUrl))
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(bytes.NewReader([]byte{})),
+		}, nil
+	}
+
 	request, err := http.NewRequest("PUT", reqUrl, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, fmt.Errorf("error creating PUT request: %w", err)
@@ -550,6 +592,15 @@ func SendPutRequest(resourceType ResourceType, resourceId string, requestBody []
 func SendPatchRequest(resourceType ResourceType, resourceId string, requestBody []byte) (*http.Response, error) {
 
 	reqUrl := buildRequestUrl(PATCH, resourceType, resourceId)
+
+	if DRY_RUN {
+		PrintLog(LogLevelInfo, UtilsResourceWrapper, "", fmt.Sprintf("[DRY RUN] Would PATCH: %s", reqUrl))
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(bytes.NewReader([]byte{})),
+		}, nil
+	}
+
 	request, err := http.NewRequest("PATCH", reqUrl, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, fmt.Errorf("error creating PATCH request: %w", err)
@@ -712,6 +763,14 @@ func SendPaginatedGetListRequest(resourceType ResourceType, totField, curCountFi
 }
 
 func SendCustomRequest(method, reqURL string, body []byte, contentType string) (*http.Response, error) {
+
+	if DRY_RUN && method != "GET" {
+		PrintLog(LogLevelInfo, UtilsResourceWrapper, "", fmt.Sprintf("[DRY RUN] Would %s: %s", method, reqURL))
+		return &http.Response{
+			StatusCode: http.StatusNoContent,
+			Body:       ioutil.NopCloser(bytes.NewReader([]byte{})),
+		}, nil
+	}
 
 	var reqBody io.Reader
 	if body != nil {

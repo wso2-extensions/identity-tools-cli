@@ -26,6 +26,11 @@ import (
 	"strings"
 )
 
+var systemFileNames = []string{
+	API_RESOURCE_SCOPES.String(),
+	WORKFLOW_ASSOCIATIONS.String(),
+}
+
 func (rt ResourceType) String() string {
 	return string(rt)
 }
@@ -162,6 +167,10 @@ func RemoveDeletedLocalDirectories(parentDir string, deployedDirNames []string) 
 		}
 		if _, exists := deployedNames[entry.Name()]; !exists {
 			dirPath := filepath.Join(parentDir, entry.Name())
+			if DRY_RUN {
+				PrintLog(LogLevelInfo, UtilsResourceWrapper, "", fmt.Sprintf("[DRY RUN] Would remove directory: %s", dirPath))
+				continue
+			}
 			if err := os.RemoveAll(dirPath); err != nil {
 				PrintLog(LogLevelError, UtilsResourceWrapper, "", fmt.Sprintf("Error when removing the directory %s: %s", entry.Name(), err))
 			} else {
@@ -185,11 +194,20 @@ func RemoveDeletedLocalResources(filePath string, deployedResourceNames []string
 			continue
 		}
 		fileName := file.Name()
-		if !Contains(deployedResourceNames, GetFileInfo(fileName).ResourceName) {
-			err := os.Remove(filepath.Join(filePath, fileName))
-			if err != nil {
+		resourceName := GetFileInfo(fileName).ResourceName
+
+		if !Contains(deployedResourceNames, resourceName) {
+			isSystem := Contains(systemFileNames, resourceName)
+			fullPath := filepath.Join(filePath, fileName)
+			if DRY_RUN {
+				if !isSystem {
+					PrintLog(LogLevelInfo, UtilsResourceWrapper, "", fmt.Sprintf("[DRY RUN] Would remove file: %s", fullPath))
+				}
+				continue
+			}
+			if err := os.Remove(fullPath); err != nil {
 				PrintLog(LogLevelError, UtilsResourceWrapper, "", fmt.Sprintf("Error when removing the file: %s %s", fileName, err))
-			} else {
+			} else if !isSystem {
 				PrintLog(LogLevelInfo, UtilsResourceWrapper, "", fmt.Sprintf("Removed the file: %s", fileName))
 			}
 		}

@@ -53,8 +53,10 @@ var importAllCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		inputDirPath, _ := cmd.Flags().GetString("inputDir")
 		configFile, _ := cmd.Flags().GetString("config")
+		dryRun, _ := cmd.Flags().GetBool("dryRun")
 
 		baseDir := utils.LoadConfigs(configFile)
+		utils.DRY_RUN = dryRun
 		if inputDirPath == "" {
 			inputDirPath = baseDir
 		}
@@ -108,5 +110,6 @@ func init() {
 	cmd.RootCmd.AddCommand(importAllCmd)
 	importAllCmd.Flags().StringP("inputDir", "i", "", "Path to the input directory")
 	importAllCmd.Flags().StringP("config", "c", "", "Path to the environment specific config folder")
+	importAllCmd.Flags().BoolP("dryRun", "d", false, "Preview changes without applying them to the server")
 	importAllCmd.MarkFlagRequired("config")
 }

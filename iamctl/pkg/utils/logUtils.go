@@ -201,6 +201,14 @@ func PrintSummary(Operation string) {
 	}
 
 	fmt.Println("========================================")
+	if DRY_RUN {
+		if Operation == IMPORT {
+			fmt.Println("[DRY RUN] No changes were applied to the server.")
+		} else {
+			fmt.Println("[DRY RUN] No local files were deleted.")
+		}
+		fmt.Println("========================================")
+	}
 	fmt.Println("Total Summary:")
 	fmt.Println("========================================")
 	fmt.Printf("Total Operations: %d\n", AggregatedSummary.TotalRequests)
@@ -286,9 +294,15 @@ func PrintImportSummary() {
 		first = false
 		fmt.Printf("%s\n", summary.ResourceType)
 		fmt.Println("----------------------------------------")
-		fmt.Printf("Successful Imports: %d\n", summary.SuccessfulImport)
-		fmt.Printf("Successful Updates: %d\n", summary.SuccessfulUpdate)
-		fmt.Printf("Deleted: %d\n", summary.DeletedCount)
+		if DRY_RUN {
+			fmt.Printf("Would Import: %d\n", summary.SuccessfulImport)
+			fmt.Printf("Would Update: %d\n", summary.SuccessfulUpdate)
+			fmt.Printf("Would Delete: %d\n", summary.DeletedCount)
+		} else {
+			fmt.Printf("Successful Imports: %d\n", summary.SuccessfulImport)
+			fmt.Printf("Successful Updates: %d\n", summary.SuccessfulUpdate)
+			fmt.Printf("Deleted: %d\n", summary.DeletedCount)
+		}
 		if summary.Duration > 0 && summary.SuccessfulImport+summary.SuccessfulUpdate > 0 {
 			fmt.Printf("Execution time: %s\n", summary.Duration.Round(time.Millisecond))
 		}
