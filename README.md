@@ -115,3 +115,5 @@ All resources available inside each resource type folder in the current director
 * [CLI Mode](docs/cli-mode.md)
 * [Environment Specific Variables](docs/env-specific-variables.md)
 * [Resource Propagation](docs/resource-propagation.md)
+* [Logging](docs/logging.md)
+* [Dry-run Mode](docs/dryRun-mode.md)
