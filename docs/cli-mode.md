@@ -283,6 +283,35 @@ Example:
 
 > **Note:** Configurations under a particular resource type will take precedence over the global configurations for that resource type.
 
+#### Rate limit handling
+The tool is rate limit aware. When the server responds with ```429 Too Many Requests```, the request is automatically retried after waiting for the duration given in the ```Retry-After``` response header. If the header is not present, an exponentially increasing wait time with jitter is used. All other failures, including server errors and connection failures, are reported as they are without retrying.
+
+This behaviour can be tuned or turned off with the ```RATE_LIMIT``` property in the tool configs.
+
+```
+{
+    "RATE_LIMIT" : {
+        "ENABLED" : true,
+        "MAX_RETRIES" : 5,
+        "INITIAL_BACKOFF_SECONDS" : 1,
+        "MAX_BACKOFF_SECONDS" : 60,
+        "BACKOFF_MULTIPLIER" : 2,
+        "MAX_RETRY_AFTER_SECONDS" : 300
+    }
+}
+```
+
+| Property | Default | Description |
+| --- | --- | --- |
+| ```ENABLED``` | ```true``` | Set to ```false``` to disable retrying and send every request only once. |
+| ```MAX_RETRIES``` | ```5``` | Maximum number of retries per request. ```0``` disables retrying. |
+| ```INITIAL_BACKOFF_SECONDS``` | ```1``` | Wait time before the first retry, when the server does not send a ```Retry-After``` header. |
+| ```MAX_BACKOFF_SECONDS``` | ```60``` | Upper bound for the calculated wait time. |
+| ```BACKOFF_MULTIPLIER``` | ```2``` | Factor by which the wait time grows after each retry. |
+| ```MAX_RETRY_AFTER_SECONDS``` | ```300``` | If the server asks to retry after a longer duration than this, retrying is aborted and the request is failed instead of waiting. |
+
+> **Note:** Only the properties that need to be overridden have to be added to the ```RATE_LIMIT``` block. The rest will take their default values.
+
 ### Keyword Mapping configurations
 The ```keywordConfig.json``` file contains the configurations needed for keyword replacement for environment-specific variables.
 

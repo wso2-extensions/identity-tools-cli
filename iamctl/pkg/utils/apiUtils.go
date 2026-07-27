@@ -20,7 +20,6 @@ package utils
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -142,15 +141,7 @@ func SendExportRequest(resourceId, fileType string, resourceType ResourceType, e
 
 	defer req.Body.Close()
 
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-
-	resp, err = httpClient.Do(req)
+	resp, err = SendHTTPRequest(req)
 	if err != nil {
 		return resp, fmt.Errorf("error while exporting resource: %s", err)
 	}
@@ -189,7 +180,6 @@ func SendImportRequest(importFilePath, fileData string, resourceType ResourceTyp
 
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
-	defer writer.Close()
 
 	part, err := writer.CreatePart(textproto.MIMEHeader{
 		"Content-Disposition": []string{fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file", fileInfo.FileName)},
@@ -204,13 +194,14 @@ func SendImportRequest(importFilePath, fileData string, resourceType ResourceTyp
 		return nil, fmt.Errorf("error when creating the import request: %s", err)
 	}
 
-	var capturedImportBody bytes.Buffer
-	var importBodyReader io.Reader = body
-	if TOOL_CONFIGS.Logs.LogRequestPayloads {
-		importBodyReader = io.TeeReader(body, &capturedImportBody)
+	// The writer is closed before creating the request, so that the complete body is available as a
+	// replayable reader when the request has to be retried.
+	if err := writer.Close(); err != nil {
+		return nil, fmt.Errorf("error when creating the import request: %s", err)
 	}
+	importBody := body.Bytes()
 
-	request, err := http.NewRequest("POST", reqUrl, importBodyReader)
+	request, err := http.NewRequest("POST", reqUrl, bytes.NewReader(importBody))
 	if err != nil {
 		return nil, fmt.Errorf("error when creating the import request: %s", err)
 	}
@@ -218,14 +209,7 @@ func SendImportRequest(importFilePath, fileData string, resourceType ResourceTyp
 	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
 	defer request.Body.Close()
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-	resp, err := client.Do(request)
+	resp, err := SendHTTPRequest(request)
 	if err != nil {
 		return nil, fmt.Errorf("error when sending the import request: %s", err)
 	}
@@ -238,7 +222,7 @@ func SendImportRequest(importFilePath, fileData string, resourceType ResourceTyp
 	resp.Body.Close()
 	PrintLog(LogLevelDebug, UtilsResourceWrapper, "", fmt.Sprintf("%s %s", request.Method, request.URL.String()))
 	if TOOL_CONFIGS.Logs.LogRequestPayloads {
-		PrintLog(LogLevelDebug, UtilsResourceWrapper, "", fmt.Sprintf("Request body: %s", capturedImportBody.String()))
+		PrintLog(LogLevelDebug, UtilsResourceWrapper, "", fmt.Sprintf("Request body: %s", string(importBody)))
 	}
 	PrintLog(LogLevelDebug, UtilsResourceWrapper, "", fmt.Sprintf("Response [%d]: %s", statusCode, string(debugBody)))
 	if error, ok := ErrorCodes[statusCode]; ok {
@@ -268,7 +252,6 @@ func SendUpdateRequest(resourceId, importFilePath, fileData string, resourceType
 
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
-	defer writer.Close()
 
 	part, err := writer.CreatePart(textproto.MIMEHeader{
 		"Content-Disposition": []string{fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file", fileInfo.FileName)},
@@ -283,13 +266,14 @@ func SendUpdateRequest(resourceId, importFilePath, fileData string, resourceType
 		return fmt.Errorf("error when creating the import request: %s", err)
 	}
 
-	var capturedUpdateBody bytes.Buffer
-	var updateBodyReader io.Reader = body
-	if TOOL_CONFIGS.Logs.LogRequestPayloads {
-		updateBodyReader = io.TeeReader(body, &capturedUpdateBody)
+	// The writer is closed before creating the request, so that the complete body is available as a
+	// replayable reader when the request has to be retried.
+	if err := writer.Close(); err != nil {
+		return fmt.Errorf("error when creating the import request: %s", err)
 	}
+	updateBody := body.Bytes()
 
-	request, err := http.NewRequest("PUT", formattedReqUrl, updateBodyReader)
+	request, err := http.NewRequest("PUT", formattedReqUrl, bytes.NewReader(updateBody))
 	if err != nil {
 		return fmt.Errorf("error when creating the import request: %s", err)
 	}
@@ -297,14 +281,7 @@ func SendUpdateRequest(resourceId, importFilePath, fileData string, resourceType
 	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
 	defer request.Body.Close()
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-	resp, err := client.Do(request)
+	resp, err := SendHTTPRequest(request)
 	if err != nil {
 		return fmt.Errorf("error when sending the import request: %s", err)
 	}
@@ -320,7 +297,7 @@ func SendUpdateRequest(resourceId, importFilePath, fileData string, resourceType
 	resp.Body.Close()
 	PrintLog(LogLevelDebug, UtilsResourceWrapper, "", fmt.Sprintf("%s %s", request.Method, request.URL.String()))
 	if TOOL_CONFIGS.Logs.LogRequestPayloads {
-		PrintLog(LogLevelDebug, UtilsResourceWrapper, "", fmt.Sprintf("Request body: %s", capturedUpdateBody.String()))
+		PrintLog(LogLevelDebug, UtilsResourceWrapper, "", fmt.Sprintf("Request body: %s", string(updateBody)))
 	}
 	PrintLog(LogLevelDebug, UtilsResourceWrapper, "", fmt.Sprintf("Response [%d]: %s", statusCode, string(debugBody)))
 	if error, ok := ErrorCodes[statusCode]; ok {
@@ -346,14 +323,7 @@ func SendDeleteRequest(resourceId string, resourceType ResourceType, opts ...Sen
 	request.URL.RawQuery = query.Encode()
 	defer request.Body.Close()
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-	resp, err := client.Do(request)
+	resp, err := SendHTTPRequest(request)
 	if err != nil {
 		return fmt.Errorf("error when sending the delete request: %s", err)
 	}
@@ -427,15 +397,7 @@ func SendGetRequest(resourceType ResourceType, resourceId string, opts ...SendOp
 	}
 	request.URL.RawQuery = query.Encode()
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-
-	resp, err := client.Do(request)
+	resp, err := SendHTTPRequest(request)
 	if err != nil {
 		return nil, fmt.Errorf("error sending GET request: %w", err)
 	}
@@ -474,15 +436,7 @@ func SendPostRequest(resourceType ResourceType, requestBody []byte, opts ...Send
 	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
 	request.Header.Set("Content-Type", cfg.contentType)
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-
-	resp, err := client.Do(request)
+	resp, err := SendHTTPRequest(request)
 	if err != nil {
 		return nil, fmt.Errorf("error sending POST request: %w", err)
 	}
@@ -517,15 +471,7 @@ func SendPutRequest(resourceType ResourceType, resourceId string, requestBody []
 	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
 	request.Header.Set("Content-Type", cfg.contentType)
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-
-	resp, err := client.Do(request)
+	resp, err := SendHTTPRequest(request)
 	if err != nil {
 		return nil, fmt.Errorf("error sending PUT request: %w", err)
 	}
@@ -558,15 +504,7 @@ func SendPatchRequest(resourceType ResourceType, resourceId string, requestBody 
 	request.Header.Set("Authorization", "Bearer "+SERVER_CONFIGS.Token)
 	request.Header.Set("Content-Type", MEDIA_TYPE_JSON)
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-
-	resp, err := client.Do(request)
+	resp, err := SendHTTPRequest(request)
 	if err != nil {
 		return nil, fmt.Errorf("error sending PATCH request: %w", err)
 	}
@@ -608,13 +546,7 @@ func SendGetListRequest(resourceType ResourceType, opts ...SendOption) ([]byte, 
 	req.URL.RawQuery = query.Encode()
 	defer req.Body.Close()
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
-
-	resp, err := client.Do(req)
+	resp, err := SendHTTPRequest(req)
 	if err != nil {
 		return nil, fmt.Errorf("error sending GET list request. %w", err)
 	}
@@ -727,15 +659,7 @@ func SendCustomRequest(method, reqURL string, body []byte, contentType string) (
 		req.Header.Set("Content-Type", contentType)
 	}
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-
-	resp, err := client.Do(req)
+	resp, err := SendHTTPRequest(req)
 	if err != nil {
 		return nil, fmt.Errorf("error sending %s request: %w", method, err)
 	}

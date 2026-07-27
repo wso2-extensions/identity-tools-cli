@@ -20,7 +20,6 @@ package utils
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -83,6 +82,7 @@ type ToolConfigs struct {
 	CustomTextConfigs          map[string]interface{} `json:"CUSTOM_TEXTS"`
 	FlowConfigs                map[string]interface{} `json:"FLOWS"`
 	Logs                       LogsConfig             `json:"LOGS"`
+	RateLimit                  RateLimitConfig        `json:"RATE_LIMIT"`
 }
 
 type KeywordConfigs struct {
@@ -121,6 +121,11 @@ func LoadConfigs(envConfigPath string) (baseDir string) {
 	TOOL_CONFIGS = loadToolConfigsFromFile(toolConfigFile)
 	CURRENT_LOG_LEVEL = resolveLogLevel(TOOL_CONFIGS.Logs.LogLevel)
 	KEYWORD_CONFIGS = loadKeywordConfigsFromFile(keywordConfigPath)
+
+	// The access token is retrieved after the tool configs are loaded, so that the token requests
+	// are also sent with the configured rate limit handling.
+	SERVER_CONFIGS.Token = getAccessToken(SERVER_CONFIGS)
+	PrintLog(LogLevelInfo, UtilsResourceWrapper, "", "Access Token received successfully.")
 	return baseDir
 }
 
@@ -149,10 +154,6 @@ func loadServerConfigs(envConfigPath string) (baseDir string, toolConfigPath str
 			log.Fatalln("ERROR: Utils - Unexpected format for Server Version.")
 		}
 	}
-
-	// Get access token.
-	SERVER_CONFIGS.Token = getAccessToken(SERVER_CONFIGS)
-	PrintLog(LogLevelInfo, UtilsResourceWrapper, "", "Access Token received successfully.")
 
 	return baseDir, toolConfigPath, keywordConfigPath
 }
@@ -213,6 +214,8 @@ func loadToolConfigsFromFile(configFilePath string) (toolConfigs ToolConfigs) {
 	}
 
 	toolConfigs.ExcludeSecrets = true
+	// Defaults are set before unmarshalling, so that only the properties defined in the config file are overridden.
+	toolConfigs.RateLimit = DefaultRateLimitConfig()
 	if len(configFile) == 0 {
 		return toolConfigs
 	}
@@ -271,14 +274,7 @@ func getAccessToken(config ServerConfigs) string {
 	req.Header.Set("Content-Type", MEDIA_TYPE_FORM)
 	defer req.Body.Close()
 
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-	resp, err := httpClient.Do(req)
+	resp, err := SendHTTPRequest(req)
 	if err != nil {
 		log.Fatalln("ERROR: Utils -", err)
 	}
@@ -325,14 +321,7 @@ func switchAccessToken(config ServerConfigs, accessToken string) string {
 	req.Header.Set("Content-Type", MEDIA_TYPE_FORM)
 	defer req.Body.Close()
 
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-	resp, err := httpClient.Do(req)
+	resp, err := SendHTTPRequest(req)
 	if err != nil {
 		log.Fatalln("ERROR: Utils -", err)
 	}
